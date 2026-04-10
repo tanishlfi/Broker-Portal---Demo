@@ -59,12 +59,12 @@ export default function LoginPage() {
 
             <div className="flex flex-wrap justify-between items-end gap-3 mt-4">
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-red-600 flex items-center gap-1.5">
+                {/* <span className="text-xs text-red-600 flex items-center gap-1.5">
                   <span>⊘</span> Invalid OTP. Please try again.
                 </span>
                 <span className="text-xs text-red-600 flex items-center gap-1.5">
                   <span>⊘</span> OTP expired. Please request a new OTP.
-                </span>
+                </span> */}
               </div>
               <a href="#" className="text-sm text-[#1e88e5] hover:underline whitespace-nowrap">
                 Resend OTP
