@@ -47,7 +47,13 @@ export default function Dashboard() {
           {navItems.map((item) => (
             <button
               key={item}
-              onClick={() => setActiveNav(item)}
+              onClick={() => {
+                if (item === "Leads") {
+                  router.push("/quote");
+                } else {
+                  setActiveNav(item);
+                }
+              }}
               className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap cursor-pointer ${
                 activeNav === item
                   ? "text-white bg-[#2e7de0] border-[#2e7de0] rounded-sm"
@@ -70,7 +76,7 @@ export default function Dashboard() {
         {/* CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
           {/* Leads */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex items-center gap-5">
+          <div onClick={() => router.push("/quote")} className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex items-center gap-5 cursor-pointer hover:shadow-md transition-shadow">
             <Users className="text-green-600 w-12 h-12" strokeWidth={1.5} />
             <div>
               <div className="text-4xl font-bold text-gray-800">91</div>
