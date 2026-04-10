@@ -2,6 +2,7 @@
 
 import "../../globals.css";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const provinces: string[] = [];
 const industries: string[] = [];
@@ -15,6 +16,7 @@ export default function QuotePage() {
   const [salary, setSalary] = useState("");
   const [province, setProvince] = useState("");
   const [industry, setIndustry] = useState("");
+  const router = useRouter();
 
   return (
     <div
@@ -173,6 +175,7 @@ export default function QuotePage() {
             <button
               className="px-14 py-2.5 rounded text-white font-medium text-sm hover:opacity-90 transition-opacity cursor-pointer"
               style={{ background: "#f5a623" }}
+              onClick={() => router.push("/quote/full")}
             >
               Next
             </button>
