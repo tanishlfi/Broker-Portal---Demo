@@ -50,6 +50,8 @@ export default function Dashboard() {
               onClick={() => {
                 if (item === "Leads") {
                   router.push("/quote");
+                } else if (item === "FAQ") {
+                  router.push("/faq");
                 } else {
                   setActiveNav(item);
                 }
