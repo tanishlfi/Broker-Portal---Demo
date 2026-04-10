@@ -3,16 +3,10 @@
 import "../../globals.css";
 import { useState } from "react";
 
-const provinces = [
-  "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
-  "Limpopo", "Mpumalanga", "Northern Cape", "North West", "Western Cape",
-];
+const provinces: string[] = [];
+const industries: string[] = [];
 
-const industries = [
-  "Agriculture", "Construction", "Education", "Finance & Insurance",
-  "Healthcare", "Hospitality", "Manufacturing", "Mining",
-  "Retail", "Technology", "Transport & Logistics", "Other",
-];
+
 
 export default function QuotePage() {
   const [employees, setEmployees] = useState("");
@@ -21,9 +15,6 @@ export default function QuotePage() {
   const [salary, setSalary] = useState("");
   const [province, setProvince] = useState("");
   const [industry, setIndustry] = useState("");
-
-  const filled = [employees, gender, avgAge, salary, province, industry].filter(Boolean).length;
-  const progress = Math.round((filled / 6) * 100);
 
   return (
     <div
@@ -43,8 +34,10 @@ export default function QuotePage() {
         </span>
       </div>
 
-      {/* CARD */}
-      <div className="bg-white rounded-xl shadow-md w-full max-w-lg mx-4 px-8 py-8 mt-4 mb-10">
+      {/* CONTENT — no card, blends into background */}
+      <div className="w-full max-w-lg mx-4 px-4 mt-6 mb-10">
+
+        {/* TITLE */}
         <h1 className="text-2xl font-bold text-gray-800 text-center mb-1">
           Let&apos;s get you your quick cost estimate
         </h1>
@@ -52,18 +45,14 @@ export default function QuotePage() {
           We just need a little info to do the maths
         </p>
 
-        {/* PROGRESS BAR */}
-        <div className="w-full bg-gray-200 rounded-full h-6 mb-6 relative flex items-center">
-          {progress === 0 ? (
-            <span className="text-gray-500 text-xs font-semibold px-3">0%</span>
-          ) : (
-            <div
-              className="h-6 rounded-full flex items-center px-3 transition-all duration-300"
-              style={{ width: `${progress}%`, background: "#2e9fd8" }}
-            >
-              <span className="text-white text-xs font-semibold">{progress}%</span>
-            </div>
-          )}
+        {/* PROGRESS BAR — static 15%, rectangular */}
+        <div className="w-full bg-gray-200 h-7 mb-6 flex items-center">
+          <div
+            className="h-7 flex items-center px-3"
+            style={{ width: "15%", background: "#2e9fd8" }}
+          >
+            <span className="text-white text-xs font-semibold">15%</span>
+          </div>
         </div>
 
         {/* FORM */}
@@ -80,7 +69,7 @@ export default function QuotePage() {
               value={employees}
               min={0}
               onChange={(e) => setEmployees(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-[#2e9fd8]"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-[#2e9fd8] bg-white"
             />
           </div>
 
@@ -117,7 +106,7 @@ export default function QuotePage() {
               value={avgAge}
               min={0}
               onChange={(e) => setAvgAge(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-[#2e9fd8]"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-[#2e9fd8] bg-white"
             />
           </div>
 
@@ -128,14 +117,14 @@ export default function QuotePage() {
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#2e9fd8] font-bold text-sm">R</span>
-              <input
-                type="number"
-                placeholder="Enter average salary"
+              <select
                 value={salary}
-                min={0}
                 onChange={(e) => setSalary(e.target.value)}
-                className="w-full border border-gray-300 rounded pl-8 pr-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-[#2e9fd8]"
-              />
+                className="w-full border border-gray-300 rounded pl-8 pr-8 py-2 text-sm text-gray-500 focus:outline-none focus:border-[#2e9fd8] appearance-none bg-white"
+              >
+                <option value="">Enter average salary</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
             </div>
           </div>
 
@@ -180,12 +169,14 @@ export default function QuotePage() {
           </div>
 
           {/* NEXT BUTTON */}
-          <button
-            className="w-full py-3 rounded-full text-white font-semibold text-sm mt-2 hover:opacity-90 transition-opacity cursor-pointer"
-            style={{ background: "#f5a623" }}
-          >
-            Next
-          </button>
+          <div className="flex justify-center mt-2">
+            <button
+              className="px-14 py-2.5 rounded text-white font-medium text-sm hover:opacity-90 transition-opacity cursor-pointer"
+              style={{ background: "#f5a623" }}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
