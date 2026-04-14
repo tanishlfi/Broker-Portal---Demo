@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Users, Briefcase, FileWarning, ChevronDown, Bot } from "lucide-react";
  
 const navItems = ["Dashboard", "Leads", "Employer Policies", "Failed Invoice Payments", "FAQ", "Broker Training"];
- 
+ //
 export default function Dashboard() {
   const [activeNav, setActiveNav] = useState("Dashboard");
   const router = useRouter();
