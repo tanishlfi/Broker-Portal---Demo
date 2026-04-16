@@ -7,9 +7,10 @@ import {
   AlertCircle, HelpCircle, GraduationCap,
   ChevronLeft, ChevronRight
 } from "lucide-react";
+import { ROUTES } from "@/lib/constants";
 
 const quickActions = [
-  { label: "Start New Lead", icon: Plus, href: "#" },
+  { label: "Start New Lead", icon: Plus, href: ROUTES.newLead },
   { label: "View Leads", icon: Eye, href: "#" },
   { label: "Quotes", icon: FileText, href: "#" },
   { label: "My Policies", icon: Shield, href: "#" },
