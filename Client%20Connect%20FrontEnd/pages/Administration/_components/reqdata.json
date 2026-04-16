@@ -1,0 +1,69 @@
+{
+  "requestDescription": "Request to edit policy",
+  "requestedBy": "John Doe",
+  "requestedDate": "2024-09-01",
+  "attachments": [
+    {
+      "description": "file description",
+      "fileName": "Azure filename",
+      "orginalName": "Original filename"
+    }
+  ],
+  "BrokerageId": 0,
+  "ParentPolicyNumber": 0,
+  "requestType": "Edit",
+  "status": "Submitted",
+  "PolicyId": 22344,
+  "PolicyNumber": "01-202008-22344",
+  "brokerge": "some brokerage name",
+  "scheme": "some scheme name",
+  "FSPNumber": "46131",
+  "RepresentativeIdNumber": "7706035937080",
+  "ProductOptionCode": "OPT:00922",
+  "InstallmentPremium": 0.0,
+  "PolicyMembers": [
+    {
+      "RolePlayerId": 0,
+      "FirstName": "first name member",
+      "surname": "surname member",
+      "IdTypeId": 1,
+      "IdNumber": "9009070223088",
+      "DateOfBirth": "1990-09-07T00:00:00",
+      "PassportExpiryDate": null,
+      "Nationality": "South African",
+      "Gender": "Male",
+      "MemberTypeId": 1,
+      "BenefitId": 0,
+      "BenefitCode": null,
+      "Premium": 0.0,
+      "CoverAmount": 30000.0,
+      "PolicyInceptionDate": "2023-08-01T00:00:00",
+      "EmploymentStartDate": null,
+      "IsBeneficiary": true,
+      "EmailAddress": "test@gmail.com",
+      "MobileNumber": "0713485201",
+      "SecondaryNumber": null,
+      "PreferredCommunicationType": 2,
+      "MonthlyPreTaxIncome": 0.0,
+      "MemberAction": 1,
+      "IsAlive": true,
+      "DateOfDeath": null,
+      "DeathCertificateNumber": "",
+      "IsVopdVerified": true,
+      "DateVopdVerified": "2023-08-01T00:00:00",
+      "InsuredLifeRemovalReason": null,
+      "ReinstateReasonEnum": null,
+      "Addresses": [
+        {
+          "AddressTypeId": 1,
+          "AddressLine1": "Tes 1 ",
+          "AddressLine2": "street 2",
+          "City": "Pretoria",
+          "Province": "Gauteng",
+          "Country": "South Africa",
+          "PostalCode": "0145"
+        }
+      ]
+    }
+  ]
+}

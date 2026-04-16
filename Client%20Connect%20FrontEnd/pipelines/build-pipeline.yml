@@ -1,0 +1,35 @@
+trigger:
+  branches:
+    include:
+      - master
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: Create_Publish_Artifact
+    steps:
+      - checkout: self
+        clean: true
+      - task: CopyFiles@2
+        displayName: 'Copy files to pipeline-publish'
+        inputs:
+          SourceFolder: '$(Build.SourcesDirectory)'
+          TargetFolder: '$(Build.SourcesDirectory)/pipeline-publish'
+          Contents: |
+            **/*
+      - task: ArchiveFiles@2
+        displayName: 'Archive artifact'
+        inputs:
+          rootFolderOrFile: '$(Build.SourcesDirectory)/pipeline-publish'
+          includeRootFolder: false
+          archiveType: zip
+          archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+          replaceExistingArchive: true
+      - task: PublishPipelineArtifact@1
+        displayName: Publish Artifacts
+        inputs:
+          artifact: frontend-build-artifact
+          targetPath: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+          publishLocation: pipeline

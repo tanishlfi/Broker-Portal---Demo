@@ -1,0 +1,12 @@
+Fix Beneficiary Form.
+
+Fix: Member DOB on Logs Logger 
+Fix: Policy Join date logger/ inception date
+
+Add: Toast success on member save. (Like on main member)
+
+Front end for display logs rows. 
+
+Later:  On Test env
+
+Uploading documents. 

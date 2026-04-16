@@ -1,0 +1,423 @@
+import {
+  LinearProgress,
+  Button,
+  Chip,
+  Alert,
+  Portal,
+  Box,
+  Stack,
+  IconButton,
+} from "@mui/material";
+import {
+  DataGridPremium,
+  GridToolbar,
+  GridToolbarQuickFilter,
+} from "@mui/x-data-grid-premium";
+import axios from "axios";
+import AppPolicyStatusChip from "components/Bits/AppPolicyStatusChip";
+import PageHeader from "components/Bits/PageHeader";
+import useToken from "hooks/useToken";
+import { useRouter } from "next/router";
+import React, { useEffect, useState } from "react";
+import { useMutation, useQuery } from "react-query";
+import { nodeSa } from "src/AxiosParams";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import AlertPopup from "components/Bits/AlertPopup";
+import RejectPolicyDialog from "components/PolicyForms/RejectPolicyDialog";
+
+function MyCustomToolbar(props) {
+  return (
+    <React.Fragment>
+      <Portal container={() => document.getElementById("filter-panel")}>
+        <GridToolbarQuickFilter />
+      </Portal>
+      <GridToolbar {...props} />
+    </React.Fragment>
+  );
+}
+
+const Policies = ({ loading }) => {
+  const router = useRouter();
+
+  const handleSelectionChange = (selectionModel) => {
+    // Update the state with the new selection model
+    setSelectedRows(selectionModel);
+  };
+
+  const accessToken = useToken();
+
+  const theWindow = typeof window !== "undefined" && window;
+
+  const [submitted, setSubmitted] = React.useState([]);
+  const [ready, setReady] = React.useState([]);
+  const [status, setStatus] = React.useState("");
+  const { fileName, own } = router.query;
+
+  let URL = `${nodeSa}/onboarding/policies?allocatedApprover=true&status=Submitted&manual=true`;
+
+  // if (fileName) {
+  //   URL = `${nodeSa}/onboarding/policies?allocatedApprover=true&fileName=${fileName}`;
+  // }
+
+  // if (own) {
+  //   URL = `${nodeSa}/onboarding/policies?allocatedApprover=${own}`;
+  // }
+
+  // if (status) {
+  //   URL = `${URL}&status=${status}`;
+  // }
+
+  const getPolicies = useQuery(
+    "getSubmittedUserPolicies",
+    async () => {
+      return await axios.get(`${URL}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    },
+    {
+      enabled: !!accessToken,
+    },
+  );
+
+  const { refetch } = getPolicies;
+
+  useEffect(() => {
+    if (status) {
+      refetch();
+    }
+  }, [status, refetch]);
+
+  // filter all with no approverId
+
+  const filteredPolicies = getPolicies?.data?.data?.data?.filter(
+    (policy) => policy.approverId === null,
+  );
+
+  const ChangeStatusOfMarkedPolicies = useMutation(
+    async (data) => {
+      return await axios.post(
+        `${nodeSa}/onboarding/policies/bulkUpdateStatus`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+    },
+    {
+      onSuccess: () => {
+        getPolicies.refetch();
+      },
+    },
+  );
+
+  const changeStatus = async (marked, status) => {
+    console.log({
+      policyIds: marked,
+      status,
+    });
+
+    ChangeStatusOfMarkedPolicies.mutate({
+      policyIds: marked,
+      status,
+    });
+  };
+
+  const markSubmitted = (id) => {
+    setSubmitted((marked) => [...marked, id]);
+  };
+
+  const unMarkSubmitted = (id) => {
+    setMarked((marked) => marked.filter((item) => item !== id));
+  };
+
+  const markReady = (id) => {
+    setReady((marked) => [...marked, id]);
+  };
+
+  const unMarkReady = (id) => {
+    setReady((marked) => marked.filter((item) => item !== id));
+  };
+
+  const columns = [
+    {
+      field: "Manage Policy",
+      headerName: "Mange Policy",
+      width: 150,
+      renderCell: (params) => {
+        return (
+          <>
+            {params.row.id ? (
+              <Button
+                disabled={loading}
+                onClick={() => handleRowClick(params)}
+                variant="contained"
+                color="primary"
+              >
+                Manage
+              </Button>
+            ) : (
+              <></>
+            )}
+          </>
+        );
+      },
+    },
+
+    {
+      field: "status",
+      headerName: "Status",
+      width: 130,
+
+      renderCell: (params) => {
+        if (params.row.status === "Submitted") {
+          return (
+            <Stack direction="row">
+              <AppPolicyStatusChip status={params.row.status} />
+              {submitted && submitted.includes(params.row.id) ? (
+                <IconButton
+                  color="warning"
+                  onClick={() => {
+                    unMarkSubmitted(params.row.id);
+                  }}
+                >
+                  <CheckBoxIcon />
+                </IconButton>
+              ) : (
+                <IconButton
+                  onClick={() => {
+                    markSubmitted(params.row.id);
+                  }}
+                >
+                  <CheckBoxOutlineBlankIcon />
+                </IconButton>
+              )}
+            </Stack>
+          );
+        } else if (params.row.status === "Ready") {
+          return (
+            <Stack direction="row">
+              <AppPolicyStatusChip status={params.row.status} />
+              {ready && ready.includes(params.row.id) ? (
+                <IconButton
+                  color="warning"
+                  onClick={() => {
+                    unMarkReady(params.row.id);
+                  }}
+                >
+                  <CheckBoxIcon />
+                </IconButton>
+              ) : (
+                <IconButton
+                  onClick={() => {
+                    markReady(params.row.id);
+                  }}
+                >
+                  <CheckBoxOutlineBlankIcon />
+                </IconButton>
+              )}
+            </Stack>
+          );
+        }
+
+        return <AppPolicyStatusChip status={params.row.status} />;
+      },
+    },
+
+    // {
+    //   field: "statusNote",
+    //   headerName: "Comment",
+    //   width: 130,
+    // },
+    // {
+    //   field: "exceptionCount",
+    //   headerName: "Errors",
+    //   width: 100,
+    //   renderCell: (params) => {
+    //     return <Chip label={params.row.exceptionCount} variant="outlined" />;
+    //   },
+    // },
+    {
+      field: "providerName",
+      headerName: "Scheme / Representative",
+      width: 250,
+    },
+    { field: "brokerageName", headerName: "Brokerage", width: 250 },
+    { field: "policyMember", headerName: "Main Member ID", width: 180 },
+    // combine firstName and surname
+    {
+      field: "fullName",
+      headerName: "Main Member",
+      width: 250,
+    },
+    // { field: "firstName", headerName: "firstName", width: 250 },
+    // { field: "surname", headerName: "surname", width: 200 },
+    // {
+    //   field: "isApproved",
+    //   headerName: "Is Approved",
+    //   width: 100,
+    //   renderCell: (params) => {
+    //     return (
+    //       <Chip
+    //         label={params.row.isApproved ? "Yes" : "No"}
+    //         color={params.row.isApproved ? "success" : "error"}
+    //       />
+    //     );
+    //   },
+    // },
+
+    { field: "createdAt", headerName: "Created At", width: 150 },
+    { field: "fileName", headerName: "File Name", width: 200 },
+    {
+      field: "rejectPolicy",
+      headerName: "Reject Policy",
+      width: 70,
+
+      renderCell: (params) => {
+        return (
+          <RejectPolicyDialog
+            policy={params.row}
+            ChangeRequest={ChangeStatusOfMarkedPolicies}
+          />
+        );
+      },
+    },
+  ];
+
+  const rows = getPolicies?.data?.data.data
+    ? getPolicies?.data?.data.data?.map((row) => {
+        const policyMainMember = row.members.find(
+          (member) => member.memberTypeId === 1,
+        );
+        return {
+          id: row.id,
+          status: row.status,
+          statusNote: row.statusNote,
+          providerId: row.providerId,
+          brokerageName: row.brokerageName,
+          providerName: row.providerName,
+          policyMember: policyMainMember?.idNumber,
+          fullName: `${policyMainMember?.firstName} ${policyMainMember?.surname}`,
+          fromFile: row?.File?.orgFileName,
+          fileName: row?.File?.orgFileName,
+          createdAt: new Date(row.createdAt).toLocaleString(),
+          exceptionCount: row.exceptionCount,
+        };
+      })
+    : [];
+
+  const handleRowClick = (params) => {
+    router.push(`/Onboarding/Policies/viewOnly/${params.row.id}`);
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="New Policies Created by Brokers"
+        subTitle={`
+          Manage policies created by brokers.
+        `}
+        breadcrumbs={[
+          {
+            title: "Home",
+            href: "/",
+          },
+          {
+            title: `Individual Approvals`,
+            href: `/Onboarding/AllocatedPolicies`,
+          },
+        ]}
+      />
+
+      <Stack
+        sx={{ my: 2 }}
+        spacing={1}
+        direction="row"
+        justifyContent="space-between"
+      >
+        <div>
+          {submitted && submitted.length > 0 && (
+            <Button
+              onClick={() => {
+                changeStatus(submitted, "Approved");
+              }}
+              color="secondary"
+              variant="contained"
+            >
+              Approve Submitted Policies
+            </Button>
+          )}
+          {ready && ready.length > 0 && (
+            <Button
+              onClick={() => {
+                changeStatus(ready, "Submitted");
+              }}
+              color="secondary"
+              variant="contained"
+            >
+              Submit Ready Policies
+            </Button>
+          )}
+        </div>
+      </Stack>
+
+      {getPolicies?.isLoading && <LinearProgress />}
+
+      {getPolicies.isError && (
+        <Alert severity="error">{getPolicies.error.message}</Alert>
+      )}
+
+      <Box id="filter-panel" />
+
+      {getPolicies.isSuccess &&
+        getPolicies?.data?.data?.success &&
+        rows &&
+        rows.length > 0 && (
+          <div
+            style={{
+              height: 900,
+              width: "94vw",
+            }}
+          >
+            <DataGridPremium
+              rows={rows}
+              columns={columns}
+              virtualization
+              slots={{
+                toolbar: MyCustomToolbar,
+              }}
+              initialState={{
+                filter: {
+                  filterModel: {
+                    items: [],
+                    quickFilterExcludeHiddenColumns: true,
+                  },
+                },
+              }}
+            />
+          </div>
+        )}
+
+      {getPolicies.isSuccess && rows && rows.length === 0 && (
+        <Alert severity="info">No Policies Found</Alert>
+      )}
+
+      <AlertPopup
+        open={ChangeStatusOfMarkedPolicies.isSuccess}
+        severity="success"
+        message="Policies Approved"
+      />
+      <AlertPopup
+        open={ChangeStatusOfMarkedPolicies.isError}
+        severity="error"
+        message={ChangeStatusOfMarkedPolicies?.error?.response?.data?.message}
+      />
+    </>
+  );
+};
+
+export default Policies;
