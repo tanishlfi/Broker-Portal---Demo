@@ -1,0 +1,222 @@
+[
+  {
+    "FspNumber": "9951",
+    "Name": "NBCS HOLDINGS (PTY) LTD",
+    "TradeName": "NBCS HOLDINGS (PTY) LTD",
+    "LegalCapacity": "Company",
+    "RegNo": "2012/194467/08",
+    "Status": "Authorized",
+    "CompanyType": "Private",
+    "FaxNo": "000 000 0000",
+    "TelNo": "000 000 0000",
+    "FspWebsite": "",
+    "FinYearEnd": "00/00",
+    "MedicalAccreditationNo": "0000",
+    "IsActive": true,
+    "ComplianceOfficer": {
+      "DateAppointed": "12/03/2013",
+      "Name": "NOT PROVIDED",
+      "PracticeName": "NBCS HOLDINGS (PTY) LTD",
+      "TelNo": "000 000 0000"
+    },
+    "ContactPerson": {
+      "Name": "N/A",
+      "Surname": "",
+      "ContactNumber": null,
+      "Email": "",
+      "Title": ""
+    },
+    "Addresses": [],
+    "Categories": [
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 1,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 3,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 20,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 21,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 22,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 4,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 5,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 14,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 2,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 23,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 7,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      },
+      {
+        "CategoryNo": 1,
+        "SubCategoryNo": 6,
+        "IntermediaryDateActive": "2013-03-12T00:00:00+02:00",
+        "AdviceDateActive": "2013-03-12T00:00:00+02:00"
+      }
+    ],
+    "SoleProprietors": null,
+    "KeyIndividuals": null,
+    "Representatives": [
+      {
+        "Title": "",
+        "Initials": "B",
+        "FirstName": "SOLOMON MIKE",
+        "SurnameOrCompanyName": "CHAUKE",
+        "IdNumber": "6109025242085",
+        "IdType": 1,
+        "DateOfBirth": "1961-09-25T00:00:00",
+        "CountryOfRegistration": "South Africa",
+        "PhysicalAddress": null,
+        "DateOfAppointment": "2016-06-17T00:00:00+02:00",
+        "MedicalAccreditationNo": "",
+        "Categories": [
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2014-05-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2014-05-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 1
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2014-05-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2014-05-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 3
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2014-05-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2014-05-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 20
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2018-07-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2018-07-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 21
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2018-07-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2018-07-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 22
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2014-05-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2014-05-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 4
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2014-05-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2014-05-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 5
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2014-05-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2014-05-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 14
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2015-11-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2015-11-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 2
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2018-07-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2018-07-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 23
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2014-05-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2014-05-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 7
+          },
+          {
+            "FspNumber": null,
+            "AdviceDateActive": "2015-11-01T00:00:00+02:00",
+            "IntermediaryDateActive": "2015-11-01T00:00:00+02:00",
+            "SusDateActive": null,
+            "CategoryNo": 1,
+            "SubCategoryNo": 6
+          }
+        ],
+        "RepQualifications": null,
+        "RepType": 1
+      }
+    ]
+  }
+]

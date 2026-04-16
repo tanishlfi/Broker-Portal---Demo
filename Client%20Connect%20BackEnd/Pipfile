@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+"azure.servicebus" = "*"
+sqlalchemy = "*"
+schedule = "*"
+openpyxl = "*"
+"azure.storage.blob" = "*"
+azure-storage-queue = "*"
+python-dateutil = "*"
+bs4 = "*"
+pyodbc = "*"
+websocket-client = "*"
+msal = "*"
+python-dotenv = "*"
+pytz = "*"
+fastapi = "*"
+uvicorn = "*"
+pydantic = "*"
+auth0-fastapi-api = "*"
+pydantic-settings = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3"

@@ -1,0 +1,21 @@
+# schedule
+5 4,11 * * 1-7
+
+
+# build steps
+sudo pm2 stop api-cc-test
+sudo mkdir -p /src/api-cc-test
+sudo rm -r /src/api-cc-test
+sudo cp -a /var/lib/jenkins/workspace/api-cc-test/. /src/api-cc-test/
+cd /src/api-cc-test
+sudo cp -a /src/config/api-test-cc-config.env /src/api-cc-test/src/config/config.env
+sudo cp -a /src/config/config.json /src/api-cc-test/src/config/config.json
+sudo npm install
+sudo sequelize-cli db:migrate --env "test"
+sudo npm run build
+sudo mkdir /src/api-cc-test/dist/config
+sudo mkdir /src/api-cc-test/dist/downloads
+sudo cp -a /src/config/api-test-cc-config.env /src/api-cc-test/dist/config/config.env
+sudo cp -a /src/config/config.json /src/api-cc-test/dist/config/config.json
+sudo chown -R RmaLinuxAdmin:RmaLinuxAdmin /src/api-cc-test
+sudo pm2 start api-cc-test
