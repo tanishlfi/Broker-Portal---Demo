@@ -1,0 +1,15 @@
+{
+  "name": "broker-portal-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "Client Connect FrontEnd",
+    "Broker-Portal-Frontend"
+  ],
+  "scripts": {
+    "dev:client": "cd \"Client Connect FrontEnd\" && npm run dev",
+    "dev:broker": "cd Broker-Portal-Frontend && npm run dev",
+    "build:client": "cd \"Client Connect FrontEnd\" && npm run build",
+    "build:broker": "cd Broker-Portal-Frontend && npm run build"
+  }
+}

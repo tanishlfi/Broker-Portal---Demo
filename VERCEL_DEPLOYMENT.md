@@ -1,109 +1,83 @@
-# Vercel Deployment Guide
+# Vercel Deployment Guide - Native Monorepo Support
 
-## Overview
-This is a monorepo with two Next.js applications:
-- **Client Connect FrontEnd** (React) - Main application
-- **Broker Portal Frontend** (Next.js) - Broker portal application
+## Architecture
 
-## Deployment Strategy
+Deploy as a **single Vercel project** using Vercel's native monorepo detection:
 
-### Option 1: Separate Vercel Projects (Recommended for now)
+- **Client Connect FrontEnd** → `https://broker-portal-demo.vercel.app/` (root)
+- **Broker Portal Frontend** → `https://broker-portal-demo.vercel.app/broker` (sub-path)
 
-**Client Connect FrontEnd:**
-- Deploy to Vercel as separate project
-- URL: `https://client-connect-demo.vercel.app`
-- Root Directory: `Client Connect FrontEnd`
+## How It Works
 
-**Broker Portal Frontend:**
-- Deploy to Vercel as separate project
-- URL: `https://broker-portal-demo.vercel.app`
-- Root Directory: `Broker-Portal-Frontend`
-
-### Environment Variables
-
-Set these in Vercel project settings for each app:
-
-**Client Connect FrontEnd:**
-```
-NEXT_PUBLIC_BROKER_PORTAL_URL=https://broker-portal-demo.vercel.app
-NEXT_PUBLIC_CLIENT_CONNECT_URL=https://client-connect-demo.vercel.app
-```
-
-**Broker Portal Frontend:**
-```
-NEXT_PUBLIC_BROKER_PORTAL_URL=https://broker-portal-demo.vercel.app
-NEXT_PUBLIC_CLIENT_CONNECT_URL=https://client-connect-demo.vercel.app
-```
+The root `package.json` defines workspaces for both apps. Vercel automatically detects this monorepo structure and:
+1. Builds both Next.js apps independently
+2. Routes requests based on `vercel.json` configuration
+3. Deploys everything as a single project
 
 ## Deployment Steps
 
-### 1. Create Vercel Projects
+### 1. Vercel Configuration
 
-**For Client Connect FrontEnd:**
-```bash
-# In Vercel dashboard:
-# - New Project
-# - Import from GitHub: tanishlfi/Broker-Portal---Demo
-# - Root Directory: Client Connect FrontEnd
-# - Framework: Next.js
-# - Build Command: npm run build
-# - Output Directory: .next
-```
+In Vercel Dashboard:
+- **New Project** → Import from GitHub
+- **Repository:** tanishlfi/Broker-Portal---Demo
+- **Root Directory:** Leave empty (monorepo root)
+- **Framework:** Auto-detect (will detect Next.js)
+- **Build Command:** Leave default (Vercel will auto-detect)
+- **Environment Variables:**
+  ```
+  NEXT_PUBLIC_BROKER_PORTAL_URL=https://broker-portal-demo.vercel.app/broker
+  NEXT_PUBLIC_CLIENT_CONNECT_URL=https://broker-portal-demo.vercel.app
+  ```
+- **Deploy**
 
-**For Broker Portal Frontend:**
-```bash
-# In Vercel dashboard:
-# - New Project
-# - Import from GitHub: tanishlfi/Broker-Portal---Demo
-# - Root Directory: Broker-Portal-Frontend
-# - Framework: Next.js
-# - Build Command: npm run build
-# - Output Directory: .next
-```
+### 2. What Happens During Build
 
-### 2. Set Environment Variables
-
-In each Vercel project settings, add the environment variables listed above.
-
-### 3. Deploy
-
-Push to `tanish/changes` branch and Vercel will auto-deploy both projects.
+Vercel will:
+1. Detect `package.json` with workspaces
+2. Install dependencies for both apps
+3. Build Client Connect FrontEnd
+4. Build Broker Portal Frontend (with `/broker` basePath)
+5. Route requests using `vercel.json`
 
 ## Navigation Flow
 
-1. User lands on `https://client-connect-demo.vercel.app`
-2. Clicks "Broker Portal" button
-3. Redirects to `https://broker-portal-demo.vercel.app`
-4. In Broker Portal, clicks "Back to Client Connect"
-5. Redirects back to `https://client-connect-demo.vercel.app`
+1. User lands on `https://broker-portal-demo.vercel.app`
+2. Clicks "Broker Portal" button → redirects to `https://broker-portal-demo.vercel.app/broker`
+3. In Broker Portal, clicks "Back to Client Connect" → redirects to `https://broker-portal-demo.vercel.app`
 
 ## Local Development
 
-**Terminal 1 - Client Connect FrontEnd (port 4200):**
+**Terminal 1 - Client Connect (port 4200):**
 ```bash
 cd "Client Connect FrontEnd"
 npm run dev
-# Runs on http://localhost:4200
 ```
 
-**Terminal 2 - Broker Portal Frontend (port 3000):**
+**Terminal 2 - Broker Portal (port 3000):**
 ```bash
 cd Broker-Portal-Frontend
 npm run dev
-# Runs on http://localhost:3000
 ```
 
-## Files Modified
+Or use the root workspace scripts:
+```bash
+npm run dev:client
+npm run dev:broker
+```
 
-- `Client Connect FrontEnd/components/Dashboards/UserCards.jsx` - Added Broker Portal button routing
-- `Client Connect FrontEnd/components/Containers/FeatureCard.jsx` - Added external link support
-- `Broker-Portal-Frontend/components/layout/Sidebar.tsx` - Added back button to Client Connect
-- `Broker-Portal-Frontend/next.config.ts` - Conditional basePath for production
-- `Broker-Portal-Frontend/lib/constants.ts` - Updated routes
-- `.env.production` files - Environment variables for production
+## Files Structure
 
-## Notes
-
-- URLs in `.env.production` should be updated with actual Vercel deployment URLs
-- Each app maintains its own deployment and can be scaled independently
-- CORS should be configured if needed for API calls between apps
+```
+.
+├── package.json (root - defines workspaces)
+├── vercel.json (routing configuration)
+├── Client Connect FrontEnd/
+│   ├── package.json
+│   ├── next.config.js
+│   └── ...
+└── Broker-Portal-Frontend/
+    ├── package.json
+    ├── next.config.ts (with /broker basePath in production)
+    └── ...
+```

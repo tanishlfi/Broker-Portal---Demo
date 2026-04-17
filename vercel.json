@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "Client%20Connect%20FrontEnd/package.json",
+      "src": "Client Connect FrontEnd/package.json",
       "use": "@vercel/next"
     },
     {
@@ -17,7 +17,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "Client%20Connect%20FrontEnd/$1"
+      "dest": "Client Connect FrontEnd/$1"
     }
   ]
 }
