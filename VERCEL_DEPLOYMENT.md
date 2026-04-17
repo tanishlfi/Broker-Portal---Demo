@@ -1,50 +1,71 @@
-# Vercel Deployment Guide - Native Monorepo Support
+# Vercel Deployment Guide - Separate Projects (Recommended)
 
 ## Architecture
 
-Deploy as a **single Vercel project** using Vercel's native monorepo detection:
+Deploy as **2 separate Vercel projects** for maximum stability:
 
-- **Client Connect FrontEnd** → `https://broker-portal-demo.vercel.app/` (root)
-- **Broker Portal Frontend** → `https://broker-portal-demo.vercel.app/broker` (sub-path)
+- **Client Connect FrontEnd** → `https://client-connect-demo.vercel.app`
+- **Broker Portal Frontend** → `https://broker-portal-demo.vercel.app`
 
-## How It Works
+## Why Separate Projects?
 
-The root `package.json` defines workspaces for both apps. Vercel automatically detects this monorepo structure and:
-1. Builds both Next.js apps independently
-2. Routes requests based on `vercel.json` configuration
-3. Deploys everything as a single project
+- ✅ Each app builds independently
+- ✅ No routing conflicts
+- ✅ Easier to debug and maintain
+- ✅ Better performance (no shared serverless functions)
+- ✅ Vercel's recommended approach for monorepos
 
 ## Deployment Steps
 
-### 1. Vercel Configuration
+### 1. Delete Current Project
+Delete the current monorepo project from Vercel dashboard.
 
-In Vercel Dashboard:
+### 2. Create Client Connect FrontEnd Project
+
+In Vercel:
 - **New Project** → Import from GitHub
 - **Repository:** tanishlfi/Broker-Portal---Demo
-- **Root Directory:** Leave empty (monorepo root)
-- **Framework:** Auto-detect (will detect Next.js)
-- **Build Command:** Leave default (Vercel will auto-detect)
+- **Root Directory:** `Client Connect FrontEnd`
+- **Framework:** Next.js
 - **Environment Variables:**
   ```
-  NEXT_PUBLIC_BROKER_PORTAL_URL=https://broker-portal-demo.vercel.app/broker
-  NEXT_PUBLIC_CLIENT_CONNECT_URL=https://broker-portal-demo.vercel.app
+  NEXT_PUBLIC_BROKER_PORTAL_URL=https://broker-portal-demo.vercel.app
+  NEXT_PUBLIC_CLIENT_CONNECT_URL=https://client-connect-demo.vercel.app
   ```
 - **Deploy**
 
-### 2. What Happens During Build
+### 3. Create Broker Portal Frontend Project
 
-Vercel will:
-1. Detect `package.json` with workspaces
-2. Install dependencies for both apps
-3. Build Client Connect FrontEnd
-4. Build Broker Portal Frontend (with `/broker` basePath)
-5. Route requests using `vercel.json`
+In Vercel:
+- **New Project** → Import from GitHub
+- **Repository:** tanishlfi/Broker-Portal---Demo
+- **Root Directory:** `Broker-Portal-Frontend`
+- **Framework:** Next.js
+- **Environment Variables:**
+  ```
+  NEXT_PUBLIC_BROKER_PORTAL_URL=https://broker-portal-demo.vercel.app
+  NEXT_PUBLIC_CLIENT_CONNECT_URL=https://client-connect-demo.vercel.app
+  ```
+- **Deploy**
+
+## Update Next.js Config
+
+Remove the `/broker` basePath from Broker Portal since it will be on its own domain:
+
+**Broker-Portal-Frontend/next.config.ts:**
+```typescript
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {};
+
+export default nextConfig;
+```
 
 ## Navigation Flow
 
-1. User lands on `https://broker-portal-demo.vercel.app`
-2. Clicks "Broker Portal" button → redirects to `https://broker-portal-demo.vercel.app/broker`
-3. In Broker Portal, clicks "Back to Client Connect" → redirects to `https://broker-portal-demo.vercel.app`
+1. User lands on `https://client-connect-demo.vercel.app`
+2. Clicks "Broker Portal" button → redirects to `https://broker-portal-demo.vercel.app`
+3. In Broker Portal, clicks "Back to Client Connect" → redirects to `https://client-connect-demo.vercel.app`
 
 ## Local Development
 
@@ -60,24 +81,6 @@ cd Broker-Portal-Frontend
 npm run dev
 ```
 
-Or use the root workspace scripts:
-```bash
-npm run dev:client
-npm run dev:broker
-```
+## Environment Variables
 
-## Files Structure
-
-```
-.
-├── package.json (root - defines workspaces)
-├── vercel.json (routing configuration)
-├── Client Connect FrontEnd/
-│   ├── package.json
-│   ├── next.config.js
-│   └── ...
-└── Broker-Portal-Frontend/
-    ├── package.json
-    ├── next.config.ts (with /broker basePath in production)
-    └── ...
-```
+Both apps use environment variables pointing to each other's Vercel URLs for seamless cross-app navigation.
