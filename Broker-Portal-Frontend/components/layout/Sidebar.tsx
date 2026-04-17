@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Plus, Eye, FileText, Shield,
   AlertCircle, HelpCircle, GraduationCap,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, LogOut
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 
@@ -109,9 +109,18 @@ export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp
         <div className="border-t border-[#2a2a2a] py-4 px-4">
           <p className="text-gray-600 text-[9px] mb-0.5">Logged in as</p>
           <p className="text-gray-400 text-[10px] mb-3 truncate">{userEmail || "—"}</p>
-          <button className="w-full py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-gray-400 text-[10px] rounded transition-colors border border-[#3a3a3a]">
-            Reset All Data
-          </button>
+          <div className="flex flex-col gap-2">
+            <button 
+              onClick={() => window.location.href = process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200"}
+              className="w-full py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-gray-400 text-[10px] rounded transition-colors border border-[#3a3a3a] flex items-center justify-center gap-1"
+            >
+              <LogOut size={12} />
+              Back to Client Connect
+            </button>
+            <button className="w-full py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-gray-400 text-[10px] rounded transition-colors border border-[#3a3a3a]">
+              Reset All Data
+            </button>
+          </div>
         </div>
       )}
     </aside>
