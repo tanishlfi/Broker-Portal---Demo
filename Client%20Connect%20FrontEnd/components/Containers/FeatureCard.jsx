@@ -6,7 +6,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { useRouter } from "next/router";
 
-const FeatureCard = ({ title, link, Icon, disabled, external }) => {
+const FeatureCard = ({ title, link, Icon, disabled }) => {
   const router = useRouter();
   return (
     <>
@@ -22,11 +22,7 @@ const FeatureCard = ({ title, link, Icon, disabled, external }) => {
             minWidth: 250,
           }}
           onClick={() => {
-            if (external) {
-              window.location.href = link;
-            } else {
-              router.push(`${link}`);
-            }
+            router.push(`${link}`);
           }}>
           <Icon
             sx={{ fontSize: 45, mb: 1, color: disabled && "text.secondary" }}
@@ -44,5 +40,4 @@ FeatureCard.propTypes = {
   title: PropTypes.string.isRequired,
   link: PropTypes.string.isRequired,
   Icon: PropTypes.elementType.isRequired,
-  external: PropTypes.bool,
 };

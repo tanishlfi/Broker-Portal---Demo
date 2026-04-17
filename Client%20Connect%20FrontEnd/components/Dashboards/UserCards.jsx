@@ -1,3 +1,4 @@
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { Card, Grid, LinearProgress, Typography } from "@mui/material";
 
 import FeatureCard from "components/Containers/FeatureCard";
@@ -33,16 +34,7 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import RuleFolderIcon from "@mui/icons-material/RuleFolder";
 
 const UserCards = () => {
-  // Mock user data for demo purposes (Auth0 bypassed)
-  const user = {
-    rmaAppRoles: ["CDA-RMA-Policy Admin"],
-    rmaAppUserMetadata: {
-      BrokerageIds: [1]
-    },
-    nickname: "Demo User",
-    email: "demo@rma.co.za"
-  };
-  const isLoading = false;
+  const { user, isLoading } = useUser();
 
   const role = user?.rmaAppRoles[0];
   const BrokerId =

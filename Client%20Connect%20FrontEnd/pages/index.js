@@ -1,11 +1,36 @@
 import React from "react";
+import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import UserCards from "components/Dashboards/UserCards";
+import { useQuery } from "react-query";
+import axios from "axios";
+import useToken from "hooks/useToken";
+import { rmaAPI } from "src/AxiosParams";
 import Alert from "@mui/material/Alert";
 
 const Home = () => {
+  // Check if RMA is Online
+  const accessToken = useToken();
+
+  const checkRMA = useQuery(
+    "checkRMA",
+    () => {
+      return axios(`${rmaAPI}/mdm/api/IdType`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    },
+    {
+      enabled: !!accessToken,
+      refetchInterval: 50000,
+    }
+  );
+
   return (
     <div>
-      <Alert severity="info">Welcome to RML Client Connect</Alert>
+      {checkRMA.isLoading && <Alert severity="warning">Checking RMA...</Alert>}
+      {checkRMA.isError && <Alert severity="error">RMA is Offline</Alert>}
+      {checkRMA.isSuccess && <Alert severity="info">RMA is Online</Alert>}
       {
         // show env NEXT_PUBLIC_NODE_ENV
         ["test", "uat", "development"].includes(
@@ -23,3 +48,5 @@ const Home = () => {
 };
 
 export default Home;
+
+export const getServerSideProps = withPageAuthRequired();
