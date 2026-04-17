@@ -5,7 +5,3 @@ export const ROUTES = {
   dashboard: "/dashboard",
   newLead: "/lead/new",
 } as const;
-
-export const EXTERNAL_ROUTES = {
-  clientConnect: "/",
-} as const;
