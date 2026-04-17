@@ -3,27 +3,21 @@
   "builds": [
     {
       "src": "Client%20Connect%20FrontEnd/package.json",
-      "use": "@vercel/next@latest",
-      "config": {
-        "zeroConfig": true
-      }
+      "use": "@vercel/next"
     },
     {
       "src": "Broker-Portal-Frontend/package.json",
-      "use": "@vercel/next@latest",
-      "config": {
-        "zeroConfig": true
-      }
+      "use": "@vercel/next"
     }
   ],
   "routes": [
     {
-      "src": "/broker(/?|/.*)",
-      "dest": "/Broker-Portal-Frontend$1"
+      "src": "/broker(.*)",
+      "dest": "Broker-Portal-Frontend$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/Client%20Connect%20FrontEnd/$1"
+      "dest": "Client%20Connect%20FrontEnd/$1"
     }
   ]
 }
