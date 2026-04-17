@@ -11,7 +11,6 @@ import AppNavBar from "components/Navigation/AppNavBar";
 import { Hydrate, QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { useLocalStorage } from "hooks/useLocalStorage";
-import { UserProvider } from "@auth0/nextjs-auth0/client";
 import { LicenseInfo } from "@mui/x-license-pro";
 import "nprogress/nprogress.css";
 
@@ -85,50 +84,48 @@ export default function MyApp(props) {
   }
 
   return (
-    <UserProvider>
-      <ThemeProvider theme={themeState ? themeDark : themeLight}>
-        {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
-        <CssBaseline />
-        <CacheProvider value={emotionCache}>
-          <Head>
-            <meta
-              name="viewport"
-              content="initial-scale=1, width=device-width"
-            />
-          </Head>
+    <ThemeProvider theme={themeState ? themeDark : themeLight}>
+      {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
+      <CssBaseline />
+      <CacheProvider value={emotionCache}>
+        <Head>
+          <meta
+            name="viewport"
+            content="initial-scale=1, width=device-width"
+          />
+        </Head>
 
-          <Stack>
-            <QueryClientProvider client={queryClient.current}>
-              <ReactQueryDevtools initialIsOpen={false} />
-              <Hydrate state={pageProps.dehydratedState}>
-                {loading && (
-                  <LinearProgress
-                    sx={{
-                      position: "fixed",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      zIndex: 9999,
-                    }}
-                  />
-                )}
-                <AppNavBar2
-                  setThemeState={setThemeState}
-                  themeState={themeState}
-                >
-                  {/* <PrivateRoute protectedRoutes={["/", "/Profile", "/Brokers"]}> */}
+        <Stack>
+          <QueryClientProvider client={queryClient.current}>
+            <ReactQueryDevtools initialIsOpen={false} />
+            <Hydrate state={pageProps.dehydratedState}>
+              {loading && (
+                <LinearProgress
+                  sx={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    zIndex: 9999,
+                  }}
+                />
+              )}
+              <AppNavBar2
+                setThemeState={setThemeState}
+                themeState={themeState}
+              >
+                {/* <PrivateRoute protectedRoutes={["/", "/Profile", "/Brokers"]}> */}
 
-                  <Component {...pageProps} loading={loading} />
+                <Component {...pageProps} loading={loading} />
 
-                  {/* </PrivateRoute> */}
-                </AppNavBar2>
-                <Footer />
-              </Hydrate>
-            </QueryClientProvider>
-          </Stack>
-        </CacheProvider>
-      </ThemeProvider>
-    </UserProvider>
+                {/* </PrivateRoute> */}
+              </AppNavBar2>
+              <Footer />
+            </Hydrate>
+          </QueryClientProvider>
+        </Stack>
+      </CacheProvider>
+    </ThemeProvider>
   );
 }
 
