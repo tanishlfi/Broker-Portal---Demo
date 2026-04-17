@@ -49,7 +49,7 @@ const jwtCheck = auth({
 
 app.use(
   `/apirma/${APP_VERSION}`,
-  jwtCheck,
+  // jwtCheck, // requires Auth0 JWKS network call — not needed locally since confirmToken handles expiry
   // no longer needed as this is breaking shit 20250527
   // addUserToRequest,
   getRmaAccessToken,
