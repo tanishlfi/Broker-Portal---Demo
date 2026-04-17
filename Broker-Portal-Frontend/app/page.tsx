@@ -20,6 +20,9 @@ export default function Home() {
     // if already has token (e.g. refresh), go straight to dashboard
     if (localStorage.getItem("bp_token")) {
       router.replace("/dashboard");
+    } else {
+      // no token, redirect to dashboard anyway (will handle auth there if needed)
+      router.replace("/dashboard");
     }
 
     return () => window.removeEventListener("message", handleMessage);
