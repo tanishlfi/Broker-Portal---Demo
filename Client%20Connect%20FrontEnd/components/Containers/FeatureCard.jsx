@@ -6,7 +6,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { useRouter } from "next/router";
 
-const FeatureCard = ({ title, link, Icon, disabled }) => {
+const FeatureCard = ({ title, link, Icon, disabled, accessToken, brokerId }) => {
   const router = useRouter();
   return (
     <>
@@ -22,7 +22,26 @@ const FeatureCard = ({ title, link, Icon, disabled }) => {
             minWidth: 250,
           }}
           onClick={() => {
-            router.push(`${link}`);
+            if (accessToken !== undefined || brokerId !== undefined) {
+              const win = window.open(link, "_blank");
+              if (win) {
+                // wait for the new window to load then send the token
+                const interval = setInterval(() => {
+                  try {
+                    win.postMessage(
+                      { type: "BP_AUTH", token: accessToken, brokerId: String(brokerId || "") },
+                      link
+                    );
+                  } catch (e) {
+                    // ignore cross-origin errors during load
+                  }
+                }, 500);
+                // stop after 5 seconds
+                setTimeout(() => clearInterval(interval), 5000);
+              }
+            } else {
+              router.push(`${link}`);
+            }
           }}>
           <Icon
             sx={{ fontSize: 45, mb: 1, color: disabled && "text.secondary" }}

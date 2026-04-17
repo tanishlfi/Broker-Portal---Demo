@@ -10,6 +10,11 @@ export const getRmaAccessToken = async (
   next: NextFunction,
 ) => {
   try {
+    // broker leads routes don't need the RMA token — skip fetch
+    if (req.path.startsWith("/broker/leads")) {
+      return next();
+    }
+
     // check if token exists in cache
     if (cache.has("rmaAccessToken")) {
       logger.debug("RMA Token is in cache");
