@@ -111,7 +111,7 @@ export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp
           <p className="text-gray-400 text-[10px] mb-3 truncate">{userEmail || "—"}</p>
           <div className="flex flex-col gap-2">
             <button 
-              onClick={() => window.location.href = "http://localhost:4200"}
+              onClick={() => window.location.href = process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200"}
               className="w-full py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-gray-400 text-[10px] rounded transition-colors border border-[#3a3a3a] flex items-center justify-center gap-1"
             >
               <LogOut size={12} />

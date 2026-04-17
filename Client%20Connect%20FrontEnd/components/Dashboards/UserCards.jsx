@@ -166,7 +166,7 @@ const RmaPolicyAdministrator = ({ BrokerId, role }) => {
 
   const toolsCards = [
     { title: "VOPD", link: "/VOPD", Icon: FactCheckIcon },
-    { title: "Broker Portal", link: "http://localhost:3000", Icon: DomainAddIcon, external: true },
+    { title: "Broker Portal", link: process.env.NEXT_PUBLIC_BROKER_PORTAL_URL || "http://localhost:3000", Icon: DomainAddIcon, external: true },
   ];
 
   return (
@@ -283,7 +283,7 @@ const RMAUserAdministrator = ({ BrokerId, role }) => {
     { title: "Tasks Manager", link: "/TasksManager", Icon: AddTaskIcon },
     { title: "VOPD", link: "/VOPD", Icon: FactCheckIcon },
     { title: "Manage All Users", link: "/Users", Icon: ManageAccountsIcon },
-    { title: "Broker Portal", link: "http://localhost:3000", Icon: DomainAddIcon, external: true },
+    { title: "Broker Portal", link: process.env.NEXT_PUBLIC_BROKER_PORTAL_URL || "http://localhost:3000", Icon: DomainAddIcon, external: true },
   ];
 
   return (
@@ -364,7 +364,7 @@ const BrokerManager = ({ BrokerId, role }) => {
       link: `/BrokerManager/UserManagement/${BrokerId}`,
       Icon: PeopleIcon,
     },
-    { title: "Broker Portal", link: "http://localhost:3000", Icon: DomainAddIcon, external: true },
+    { title: "Broker Portal", link: process.env.NEXT_PUBLIC_BROKER_PORTAL_URL || "http://localhost:3000", Icon: DomainAddIcon, external: true },
   ];
 
   return (
