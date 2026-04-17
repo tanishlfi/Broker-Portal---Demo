@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "Client Connect FrontEnd/package.json",
+      "use": "@vercel/next@latest",
+      "config": {
+        "zeroConfig": true
+      }
+    },
+    {
+      "src": "Broker-Portal-Frontend/package.json",
+      "use": "@vercel/next@latest",
+      "config": {
+        "zeroConfig": true
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/broker(/?|/.*)",
+      "dest": "/Broker-Portal-Frontend$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/Client Connect FrontEnd/$1"
+    }
+  ]
+}
