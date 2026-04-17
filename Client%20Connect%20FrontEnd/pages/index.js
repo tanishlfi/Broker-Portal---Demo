@@ -1,5 +1,4 @@
 import React from "react";
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import UserCards from "components/Dashboards/UserCards";
 import { useQuery } from "react-query";
 import axios from "axios";
@@ -48,5 +47,3 @@ const Home = () => {
 };
 
 export default Home;
-
-export const getServerSideProps = withPageAuthRequired();
