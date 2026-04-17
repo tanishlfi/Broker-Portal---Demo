@@ -171,16 +171,16 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
           Administration
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={adminCardsLine1} />
-      <FeatureCardGrid cards={adminCardsLine2} />
+      <FeatureCardGrid cards={adminCardsLine1} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={adminCardsLine2} accessToken={accessToken} brokerId={BrokerId} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Onboarding Members
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={onboardingCards} />
-      <FeatureCardGrid cards={fileCards} />
-      <FeatureCardGrid cards={policyCards} />
+      <FeatureCardGrid cards={onboardingCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={fileCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={policyCards} accessToken={accessToken} brokerId={BrokerId} />
 
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
@@ -288,16 +288,16 @@ const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
           Administration
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={adminCardsLine1} />
-      <FeatureCardGrid cards={adminCardsLine2} />
+      <FeatureCardGrid cards={adminCardsLine1} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={adminCardsLine2} accessToken={accessToken} brokerId={BrokerId} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Onboarding Members
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={onboardingCards} />
-      <FeatureCardGrid cards={fileCards} />
-      <FeatureCardGrid cards={policyCards} />
+      <FeatureCardGrid cards={onboardingCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={fileCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={policyCards} accessToken={accessToken} brokerId={BrokerId} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           New Business Registration
@@ -365,7 +365,7 @@ const BrokerManager = ({ BrokerId, role, accessToken }) => {
   return (
     <Grid item xs={12}>
       {role === "CDA-SCHEME-Scheme Representative" && (
-        <FeatureCardGrid cards={schemeCards} />
+        <FeatureCardGrid cards={schemeCards} accessToken={accessToken} brokerId={BrokerId} />
       )}
       {role === "CDA-BROKERAGE-Broker Manager" && (
         <>
@@ -374,7 +374,7 @@ const BrokerManager = ({ BrokerId, role, accessToken }) => {
               Onboarding
             </Typography>
           </Grid>
-          <FeatureCardGrid cards={onboardingCards} />
+          <FeatureCardGrid cards={onboardingCards} accessToken={accessToken} brokerId={BrokerId} />
           <Grid sx={{ my: 2 }}>
             <Typography variant="h6" align="left">
               Tools and Settings
@@ -451,14 +451,14 @@ const BrokerNormalUser = ({ BrokerId, role }) => {
           Administration
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={adminCards} />
+      <FeatureCardGrid cards={adminCards} accessToken={undefined} brokerId={undefined} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Onboarding Members
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={onboardingCards} />
-      <FeatureCardGrid cards={policyCards} />
+      <FeatureCardGrid cards={onboardingCards} accessToken={undefined} brokerId={undefined} />
+      <FeatureCardGrid cards={policyCards} accessToken={undefined} brokerId={undefined} />
     </Grid>
   );
 };
