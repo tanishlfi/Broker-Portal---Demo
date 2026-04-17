@@ -7,7 +7,7 @@ import {
   AlertCircle, HelpCircle, GraduationCap,
   ChevronLeft, ChevronRight, LogOut
 } from "lucide-react";
-import { ROUTES, EXTERNAL_ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 
 const quickActions = [
   { label: "Start New Lead", icon: Plus, href: ROUTES.newLead },
