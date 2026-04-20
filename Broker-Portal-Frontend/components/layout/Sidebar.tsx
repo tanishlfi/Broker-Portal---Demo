@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Plus, Eye, FileText, Shield,
   AlertCircle, HelpCircle, GraduationCap,
   ChevronLeft, ChevronRight, LogOut
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
+import { useUser } from "@/lib/context/UserContext";
 
 const quickActions = [
   { label: "Start New Lead", icon: Plus, href: ROUTES.newLead },
@@ -30,16 +31,23 @@ interface SidebarProps {
 
 export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp, onToggle }: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useUser();
   const [userEmail, setUserEmail] = useState(propEmail ?? "");
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed = collapsedProp !== undefined ? collapsedProp : internalCollapsed;
   const handleToggle = onToggle ?? (() => setInternalCollapsed((v) => !v));
 
   useEffect(() => {
-    if (!propEmail) {
+    // Use user from context first, then prop, then localStorage
+    if (user?.email) {
+      setUserEmail(user.email);
+    } else if (propEmail) {
+      setUserEmail(propEmail);
+    } else {
       setUserEmail(localStorage.getItem("userEmail") ?? "");
     }
-  }, [propEmail]);
+  }, [user, propEmail]);
 
   return (
     <aside
@@ -69,17 +77,24 @@ export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp
             <p className="text-gray-500 text-[9px] uppercase tracking-[0.15em] mb-2 px-2">Quick Actions</p>
           )}
           <nav className="flex flex-col gap-0.5">
-            {quickActions.map(({ label, icon: Icon, href }) => (
-              <button
-                key={label}
-                onClick={() => router.push(href)}
-                title={collapsed ? label : undefined}
-                className="flex items-center gap-2.5 text-gray-400 hover:text-white text-[11px] py-2 px-2 rounded hover:bg-white/5 transition-colors text-left w-full"
-              >
-                <Icon size={13} className="text-gray-400 flex-shrink-0" />
-                {!collapsed && label}
-              </button>
-            ))}
+            {quickActions.map(({ label, icon: Icon, href }) => {
+              const isActive = pathname === href;
+              return (
+                <button
+                  key={label}
+                  onClick={() => router.push(href)}
+                  title={collapsed ? label : undefined}
+                  className={`flex items-center gap-2.5 text-[11px] py-2 px-2 rounded transition-colors text-left w-full ${
+                    isActive
+                      ? "bg-[#29abe2] text-white"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <Icon size={13} className={`flex-shrink-0 ${isActive ? "text-white" : "text-gray-400"}`} />
+                  {!collapsed && label}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
