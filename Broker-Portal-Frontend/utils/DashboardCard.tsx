@@ -11,7 +11,7 @@ export default function DashboardCard({ title, description, icon, onClick }: Das
   return (
     <button
       onClick={onClick}
-      className="bg-[#2a2a2a] hover:bg-[#313131] rounded-xl p-5 flex flex-col gap-6 text-left transition-colors w-full h-36"
+      className="bg-[#2a2a2a] hover:bg-[#313131] rounded-xl p-5 flex flex-col gap-6 text-left transition-colors w-full h-36 cursor-pointer"
     >
       <div className="text-[#29abe2]">{icon}</div>
       <div>

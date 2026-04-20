@@ -62,7 +62,7 @@ export default function DashboardPage() {
               />
             ))}
           </div>
-          <hr className="border-gray-700 mt-8" />
+          <hr className="border-gray-700 mt-8 hidden" />
         </div>
       ))}
     </div>
