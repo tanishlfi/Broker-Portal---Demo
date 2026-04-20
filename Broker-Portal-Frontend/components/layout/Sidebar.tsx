@@ -32,13 +32,23 @@ interface SidebarProps {
 export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp, onToggle }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useUser();
   const [userEmail, setUserEmail] = useState(propEmail ?? "");
   const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const collapsed = collapsedProp !== undefined ? collapsedProp : internalCollapsed;
   const handleToggle = onToggle ?? (() => setInternalCollapsed((v) => !v));
 
+  // Safely use useUser with try-catch for SSR
+  let user = null;
+  try {
+    const userContext = useUser();
+    user = userContext?.user;
+  } catch (error) {
+    // Context not available during SSR, will use localStorage
+  }
+
   useEffect(() => {
+    setMounted(true);
     // Use user from context first, then prop, then localStorage
     if (user?.email) {
       setUserEmail(user.email);
