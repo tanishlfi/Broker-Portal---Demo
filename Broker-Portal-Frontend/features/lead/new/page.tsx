@@ -15,7 +15,7 @@ import {
   validateAddressLine,
   validateRegistrationNumber,
   validateContactPersonName,
-} from "@/lib/validators";
+} from "@/utils/validators";
 
 const STEPS = ["1. Employer Details", "2. Contact Details", "3. Review & Submit"];
 
