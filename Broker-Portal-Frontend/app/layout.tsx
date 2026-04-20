@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { UserProvider } from "@/lib/context/UserContext";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "RMA Broker Portal",
@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="antialiased">
-        <UserProvider>
+        <Providers>
           {children}
-        </UserProvider>
+        </Providers>
       </body>
     </html>
   );

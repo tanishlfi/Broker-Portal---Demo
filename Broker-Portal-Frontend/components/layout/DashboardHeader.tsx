@@ -13,7 +13,15 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ title, subtitle, userEmail: propUserEmail }: DashboardHeaderProps) {
   const router = useRouter();
-  const { user } = useUser();
+  
+  // Safely use useUser with try-catch for SSR
+  let user = null;
+  try {
+    const userContext = useUser();
+    user = userContext?.user;
+  } catch (error) {
+    // Context not available during SSR, will use prop
+  }
   
   // Use user from context first, then prop
   const displayEmail = user?.email || propUserEmail;

@@ -20,8 +20,11 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    
     // Initialize user from localStorage or URL params
     const initializeUser = () => {
       try {
@@ -74,6 +77,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     initializeUser();
   }, []);
+
+  // Don't render children until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <UserContext.Provider value={{ user, loading, setUser }}>
