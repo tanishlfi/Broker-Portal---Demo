@@ -34,7 +34,7 @@ export default function DashboardHeader({ title, subtitle, userEmail: propUserEm
           <Bell size={18} />
         </button>
         <button
-          onClick={() => router.push(ROUTES.login)}
+          onClick={() => window.location.href = process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200"}
           className="text-xs text-gray-400 hover:text-white uppercase tracking-widest transition-colors font-semibold"
         >
           Logout

@@ -51,19 +51,15 @@ export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp
 
   return (
     <aside
-      className={`${collapsed ? "w-20" : "w-44"} h-screen bg-[#1a1a1a] flex flex-col border-r border-[#2a2a2a] flex-shrink-0 transition-all duration-300 overflow-hidden fixed left-0 top-0 z-10`}
+      className={`${collapsed ? "w-20" : "w-44"} h-screen bg-[#1a1a1a] flex flex-col border-r border-[#2a2a2a] flex-shrink-0 transition-all duration-300 fixed left-0 top-0 z-10`}
     >
-      {/* Logo — always visible */}
-      <div className={`flex items-center h-16 border-b border-[#2a2a2a] flex-shrink-0 ${collapsed ? "justify-center px-2" : "px-4"}`}>
-        <span className="text-[#29abe2] font-black italic text-2xl tracking-tight leading-none">RMA</span>
-      </div>
-
-      {/* Collapse toggle */}
-      <div className={`py-3 border-b border-[#2a2a2a] ${collapsed ? "px-2" : "px-4"}`}>
+      {/* Logo + collapse toggle inline */}
+      <div className={`flex items-center justify-between h-16 border-b border-[#2a2a2a] flex-shrink-0 px-4`}>
+        {!collapsed && <span className="text-[#29abe2] font-black italic text-2xl tracking-tight leading-none">RMA</span>}
         <button
           onClick={handleToggle}
-          className={`text-gray-400 hover:text-white transition-colors ${collapsed ? "mx-auto" : ""}`}
           aria-label="Toggle sidebar"
+          className={`text-gray-400 hover:text-white transition-colors ${collapsed ? "mx-auto" : ""}`}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>

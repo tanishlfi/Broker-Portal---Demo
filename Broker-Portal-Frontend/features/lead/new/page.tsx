@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { createLead } from "@/lib/api/leads";
 
 const STEPS = ["1. Employer Details", "2. Contact Details", "3. Review & Submit"];
 
@@ -65,6 +66,15 @@ export default function StartNewLeadPage() {
   const [contact, setContact] = useState<ContactForm>(emptyContact);
   const [employerErrors, setEmployerErrors] = useState<EmployerErrors>({});
   const [contactErrors, setContactErrors] = useState<ContactErrors>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [token, setToken] = useState<string>("");
+  const [brokerId, setBrokerId] = useState<string>("");
+
+  useEffect(() => {
+    setToken(localStorage.getItem("bp_token") ?? "");
+    setBrokerId(localStorage.getItem("bp_broker_id") ?? "");
+  }, []);
 
   const base = "w-full bg-[#3d3d3d] border border-[#4d4d4d] rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors";
   const validInput = `${base} focus:border-[#29abe2]`;
@@ -76,6 +86,34 @@ export default function StartNewLeadPage() {
     if (step === 0) { const e = validateEmployer(employer); setEmployerErrors(e); if (Object.keys(e).length) return; }
     if (step === 1) { const e = validateContact(contact); setContactErrors(e); if (Object.keys(e).length) return; }
     setStep(s => s + 1);
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      if (!token) throw new Error("No auth token found. Please navigate from Client Connect.");
+      const [firstName, ...rest] = contact.contactName.trim().split(" ");
+      await createLead({
+        employerName: employer.companyName,
+        registrationNumber: employer.registrationNumber || undefined,
+        industryType: employer.industry,
+        numberOfEmployees: Number(employer.numberOfEmployees),
+        province: employer.province,
+        contactFirstName: firstName,
+        contactLastName: rest.join(" ") || firstName,
+        contactEmail: contact.email,
+        contactMobile: contact.phone,
+        preferredCommunicationMethod: "Email",
+        representativeId: brokerId || "00000000-0000-0000-0000-000000000000",
+        brokerId: brokerId || "00000000-0000-0000-0000-000000000000",
+      }, token);
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "Submission failed");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -254,10 +292,13 @@ export default function StartNewLeadPage() {
               {step === 0 ? "Next: Contact Details" : "Review"}
             </button>
           ) : (
-            <button
-              className="px-5 py-2 text-sm text-white bg-[#29abe2] hover:bg-[#1a9fd6] rounded transition-colors cursor-pointer font-medium">
-              Submit Lead
-            </button>
+            <>
+              {submitError && <p className="text-red-400 text-xs mr-3 self-center">{submitError}</p>}
+              <button onClick={handleSubmit} disabled={submitting}
+                className="px-5 py-2 text-sm text-white bg-[#29abe2] hover:bg-[#1a9fd6] rounded transition-colors cursor-pointer font-medium disabled:opacity-50">
+                {submitting ? "Submitting..." : "Submit Lead"}
+              </button>
+            </>
           )}
         </div>
         </div>

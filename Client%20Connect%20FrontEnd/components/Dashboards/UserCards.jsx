@@ -1,9 +1,8 @@
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { Card, Grid, LinearProgress, Typography } from "@mui/material";
-
 import FeatureCard from "components/Containers/FeatureCard";
-
 import React from "react";
+import useToken from "hooks/useToken";
 
 // Icons imports
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
@@ -35,6 +34,7 @@ import RuleFolderIcon from "@mui/icons-material/RuleFolder";
 
 const UserCards = () => {
   const { user, isLoading } = useUser();
+  const accessToken = useToken();
 
   const role = user?.rmaAppRoles[0];
   const BrokerId =
@@ -47,42 +47,37 @@ const UserCards = () => {
 
   return (
     <div>
-      {/* <PageHeader
-        title="RML Client Connect"
-        subTitle={`Welcome ${user?.nickname}! You are logged in as ${user?.email}`}
-        noBack
-        breadcrumbs={[
-          {
-            text: "Home",
-            link: "/",
-          },
-        ]}
-      /> */}
       {BrokerId && role && (
         <>
-          <BrokerManager BrokerId={BrokerId} role={role} />
+          <BrokerManager BrokerId={BrokerId} role={role} accessToken={accessToken} />
           <BrokerNormalUser BrokerId={BrokerId} role={role} />
         </>
       )}
-      <RmaPolicyAdministrator BrokerId={BrokerId} role={role} />
-      <RMAUserAdministrator BrokerId={BrokerId} role={role} />
+      <RmaPolicyAdministrator BrokerId={BrokerId} role={role} accessToken={accessToken} />
+      <RMAUserAdministrator BrokerId={BrokerId} role={role} accessToken={accessToken} />
     </div>
   );
 };
 
 export default UserCards;
 
-const FeatureCardGrid = ({ cards }) => (
+const FeatureCardGrid = ({ cards, accessToken, brokerId }) => (
   <Grid container>
-    {cards.map(({ title, link, Icon }, index) => (
+    {cards.map(({ title, link, Icon, external }, index) => (
       <Grid item xs={4} md={4} lg={3} xl={2} key={index}>
-        <FeatureCard title={title} link={link} Icon={Icon} />
+        <FeatureCard
+          title={title}
+          link={link}
+          Icon={Icon}
+          accessToken={external ? accessToken : undefined}
+          brokerId={external ? brokerId : undefined}
+        />
       </Grid>
     ))}
   </Grid>
 );
 
-const RmaPolicyAdministrator = ({ BrokerId, role }) => {
+const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
   if (role !== "CDA-RMA-Policy Admin") return null;
 
   const adminCardsLine1 = [
@@ -176,28 +171,28 @@ const RmaPolicyAdministrator = ({ BrokerId, role }) => {
           Administration
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={adminCardsLine1} />
-      <FeatureCardGrid cards={adminCardsLine2} />
+      <FeatureCardGrid cards={adminCardsLine1} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={adminCardsLine2} accessToken={accessToken} brokerId={BrokerId} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Onboarding Members
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={onboardingCards} />
-      <FeatureCardGrid cards={fileCards} />
-      <FeatureCardGrid cards={policyCards} />
+      <FeatureCardGrid cards={onboardingCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={fileCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={policyCards} accessToken={accessToken} brokerId={BrokerId} />
 
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Tools and Settings
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={toolsCards} />
+      <FeatureCardGrid cards={toolsCards} accessToken={accessToken} brokerId={BrokerId} />
     </Grid>
   );
 };
 
-const RMAUserAdministrator = ({ BrokerId, role }) => {
+const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
   if (role !== "CDA-RMA-User Admin") return null;
 
   const adminCardsLine1 = [
@@ -293,27 +288,27 @@ const RMAUserAdministrator = ({ BrokerId, role }) => {
           Administration
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={adminCardsLine1} />
-      <FeatureCardGrid cards={adminCardsLine2} />
+      <FeatureCardGrid cards={adminCardsLine1} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={adminCardsLine2} accessToken={accessToken} brokerId={BrokerId} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Onboarding Members
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={onboardingCards} />
-      <FeatureCardGrid cards={fileCards} />
-      <FeatureCardGrid cards={policyCards} />
+      <FeatureCardGrid cards={onboardingCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={fileCards} accessToken={accessToken} brokerId={BrokerId} />
+      <FeatureCardGrid cards={policyCards} accessToken={accessToken} brokerId={BrokerId} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           New Business Registration
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={toolsCards} />
+      <FeatureCardGrid cards={toolsCards} accessToken={accessToken} brokerId={BrokerId} />
     </Grid>
   );
 };
 
-const BrokerManager = ({ BrokerId, role }) => {
+const BrokerManager = ({ BrokerId, role, accessToken }) => {
   if (
     role !== "CDA-SCHEME-Scheme Representative" &&
     role !== "new-Broker-onboarding-user" &&
@@ -370,7 +365,7 @@ const BrokerManager = ({ BrokerId, role }) => {
   return (
     <Grid item xs={12}>
       {role === "CDA-SCHEME-Scheme Representative" && (
-        <FeatureCardGrid cards={schemeCards} />
+        <FeatureCardGrid cards={schemeCards} accessToken={accessToken} brokerId={BrokerId} />
       )}
       {role === "CDA-BROKERAGE-Broker Manager" && (
         <>
@@ -379,13 +374,13 @@ const BrokerManager = ({ BrokerId, role }) => {
               Onboarding
             </Typography>
           </Grid>
-          <FeatureCardGrid cards={onboardingCards} />
+          <FeatureCardGrid cards={onboardingCards} accessToken={accessToken} brokerId={BrokerId} />
           <Grid sx={{ my: 2 }}>
             <Typography variant="h6" align="left">
               Tools and Settings
             </Typography>
           </Grid>
-          <FeatureCardGrid cards={toolsCards} />
+          <FeatureCardGrid cards={toolsCards} accessToken={accessToken} brokerId={BrokerId} />
         </>
       )}
       {role === "new-Broker-onboarding-user" && (
@@ -456,14 +451,14 @@ const BrokerNormalUser = ({ BrokerId, role }) => {
           Administration
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={adminCards} />
+      <FeatureCardGrid cards={adminCards} accessToken={undefined} brokerId={undefined} />
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Onboarding Members
         </Typography>
       </Grid>
-      <FeatureCardGrid cards={onboardingCards} />
-      <FeatureCardGrid cards={policyCards} />
+      <FeatureCardGrid cards={onboardingCards} accessToken={undefined} brokerId={undefined} />
+      <FeatureCardGrid cards={policyCards} accessToken={undefined} brokerId={undefined} />
     </Grid>
   );
 };
