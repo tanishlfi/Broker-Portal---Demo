@@ -1,12 +1,19 @@
 @import "tailwindcss";
 
-/* Remove number input spinner */
+/* Remove number input spinner for all browsers */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
+  -webkit-appearance: none !important;
   margin: 0;
 }
 
 input[type="number"] {
-  -moz-appearance: textfield;
+  -moz-appearance: textfield !important;
+}
+
+/* Additional fallback */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

@@ -4,6 +4,18 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createLead } from "@/lib/api/leads";
+import {
+  validateSAMobileNumber,
+  validateEmail,
+  validatePostalCode,
+  validateCompanyName,
+  validateRequired,
+  validatePositiveNumber,
+  validateCity,
+  validateAddressLine,
+  validateRegistrationNumber,
+  validateContactPersonName,
+} from "@/lib/validators";
 
 const STEPS = ["1. Employer Details", "2. Contact Details", "3. Review & Submit"];
 
@@ -34,28 +46,89 @@ const emptyContact: ContactForm = { contactName: "", position: "", email: "", ph
 
 function validateEmployer(f: EmployerForm): EmployerErrors {
   const e: EmployerErrors = {};
-  if (!f.companyName.trim()) e.companyName = "Company name is required";
-  if (!f.registrationNumber.trim()) e.registrationNumber = "Registration number is required";
-  if (!f.industry) e.industry = "Please select an industry";
-  if (!f.numberOfEmployees.trim()) e.numberOfEmployees = "Number of employees is required";
-  else if (isNaN(Number(f.numberOfEmployees)) || Number(f.numberOfEmployees) <= 0)
+  
+  // Company Name validation
+  if (!validateRequired(f.companyName)) {
+    e.companyName = "Company name is required";
+  } else if (!validateCompanyName(f.companyName)) {
+    e.companyName = "Company name must be between 1 and 100 characters";
+  }
+  
+  // Registration Number validation (optional field, matches Client Connect API)
+  if (!validateRegistrationNumber(f.registrationNumber)) {
+    e.registrationNumber = "Registration number must be between 1 and 50 characters if provided";
+  }
+  
+  // Industry validation
+  if (!f.industry) {
+    e.industry = "Please select an industry";
+  }
+  
+  // Number of Employees validation
+  if (!validateRequired(f.numberOfEmployees)) {
+    e.numberOfEmployees = "Number of employees is required";
+  } else if (!validatePositiveNumber(f.numberOfEmployees)) {
     e.numberOfEmployees = "Must be a valid positive number";
-  if (!f.companyAddress.trim()) e.companyAddress = "Company address is required";
-  if (!f.city.trim()) e.city = "City is required";
-  if (!f.province) e.province = "Please select a province";
-  if (!f.postalCode.trim()) e.postalCode = "Postal code is required";
-  else if (!/^\d{4}$/.test(f.postalCode.trim())) e.postalCode = "Must be a 4-digit postal code";
+  }
+  
+  // Company Address validation
+  if (!validateRequired(f.companyAddress)) {
+    e.companyAddress = "Company address is required";
+  } else if (!validateAddressLine(f.companyAddress)) {
+    e.companyAddress = "Address must be between 1 and 100 characters";
+  }
+  
+  // City validation
+  if (!validateRequired(f.city)) {
+    e.city = "City is required";
+  } else if (!validateCity(f.city)) {
+    e.city = "City must be between 1 and 50 characters";
+  }
+  
+  // Province validation
+  if (!f.province) {
+    e.province = "Please select a province";
+  }
+  
+  // Postal Code validation
+  if (!validateRequired(f.postalCode)) {
+    e.postalCode = "Postal code is required";
+  } else if (!validatePostalCode(f.postalCode)) {
+    e.postalCode = "Postal code must be exactly 4 digits";
+  }
+  
   return e;
 }
 
 function validateContact(f: ContactForm): ContactErrors {
   const e: ContactErrors = {};
-  if (!f.contactName.trim()) e.contactName = "Contact name is required";
-  if (!f.position.trim()) e.position = "Position is required";
-  if (!f.email.trim()) e.email = "Email is required";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = "Enter a valid email address";
-  if (!f.phone.trim()) e.phone = "Phone number is required";
-  else if (!/^\+?[\d\s\-()]{7,15}$/.test(f.phone)) e.phone = "Enter a valid phone number";
+  
+  // Contact Name validation
+  if (!validateRequired(f.contactName)) {
+    e.contactName = "Contact name is required";
+  } else if (!validateContactPersonName(f.contactName)) {
+    e.contactName = "Contact name cannot start with a number";
+  }
+  
+  // Position validation
+  if (!validateRequired(f.position)) {
+    e.position = "Position is required";
+  }
+  
+  // Email validation
+  if (!validateRequired(f.email)) {
+    e.email = "Email is required";
+  } else if (!validateEmail(f.email)) {
+    e.email = "Enter a valid email address";
+  }
+  
+  // Phone Number validation
+  if (!validateRequired(f.phone)) {
+    e.phone = "Phone number is required";
+  } else if (!validateSAMobileNumber(f.phone)) {
+    e.phone = "Mobile phone number must be 10 digits long and start with 06, 07 or 08";
+  }
+  
   return e;
 }
 
@@ -149,14 +222,21 @@ export default function StartNewLeadPage() {
                 <div>
                   <label className={lbl}>Company Name *</label>
                   <input className={employerErrors.companyName ? errorInput : validInput} value={employer.companyName}
-                    onChange={e => { setEmployer({ ...employer, companyName: e.target.value }); setEmployerErrors({ ...employerErrors, companyName: undefined }); }} />
+                    onChange={e => { setEmployer({ ...employer, companyName: e.target.value }); setEmployerErrors({ ...employerErrors, companyName: undefined }); }} 
+                    placeholder="e.g., Acme Corporation" />
                   {errMsg(employerErrors.companyName)}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={lbl}>Registration Number *</label>
+                    <label className={lbl}>Registration Number</label>
                     <input className={employerErrors.registrationNumber ? errorInput : validInput} value={employer.registrationNumber}
-                      onChange={e => { setEmployer({ ...employer, registrationNumber: e.target.value }); setEmployerErrors({ ...employerErrors, registrationNumber: undefined }); }} />
+                      onChange={e => { 
+                        const value = e.target.value.replace(/[^\d/]/g, "");
+                        setEmployer({ ...employer, registrationNumber: value }); 
+                        setEmployerErrors({ ...employerErrors, registrationNumber: undefined }); 
+                      }} 
+                      placeholder="e.g., 2016/4924343/07"
+                      inputMode="numeric" />
                     {errMsg(employerErrors.registrationNumber)}
                   </div>
                   <div>
@@ -172,20 +252,28 @@ export default function StartNewLeadPage() {
                 <div>
                   <label className={lbl}>Number of Employees *</label>
                   <input className={employerErrors.numberOfEmployees ? errorInput : validInput} type="number" min="1" value={employer.numberOfEmployees}
-                    onChange={e => { setEmployer({ ...employer, numberOfEmployees: e.target.value }); setEmployerErrors({ ...employerErrors, numberOfEmployees: undefined }); }} />
+                    onChange={e => { 
+                      const value = e.target.value.replace(/\D/g, "");
+                      setEmployer({ ...employer, numberOfEmployees: value }); 
+                      setEmployerErrors({ ...employerErrors, numberOfEmployees: undefined }); 
+                    }} 
+                    inputMode="numeric"
+                    placeholder="e.g., 150" />
                   {errMsg(employerErrors.numberOfEmployees)}
                 </div>
                 <div>
                   <label className={lbl}>Company Address *</label>
                   <input className={employerErrors.companyAddress ? errorInput : validInput} value={employer.companyAddress}
-                    onChange={e => { setEmployer({ ...employer, companyAddress: e.target.value }); setEmployerErrors({ ...employerErrors, companyAddress: undefined }); }} />
+                    onChange={e => { setEmployer({ ...employer, companyAddress: e.target.value }); setEmployerErrors({ ...employerErrors, companyAddress: undefined }); }} 
+                    placeholder="e.g., 123 Main Street" />
                   {errMsg(employerErrors.companyAddress)}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>City *</label>
                     <input className={employerErrors.city ? errorInput : validInput} value={employer.city}
-                      onChange={e => { setEmployer({ ...employer, city: e.target.value }); setEmployerErrors({ ...employerErrors, city: undefined }); }} />
+                      onChange={e => { setEmployer({ ...employer, city: e.target.value }); setEmployerErrors({ ...employerErrors, city: undefined }); }} 
+                      placeholder="e.g., Johannesburg" />
                     {errMsg(employerErrors.city)}
                   </div>
                   <div>
@@ -201,7 +289,14 @@ export default function StartNewLeadPage() {
                 <div>
                   <label className={lbl}>Postal Code *</label>
                   <input className={employerErrors.postalCode ? errorInput : validInput} value={employer.postalCode}
-                    onChange={e => { setEmployer({ ...employer, postalCode: e.target.value }); setEmployerErrors({ ...employerErrors, postalCode: undefined }); }} />
+                    onChange={e => { 
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setEmployer({ ...employer, postalCode: value }); 
+                      setEmployerErrors({ ...employerErrors, postalCode: undefined }); 
+                    }} 
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="0000" />
                   {errMsg(employerErrors.postalCode)}
                 </div>
               </div>
@@ -216,13 +311,15 @@ export default function StartNewLeadPage() {
                   <div>
                     <label className={lbl}>Contact Person Name *</label>
                     <input className={contactErrors.contactName ? errorInput : validInput} value={contact.contactName}
-                      onChange={e => { setContact({ ...contact, contactName: e.target.value }); setContactErrors({ ...contactErrors, contactName: undefined }); }} />
+                      onChange={e => { setContact({ ...contact, contactName: e.target.value }); setContactErrors({ ...contactErrors, contactName: undefined }); }} 
+                      placeholder="e.g., John Smith" />
                     {errMsg(contactErrors.contactName)}
                   </div>
                   <div>
                     <label className={lbl}>Position *</label>
                     <input className={contactErrors.position ? errorInput : validInput} value={contact.position}
-                      onChange={e => { setContact({ ...contact, position: e.target.value }); setContactErrors({ ...contactErrors, position: undefined }); }} />
+                      onChange={e => { setContact({ ...contact, position: e.target.value }); setContactErrors({ ...contactErrors, position: undefined }); }} 
+                      placeholder="e.g., HR Manager" />
                     {errMsg(contactErrors.position)}
                   </div>
                 </div>
@@ -230,13 +327,21 @@ export default function StartNewLeadPage() {
                   <div>
                     <label className={lbl}>Email Address *</label>
                     <input className={contactErrors.email ? errorInput : validInput} type="email" value={contact.email}
-                      onChange={e => { setContact({ ...contact, email: e.target.value }); setContactErrors({ ...contactErrors, email: undefined }); }} />
+                      onChange={e => { setContact({ ...contact, email: e.target.value }); setContactErrors({ ...contactErrors, email: undefined }); }} 
+                      placeholder="e.g., john@company.com" />
                     {errMsg(contactErrors.email)}
                   </div>
                   <div>
                     <label className={lbl}>Phone Number *</label>
-                    <input className={contactErrors.phone ? errorInput : validInput} type="tel" placeholder="0821234567" value={contact.phone}
-                      onChange={e => { setContact({ ...contact, phone: e.target.value }); setContactErrors({ ...contactErrors, phone: undefined }); }} />
+                    <input className={contactErrors.phone ? errorInput : validInput} type="tel" placeholder="0821234567" 
+                      value={contact.phone}
+                      onChange={e => { 
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setContact({ ...contact, phone: value }); 
+                        setContactErrors({ ...contactErrors, phone: undefined }); 
+                      }} 
+                      inputMode="numeric"
+                      maxLength={10} />
                     {errMsg(contactErrors.phone)}
                   </div>
                 </div>
