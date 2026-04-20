@@ -8,6 +8,9 @@ export default function Home() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      // Security: Verify message origin from trusted Client Connect URL
+      if (event.origin !== process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL) return;
+      
       if (event.data?.type !== "BP_AUTH") return;
       const { token, brokerId } = event.data;
       if (token) localStorage.setItem("bp_token", token);
