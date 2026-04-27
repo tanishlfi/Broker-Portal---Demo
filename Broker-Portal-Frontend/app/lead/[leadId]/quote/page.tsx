@@ -3,13 +3,19 @@ import DashboardHeader from "@/components/layout/DashboardHeader";
 import QuoteJourneyPage from "@/features/lead/quote/QuoteJourneyPage";
 
 interface QuotePageProps {
-  params: { leadId: string };
-  searchParams: { ref?: string; company?: string };
+  params: Promise<{ leadId: string }>;
+  searchParams: Promise<{ 
+    ref?: string; 
+    company?: string; 
+  }>;
 }
 
-export default function QuoteRoute({ params, searchParams }: QuotePageProps) {
-  const leadReference = searchParams.ref || params.leadId;
-  const companyName = searchParams.company ? decodeURIComponent(searchParams.company) : "";
+export default async function QuoteRoute({ params, searchParams }: QuotePageProps) {
+  const { leadId } = await params;
+  const { ref, company } = await searchParams;
+
+  const leadReference = ref || leadId;
+  const companyName = company ? decodeURIComponent(company) : "";
 
   return (
     <DashboardLayout>
@@ -17,8 +23,13 @@ export default function QuoteRoute({ params, searchParams }: QuotePageProps) {
         title="Quote Journey"
         subtitle={companyName ? `${companyName} – ${leadReference}` : leadReference}
       />
-      <div className="flex-1 flex overflow-hidden">
-        <QuoteJourneyPage leadReference={leadReference} companyName={companyName} />
+
+      <div className="flex-1 flex overflow-hidden justify-center pt-10 px-6">
+        {/* ✅ ONLY ONE ENTRY POINT */}
+        <QuoteJourneyPage 
+          leadReference={leadReference} 
+          companyName={companyName} 
+        />
       </div>
     </DashboardLayout>
   );

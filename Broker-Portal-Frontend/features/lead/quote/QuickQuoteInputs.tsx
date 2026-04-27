@@ -6,8 +6,28 @@ import {
   validatePositiveDecimal
 } from "@/utils/validators";
 
+interface QuickQuoteData {
+  coverageAmount: number;
+  monthlyPremium: number;
+  numberOfEmployees: number;
+  benefitsIncluded: string;
+}
+
+interface FormData {
+  employees: string;
+  genderSplit: string;
+  averageAge: string;
+  averageIncome: string;
+  province: string;
+  industry: string;
+  cellphone: string;
+}
+
 interface QuickQuoteInputsProps {
+  formData: FormData;
+  onFormChange: (data: FormData) => void;
   onBack: () => void;
+  onGenerateQuote?: (data: QuickQuoteData) => void;
 }
 
 const INDUSTRIES = [
@@ -20,15 +40,13 @@ const PROVINCES = [
   "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape",
 ];
 
-export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
-  const [employees, setEmployees] = useState("");
-  const [genderSplit, setGenderSplit] = useState("");
-  const [averageAge, setAverageAge] = useState("");
-  const [averageIncome, setAverageIncome] = useState("");
-  const [province, setProvince] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [cellphone, setCellphone] = useState("");
-
+export default function QuickQuoteInputs({ 
+  formData, 
+  onFormChange, 
+  onBack, 
+  onGenerateQuote 
+}: QuickQuoteInputsProps) {
+  const { employees, genderSplit, averageAge, averageIncome, province, industry, cellphone } = formData;
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = () => {
@@ -76,10 +94,33 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
 
   const handleGenerateQuote = () => {
     if (validateForm()) {
-      // Proceed with generating quote
-      console.log("Validation passed. Form data:", {
-        employees, genderSplit, averageAge, averageIncome, province, industry, cellphone
-      });
+      // Generate indicative quote based on inputs
+      const employeeCount = parseInt(employees, 10);
+      const monthlyIncome = parseFloat(averageIncome);
+      
+      // Calculate estimated premium (example calculation)
+      // Base premium per employee + income-based premium
+      const basePremiumPerEmployee = 150;
+      const incomeMultiplier = 0.05; // 5% of monthly income
+      
+      const estimatedMonthlyPremium = 
+        (employeeCount * basePremiumPerEmployee) + 
+        (employeeCount * monthlyIncome * incomeMultiplier);
+      
+      // Calculate coverage amount
+      const coverageAmount = estimatedMonthlyPremium * 12 * 40; // 40x annual premium
+      
+      // Build benefits string
+      const benefits = "Basic medical coverage, Life Insurance";
+      
+      if (onGenerateQuote) {
+        onGenerateQuote({
+          coverageAmount,
+          monthlyPremium: estimatedMonthlyPremium,
+          numberOfEmployees: employeeCount,
+          benefitsIncluded: benefits,
+        });
+      }
     }
   };
 
@@ -110,7 +151,7 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
               value={employees}
               onChange={(e) => {
                 const value = e.target.value.replace(/\D/g, "");
-                setEmployees(value);
+                onFormChange({ ...formData, employees: value });
                 setErrors({ ...errors, employees: "" });
               }}
             />
@@ -127,7 +168,7 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
                     value={option} 
                     checked={genderSplit === option} 
                     onChange={(e) => {
-                      setGenderSplit(e.target.value);
+                      onFormChange({ ...formData, genderSplit: e.target.value });
                       setErrors({ ...errors, genderSplit: "" });
                     }}
                     className="accent-[#29abe2] cursor-pointer"
@@ -147,7 +188,7 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
               value={averageAge}
               onChange={(e) => {
                 const value = e.target.value.replace(/\D/g, "");
-                setAverageAge(value);
+                onFormChange({ ...formData, averageAge: value });
                 setErrors({ ...errors, averageAge: "" });
               }}
             />
@@ -166,7 +207,7 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
                 if ((value.match(/\./g) || []).length > 1) {
                   value = value.replace(/\.$/, "");
                 }
-                setAverageIncome(value);
+                onFormChange({ ...formData, averageIncome: value });
                 setErrors({ ...errors, averageIncome: "" });
               }}
             />
@@ -178,7 +219,7 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
               className={getClass(!!errors.province)}
               value={province}
               onChange={(e) => {
-                setProvince(e.target.value);
+                onFormChange({ ...formData, province: e.target.value });
                 setErrors({ ...errors, province: "" });
               }}
             >
@@ -193,7 +234,7 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
               className={getClass(!!errors.industry)}
               value={industry}
               onChange={(e) => {
-                setIndustry(e.target.value);
+                onFormChange({ ...formData, industry: e.target.value });
                 setErrors({ ...errors, industry: "" });
               }}
             >
@@ -210,7 +251,7 @@ export default function QuickQuoteInputs({ onBack }: QuickQuoteInputsProps) {
               value={cellphone}
               onChange={(e) => {
                 const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                setCellphone(value);
+                onFormChange({ ...formData, cellphone: value });
                 setErrors({ ...errors, cellphone: "" });
               }}
               placeholder="0821234567"
