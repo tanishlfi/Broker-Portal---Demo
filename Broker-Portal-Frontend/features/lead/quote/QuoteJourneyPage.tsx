@@ -1,14 +1,28 @@
 "use client";
 
+import { useState } from "react";
+import QuickQuoteInputs from "./QuickQuoteInputs";
+
 interface QuoteJourneyPageProps {
   leadReference: string;
   companyName: string;
 }
 
+type Step = "SELECT_TYPE" | "QUICK_QUOTE" | "FULL_QUOTE";
+
 export default function QuoteJourneyPage({
   leadReference,
   companyName,
 }: QuoteJourneyPageProps) {
+  const [step, setStep] = useState<Step>("SELECT_TYPE");
+
+  if (step === "QUICK_QUOTE") {
+    return (
+      <div className="flex justify-center items-start min-h-screen bg-[#1f1f1f] px-6 pt-12 w-full">
+        <QuickQuoteInputs onBack={() => setStep("SELECT_TYPE")} />
+      </div>
+    );
+  }
   return (
     <div className="flex justify-center items-start min-h-screen bg-[#1f1f1f] px-6 pt-12 w-full">
       
@@ -27,7 +41,10 @@ export default function QuoteJourneyPage({
         <div className="grid grid-cols-2 gap-5">
           
           {/* Quick Quote */}
-          <button className="group text-left bg-[#303030] border border-[#444] hover:border-[#29abe2] rounded-lg p-5 transition-all duration-200 hover:shadow-[0_0_0_1px_#29abe2]">
+          <button 
+            onClick={() => setStep("QUICK_QUOTE")}
+            className="group text-left bg-[#303030] border border-[#444] hover:border-[#29abe2] rounded-lg p-5 transition-all duration-200 hover:shadow-[0_0_0_1px_#29abe2]"
+          >
             
             <h3 className="text-white text-sm font-semibold mb-2">
               Quick Quote
@@ -56,7 +73,10 @@ export default function QuoteJourneyPage({
           </button>
 
           {/* Full Quote */}
-          <button className="group text-left bg-[#303030] border border-[#444] hover:border-[#29abe2] rounded-lg p-5 transition-all duration-200 hover:shadow-[0_0_0_1px_#29abe2]">
+          <button 
+            onClick={() => setStep("FULL_QUOTE")}
+            className="group text-left bg-[#303030] border border-[#444] hover:border-[#29abe2] rounded-lg p-5 transition-all duration-200 hover:shadow-[0_0_0_1px_#29abe2]"
+          >
             
             <h3 className="text-white text-sm font-semibold mb-2">
               Full Quote
