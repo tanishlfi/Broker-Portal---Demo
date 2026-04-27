@@ -167,7 +167,7 @@ export default function StartNewLeadPage() {
     try {
       if (!token) throw new Error("No auth token found. Please navigate from Client Connect.");
       const [firstName, ...rest] = contact.contactName.trim().split(" ");
-      await createLead({
+      const result = await createLead({
         employerName: employer.companyName,
         registrationNumber: employer.registrationNumber || undefined,
         industryType: employer.industry,
@@ -181,7 +181,8 @@ export default function StartNewLeadPage() {
         representativeId: brokerId || "00000000-0000-0000-0000-000000000000",
         brokerId: brokerId || "00000000-0000-0000-0000-000000000000",
       }, token);
-      router.push("/dashboard");
+      const { leadId, leadReference } = result.data;
+      router.push(`/lead/${leadId}/quote?ref=${leadReference}&company=${encodeURIComponent(employer.companyName)}`);
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Submission failed");
     } finally {
