@@ -271,10 +271,11 @@ export default function QuickQuoteInputs({
         </button>
         <button 
           onClick={handleGenerateQuote}
-          className="bg-[#4b8fa6] hover:bg-[#3e798e] border border-[#52a2bc] text-white text-xs font-semibold py-2.5 px-6 rounded-md transition-colors opacity-90 hover:opacity-100"
+          className="text-xs bg-[#29abe2] hover:bg-[#1a9fd6] text-white rounded px-6 py-2.5 font-semibold transition-colors"
         >
           Generate Quick Quote
         </button>
+
       </div>
     </div>
   );
