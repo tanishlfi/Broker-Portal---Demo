@@ -3,6 +3,7 @@
 import { useState } from "react";
 import QuickQuoteInputs from "./QuickQuoteInputs";
 import GeneratedQuote from "./GeneratedQuote";
+import FullQuoteCapture from "./FullQuoteCapture";
 
 interface QuoteJourneyPageProps {
   leadReference: string;
@@ -73,6 +74,19 @@ export default function QuoteJourneyPage({
       />
     );
   }
+
+  if (step === "FULL_QUOTE") {
+    return (
+      <FullQuoteCapture
+        onBack={() => setStep("SELECT_TYPE")}
+        onGenerate={() => {
+          // TODO: hook up full quote generation
+          console.log("Generate full quote");
+        }}
+      />
+    );
+  }
+
   return (
     <div className="w-full max-w-[720px]">
       {/* Main Card */}
