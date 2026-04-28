@@ -150,10 +150,11 @@ export default function GeneratedQuote({
 
           <button
             onClick={onContinueToFull}
-            className="bg-[#2da8df] hover:bg-[#2498cc] text-white text-xs px-4 py-2 rounded"
+            className="bg-[#29abe2] hover:bg-[#1a9fd6] text-white text-xs px-4 py-2 rounded transition-colors"
           >
             Continue to Full Quote
           </button>
+
         </div>
       </div>
     </div>
