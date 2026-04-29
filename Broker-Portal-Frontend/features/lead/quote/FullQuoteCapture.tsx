@@ -1,26 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Upload, Send, CheckCircle, AlertCircle } from "lucide-react";
 import * as XLSX from "xlsx";
+import EmployeeTable from "@/components/ui/EmployeeTable";
 
 interface Employee {
-  id: string;
-  name: string;
-  firstName: string;
-  surname: string;
-  gender: string;
-  salary: string;
-  income: string;
-  dob: string;
-  email: string;
-  cellNumber: string;
-  startDate: string;
-  identification: string;
-  idType: string;
-  passportExpiry: string;
-  nationality: string;
-  status: string;
+  id: string; name: string; firstName: string; surname: string;
+  gender: string; salary: string; income: string; dob: string;
+  email: string; cellNumber: string; startDate: string;
+  identification: string; idType: string; passportExpiry: string;
+  nationality: string; status: string;
 }
 
 interface FullQuoteCaptureProps {
@@ -29,227 +19,221 @@ interface FullQuoteCaptureProps {
 }
 
 const SCHEMES = [
-  {
-    name: "Basic Plan",
-    benefits: ["Core medical coverage", "Standard life insurance", "Basic disability cover"],
-  },
-  {
-    name: "Comprehensive Plan",
-    benefits: ["Extensive medical coverage", "Enhanced life insurance", "Full disability cover", "Family assistance"],
-  },
-  {
-    name: "Premium Plan",
-    benefits: ["Global medical coverage", "Maximum life insurance", "Executive disability cover", "Family assistance & Wellness programs"],
-  },
+  { name: "Basic Plan", benefits: ["Core medical coverage", "Standard life insurance", "Basic disability cover"] },
+  { name: "Comprehensive Plan", benefits: ["Extensive medical coverage", "Enhanced life insurance", "Full disability cover", "Family assistance"] },
+  { name: "Premium Plan", benefits: ["Global medical coverage", "Maximum life insurance", "Executive disability cover", "Family assistance & Wellness programs"] },
 ];
 
 const EMPTY_FORM = { firstName: "", surname: "", dob: "", salary: "", idType: "SA ID", identification: "" };
 
+const card: React.CSSProperties = {
+  background: "#2d2d2d", border: "1px solid #4a4a4a", borderRadius: "8px", padding: "24px",
+};
+
+const btnOutline: React.CSSProperties = {
+  height: "40px", padding: "0 20px", fontSize: "1rem", fontWeight: 500,
+  background: "transparent", border: "1px solid #4a4a4a", color: "#ffffff",
+  borderRadius: "6px", cursor: "pointer", transition: "background 0.15s",
+};
+
+const fieldInput: React.CSSProperties = {
+  width: "100%", height: "40px", padding: "8px 12px", marginTop: "6px",
+  background: "#3a3a3a", border: "2px solid #4a4a4a", borderRadius: "6px",
+  fontSize: "0.875rem", color: "#ffffff", outline: "none", boxSizing: "border-box",
+};
+
 export default function FullQuoteCapture({ onBack, onGenerate }: FullQuoteCaptureProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fileName, setFileName] = useState<string>("");
+  const [fileName, setFileName] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const arrayBuffer = event.target?.result as ArrayBuffer;
-        if (!arrayBuffer) return;
-        const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        if (rows.length > 0) {
-          const hasHeader = rows[0].some(
-            (cell: any) =>
-              typeof cell === "string" &&
-              (cell.toLowerCase().includes("name") ||
-                cell.toLowerCase().includes("first") ||
-                cell.toLowerCase().includes("income"))
-          );
-          const dataRows = hasHeader ? rows.slice(1) : rows;
-          const newEmployees: Employee[] = dataRows
-            .filter((row) => row.length >= 4 && (row[0] || row[1]))
-            .map((row) => {
-              const firstName = String(row[0] || "").trim();
-              const surname = String(row[1] || "").trim();
-              const income = String(row[3] || "0").trim();
-              return {
-                id: Math.random().toString(36).substring(2, 11),
-                name: `${firstName} ${surname}`.trim() || "Unknown",
-                firstName,
-                surname,
-                gender: String(row[2] || "").trim(),
-                salary: income,
-                income,
-                dob: String(row[4] || "").trim(),
-                email: String(row[5] || "").trim(),
-                cellNumber: String(row[6] || "").trim(),
-                startDate: String(row[7] || "").trim(),
-                identification: String(row[8] || "N/A").trim(),
-                idType: "SA ID",
-                passportExpiry: String(row[9] || "").trim(),
-                nationality: String(row[10] || "").trim(),
-                status: "Active",
-              };
-            });
-          setEmployees((prev) => [...prev, ...newEmployees]);
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
+    if (!file) return;
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const buf = ev.target?.result as ArrayBuffer;
+      if (!buf) return;
+      const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      if (!rows.length) return;
+      const hasHeader = rows[0].some((c: any) => typeof c === "string" && (c.toLowerCase().includes("name") || c.toLowerCase().includes("income")));
+      const data = hasHeader ? rows.slice(1) : rows;
+      setEmployees(prev => [...prev, ...data.filter(r => r.length >= 4 && (r[0] || r[1])).map(r => ({
+        id: Math.random().toString(36).slice(2),
+        name: `${r[0] || ""} ${r[1] || ""}`.trim() || "Unknown",
+        firstName: String(r[0] || "").trim(), surname: String(r[1] || "").trim(),
+        gender: String(r[2] || "").trim(), salary: String(r[3] || "0").trim(),
+        income: String(r[3] || "0").trim(), dob: String(r[4] || "").trim(),
+        email: String(r[5] || "").trim(), cellNumber: String(r[6] || "").trim(),
+        startDate: String(r[7] || "").trim(), identification: String(r[8] || "N/A").trim(),
+        idType: "SA ID", passportExpiry: String(r[9] || "").trim(),
+        nationality: String(r[10] || "").trim(), status: "Active",
+      }))]);
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const handleAddEmployee = () => {
     if (!form.firstName || !form.surname) return;
-    const newEmp: Employee = {
-      id: Math.random().toString(36).substring(2, 11),
+    setEmployees(prev => [...prev, {
+      id: Math.random().toString(36).slice(2),
       name: `${form.firstName} ${form.surname}`.trim(),
-      firstName: form.firstName,
-      surname: form.surname,
-      gender: "",
-      salary: form.salary,
-      income: form.salary,
-      dob: form.dob,
-      email: "",
-      cellNumber: "",
-      startDate: "",
-      identification: form.identification,
-      idType: form.idType,
-      passportExpiry: "",
-      nationality: "",
-      status: "Active",
-    };
-    setEmployees((prev) => [...prev, newEmp]);
+      firstName: form.firstName, surname: form.surname, gender: "",
+      salary: form.salary, income: form.salary, dob: form.dob,
+      email: "", cellNumber: "", startDate: "",
+      identification: form.identification, idType: form.idType,
+      passportExpiry: "", nationality: "", status: "Active",
+    }]);
     setForm(EMPTY_FORM);
     setShowForm(false);
   };
 
-  const removeEmployee = (id: string) => {
-    setEmployees((prev) => prev.filter((emp) => emp.id !== id));
-  };
-
-  const inputCls = "w-full bg-[#1e1e1e] border border-[#444] rounded px-3 py-2 text-gray-200 text-xs placeholder-gray-500 focus:outline-none focus:border-[#29abe2]";
-
   return (
-    <div className="w-full max-w-[720px] flex flex-col gap-5">
-      {/* Capture Employee Data */}
-      <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl px-8 py-7 shadow-md">
-        <h2 className="text-white text-sm font-semibold mb-1">Capture Employee Data</h2>
-        <p className="text-gray-400 text-xs mb-5">
+    <div style={{ width: "100%", maxWidth: "896px" }}>
+
+      {/* Card 1 */}
+      <div style={card}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 500, color: "#ffffff", marginBottom: "16px" }}>
+          Capture Employee Data
+        </h2>
+        <p style={{ fontSize: "14px", color: "#a0a0a0", marginBottom: "24px" }}>
           Provide employee information via upload or manual entry to generate an accurate full quote.
         </p>
 
-        <div className="grid grid-cols-2 gap-4 mb-5">
-          {/* Bulk Upload */}
-          <div className="bg-[#303030] border border-[#444] rounded-lg p-5 flex flex-col items-center gap-3">
-            <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-            </svg>
-            <span className="text-white text-xs font-medium">Bulk Upload</span>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="text-xs border border-[#555] text-gray-300 rounded px-3 py-1.5 hover:border-[#29abe2] hover:text-white transition-colors w-full text-center"
-            >
-              {fileName ? fileName : "Choose file  No file chosen"}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: fileName ? "16px" : "32px" }}>
+          <div style={{ border: "2px dashed #4a4a4a", borderRadius: "8px", padding: "24px", textAlign: "center" }}>
+            <Upload size={32} style={{ color: "#a0a0a0", margin: "0 auto 16px" }} />
+            <p style={{ fontSize: "14px", fontWeight: 500, color: "#ffffff", marginBottom: "8px" }}>Bulk Upload</p>
+            <button onClick={() => fileInputRef.current?.click()}
+              style={{ fontSize: "12px", border: "1px solid #4a4a4a", background: "transparent", color: "#a0a0a0", borderRadius: "6px", padding: "6px 12px", cursor: "pointer" }}>
+              {fileName ? "Replace file" : "Choose file"}
             </button>
-            <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} onChange={handleFileChange} />
           </div>
 
-          {/* Manual Capture */}
-          <div className="bg-[#303030] border border-[#444] rounded-lg p-5 flex flex-col items-center gap-3">
-            <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-            </svg>
-            <span className="text-white text-xs font-medium">Manual Capture</span>
-            <button
-              onClick={() => setShowForm(true)}
-              className="text-xs border border-[#555] text-gray-300 rounded px-3 py-1.5 hover:border-[#29abe2] hover:text-white transition-colors flex items-center gap-1.5"
-            >
-              <span className="text-lg leading-none">+</span> Add Individual Employee
+          <div style={{ border: "2px dashed #4a4a4a", borderRadius: "8px", padding: "24px", textAlign: "center" }}>
+            <Send size={32} style={{ color: "#a0a0a0", margin: "0 auto 16px" }} />
+            <p style={{ fontSize: "14px", fontWeight: 500, color: "#ffffff", marginBottom: "8px" }}>Manual Capture</p>
+            <button onClick={() => setShowForm(true)}
+              style={{ fontSize: "12px", border: "1px solid #4a4a4a", background: "transparent", color: "#a0a0a0", borderRadius: "6px", padding: "6px 12px", cursor: "pointer" }}>
+              + Add Individual Employee
             </button>
           </div>
         </div>
 
-        {/* Inline Add Employee Form */}
+        {fileName && (
+          <div style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "8px", padding: "16px", marginBottom: "32px", display: "flex", alignItems: "center", gap: "8px" }}>
+            <CheckCircle size={20} style={{ color: "#22c55e", flexShrink: 0 }} />
+            <div>
+              <p style={{ fontSize: "14px", fontWeight: 500, color: "#16a34a", margin: 0 }}>{fileName} uploaded</p>
+              <p style={{ fontSize: "12px", color: "rgba(21,128,61,0.8)", margin: 0 }}>{employees.length} employees extracted</p>
+            </div>
+          </div>
+        )}
+
         {showForm && (
-          <div className="mb-5">
-            <h3 className="text-white text-xs font-semibold mb-3">New Employee Details</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-gray-400 text-[11px]">First Name</label>
-                <input
-                  className={inputCls}
-                  placeholder="John"
-                  value={form.firstName}
-                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-gray-400 text-[11px]">Surname</label>
-                <input
-                  className={inputCls}
-                  placeholder="Doe"
-                  value={form.surname}
-                  onChange={(e) => setForm((f) => ({ ...f, surname: e.target.value }))}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-gray-400 text-[11px]">Date of Birth</label>
-                <input
-                  type="date"
-                  className={`${inputCls} [color-scheme:dark]`}
-                  value={form.dob}
-                  onChange={(e) => setForm((f) => ({ ...f, dob: e.target.value }))}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-gray-400 text-[11px]">Salary (R)</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={500}
-                  className={`${inputCls} [color-scheme:dark] show-spinner`}
-                  placeholder="25000"
-                  value={form.salary}
-                  onChange={(e) => setForm((f) => ({ ...f, salary: e.target.value }))}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-gray-400 text-[11px]">ID Type</label>
+          <div style={{
+            background: "rgba(31,195,235,0.05)",
+            border: "1px solid rgba(31,195,235,0.2)",
+            borderRadius: "8px",
+            padding: "16px",
+            marginBottom: "24px",
+          }}>
+            <h3 style={{ fontSize: "14px", fontWeight: 600, color: "#ffffff", marginBottom: "16px" }}>New Employee Details</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              {([
+                { label: "First Name", key: "firstName", placeholder: "John" },
+                { label: "Surname", key: "surname", placeholder: "Doe" },
+                { label: "Date of Birth", key: "dob", type: "date" },
+                { label: "Salary (R)", key: "salary", placeholder: "25000", type: "number" },
+              ] as { label: string; key: keyof typeof EMPTY_FORM; placeholder?: string; type?: string }[]).map(({ label, key, placeholder, type }) => (
+                <div key={key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#ffffff" }}>{label}</label>
+                  <input
+                    type={type || "text"}
+                    placeholder={placeholder}
+                    value={form[key]}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    style={{
+                      height: "32px", fontSize: "12px", background: "#1a1a1a",
+                      border: "2px solid #4a4a4a", borderRadius: "6px",
+                      padding: "8px 12px", color: "#ffffff", width: "100%",
+                      boxSizing: "border-box", outline: "none", colorScheme: "dark",
+                    } as React.CSSProperties}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(31,195,235,0.5)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#4a4a4a"; }}
+                    onFocus={e => {
+                      e.currentTarget.style.borderColor = "#1FC3EB";
+                      e.currentTarget.style.boxShadow = "0 0 0 4px rgba(31,195,235,0.2)";
+                    }}
+                    onBlur={e => {
+                      e.currentTarget.style.borderColor = "#4a4a4a";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  />
+                </div>
+              ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 500, color: "#ffffff" }}>ID Type</label>
                 <select
-                  className={inputCls}
                   value={form.idType}
-                  onChange={(e) => setForm((f) => ({ ...f, idType: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, idType: e.target.value }))}
+                  style={{
+                    width: "100%", height: "32px", padding: "0 12px",
+                    borderRadius: "6px", border: "1px solid #4a4a4a",
+                    background: "#1a1a1a", fontSize: "12px", color: "#ffffff",
+                    boxSizing: "border-box", outline: "none", colorScheme: "dark",
+                  } as React.CSSProperties}
                 >
                   <option value="SA ID">SA ID</option>
                   <option value="Passport">Passport</option>
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-gray-400 text-[11px]">ID/Passport Number</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 500, color: "#ffffff" }}>ID/Passport Number</label>
                 <input
-                  className={inputCls}
+                  type="text"
                   placeholder="ID Number"
                   value={form.identification}
-                  onChange={(e) => setForm((f) => ({ ...f, identification: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, identification: e.target.value }))}
+                  style={{
+                    height: "32px", fontSize: "12px", background: "#1a1a1a",
+                    border: "2px solid #4a4a4a", borderRadius: "6px",
+                    padding: "8px 12px", color: "#ffffff", width: "100%",
+                    boxSizing: "border-box", outline: "none", colorScheme: "dark",
+                  } as React.CSSProperties}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(31,195,235,0.5)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#4a4a4a"; }}
+                  onFocus={e => {
+                    e.currentTarget.style.borderColor = "#1FC3EB";
+                    e.currentTarget.style.boxShadow = "0 0 0 4px rgba(31,195,235,0.2)";
+                  }}
+                  onBlur={e => {
+                    e.currentTarget.style.borderColor = "#4a4a4a";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-4">
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", paddingTop: "8px" }}>
               <button
                 onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-                className="text-xs text-gray-400 border border-[#444] rounded px-4 py-1.5 hover:border-[#555] hover:text-white transition-colors"
+                style={{ height: "32px", padding: "0 12px", fontSize: "14px", background: "transparent", color: "#ffffff", border: "none", borderRadius: "6px", cursor: "pointer", transition: "background 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(31,195,235,0.15)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddEmployee}
-                className="text-xs bg-[#29abe2] hover:bg-[#1a9fd6] text-white rounded px-4 py-1.5 font-medium transition-colors"
+                style={{ height: "32px", padding: "0 12px", fontSize: "14px", fontWeight: 500, background: "#1FC3EB", color: "#ffffff", border: "none", borderRadius: "6px", cursor: "pointer", transition: "background 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(31,195,235,0.9)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#1FC3EB"; }}
               >
                 Add Employee
               </button>
@@ -257,78 +241,35 @@ export default function FullQuoteCapture({ onBack, onGenerate }: FullQuoteCaptur
           </div>
         )}
 
-        {/* Employees Table — inside the same card */}
         {employees.length > 0 && (
-          <div className="mt-5">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-white text-xs font-semibold">Manually Added Employees ({employees.length})</h3>
-              <button onClick={() => setEmployees([])} className="text-[10px] text-gray-400 hover:text-red-400 transition-colors">
-                Clear All
-              </button>
-            </div>
-            <div className="rounded-lg border border-[#3a3a3a] overflow-hidden">
-            <table className="w-full text-left border-collapse table-fixed">
-                <colgroup>
-                  <col style={{ width: "25%" }} />
-                  <col style={{ width: "28%" }} />
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: "17%" }} />
-                  <col style={{ width: "10%" }} />
-                </colgroup>
-                <thead>
-                  <tr className="bg-[#222] border-b border-[#3a3a3a]">
-                    <th className="px-4 py-2.5 text-gray-400 text-xs font-semibold">Name</th>
-                    <th className="px-4 py-2.5 text-gray-400 text-xs font-semibold">ID/Passport</th>
-                    <th className="px-4 py-2.5 text-gray-400 text-xs font-semibold">Salary</th>
-                    <th className="px-4 py-2.5 text-gray-400 text-xs font-semibold">Status</th>
-                    <th className="px-4 py-2.5 text-gray-400 text-xs font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((emp) => (
-                    <tr key={emp.id} className="border-b border-[#3a3a3a] last:border-0 hover:bg-white/5 transition-colors">
-                      <td className="px-4 py-3 text-gray-300 text-xs truncate max-w-0 pr-3" title={emp.name}>{emp.name}</td>
-                      <td className="px-4 py-3 text-gray-300 text-xs truncate max-w-0 pr-3">{emp.identification}</td>
-                      <td className="px-4 py-3 text-gray-300 text-xs truncate max-w-0 pr-3">R {emp.salary}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-gray-300 text-xs border border-[#555] rounded-full px-2.5 py-0.5">{emp.status}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button onClick={() => removeEmployee(emp.id)} className="text-red-500/80 hover:text-red-500 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <EmployeeTable
+            employees={employees}
+            onRemove={id => setEmployees(prev => prev.filter(e => e.id !== id))}
+            onClearAll={() => setEmployees([])}
+          />
         )}
 
-        {/* Info banner */}
-        <div className={`bg-[#1a2a3a] border border-[#29abe2]/30 rounded-md px-4 py-2.5 flex items-start gap-2 ${employees.length > 0 || showForm ? "mt-4" : ""}`}>
-          <svg className="w-4 h-4 text-[#29abe2] mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-          </svg>
-          <p className="text-[#29abe2] text-xs">
+        <div style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: "8px", padding: "16px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+          <AlertCircle size={14} style={{ color: "#3b82f6", flexShrink: 0, marginTop: "1px" }} />
+          <p style={{ fontSize: "12px", color: "#3b82f6", margin: 0 }}>
             Required Quote Inputs: ID Type, DOB, and Salary are mandatory for each employee record.
           </p>
         </div>
       </div>
 
-      {/* Available Schemes & Benefits */}
-      <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl px-8 py-7 shadow-md">
-        <h2 className="text-white text-sm font-semibold mb-4">Available Schemes &amp; Benefits</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {SCHEMES.map((scheme) => (
-            <div key={scheme.name} className="bg-[#303030] border border-[#444] rounded-lg p-4">
-              <h3 className="text-[#29abe2] text-xs font-semibold mb-2">{scheme.name}</h3>
-              <ul className="space-y-1">
-                {scheme.benefits.map((b) => (
-                  <li key={b} className="text-gray-400 text-xs flex gap-1.5">
-                    <span className="text-gray-500">•</span>
-                    {b}
+      {/* Card 2 */}
+      <div style={{ ...card, marginTop: "24px" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 500, color: "#ffffff", marginBottom: "16px" }}>
+          Available Schemes &amp; Benefits
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+          {SCHEMES.map(scheme => (
+            <div key={scheme.name} style={{ background: "rgba(58,58,58,0.5)", border: "1px solid #4a4a4a", borderRadius: "8px", padding: "16px" }}>
+              <h3 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#1FC3EB", marginBottom: "8px" }}>{scheme.name}</h3>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+                {scheme.benefits.map(b => (
+                  <li key={b} style={{ fontSize: "14px", color: "#a0a0a0", display: "flex", gap: "6px" }}>
+                    <span>•</span>{b}
                   </li>
                 ))}
               </ul>
@@ -337,12 +278,23 @@ export default function FullQuoteCapture({ onBack, onGenerate }: FullQuoteCaptur
         </div>
       </div>
 
-      {/* Footer actions */}
-      <div className="flex justify-between items-center">
-        <button onClick={onBack} className="text-xs text-gray-300 border border-[#444] rounded px-4 py-2 hover:border-[#29abe2] hover:text-white transition-colors">
+      {/* Buttons */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", marginTop: "16px" }}>
+        <button onClick={onBack} style={btnOutline}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#4a4a4a"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
           Back
         </button>
-        <button onClick={onGenerate} className="text-xs bg-[#29abe2] hover:bg-[#1a9fd6] text-white rounded px-5 py-2 font-medium transition-colors">
+        <button onClick={onGenerate} disabled={employees.length === 0 && !fileName}
+          style={{
+            height: "40px", padding: "0 20px", fontSize: "1rem", fontWeight: 500,
+            background: "#1FC3EB", color: "#ffffff", border: "none", borderRadius: "6px",
+            cursor: employees.length === 0 && !fileName ? "not-allowed" : "pointer",
+            opacity: employees.length === 0 && !fileName ? 0.5 : 1,
+            transition: "opacity 0.15s",
+          }}
+          onMouseEnter={e => { if (employees.length > 0 || fileName) (e.currentTarget as HTMLElement).style.opacity = "0.9"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = employees.length === 0 && !fileName ? "0.5" : "1"; }}>
           Generate Full Quote
         </button>
       </div>

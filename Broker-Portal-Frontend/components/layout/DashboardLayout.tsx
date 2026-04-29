@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Sidebar from "./Sidebar";
 
 interface DashboardLayoutProps {
@@ -8,12 +7,13 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
-    <div className="flex min-h-screen bg-[#222222]">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-      <div className={`flex flex-col flex-1 transition-all duration-300 ${collapsed ? "ml-20" : "ml-44"}`}>
+    <div className="flex h-screen" style={{ background: "var(--background)", fontFamily: "'Inter', sans-serif" }}>
+      <Sidebar />
+      <div
+        className="flex flex-col flex-1 overflow-y-auto"
+        style={{ marginLeft: "var(--sidebar-width)" }}
+      >
         {children}
       </div>
     </div>

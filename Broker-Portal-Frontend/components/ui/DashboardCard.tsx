@@ -11,13 +11,36 @@ export default function DashboardCard({ title, description, icon, onClick }: Das
   return (
     <button
       onClick={onClick}
-      className="bg-[#2a2a2a] hover:bg-[#313131] rounded-xl p-5 flex flex-col gap-6 text-left transition-colors w-full h-36 cursor-pointer"
+      className="text-left rounded-lg p-6 flex flex-col h-full w-full group"
+      style={{
+        background: "#2d2d2d",
+        borderWidth: "1px",
+        borderStyle: "solid",
+        borderColor: "rgb(58, 58, 58)",
+        cursor: onClick ? "pointer" : "default",
+        transition: "border-color 0.2s, background 0.2s",
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = "#1FC3EB";
+        el.style.background = "rgba(31, 195, 235, 0.05)";
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = "rgb(58, 58, 58)";
+        el.style.background = "#2d2d2d";
+      }}
     >
-      <div className="text-[#29abe2]">{icon}</div>
-      <div>
-        <p className="text-white text-sm font-semibold mb-1">{title}</p>
-        <p className="text-gray-500 text-xs leading-relaxed">{description}</p>
+      <div
+        className="mb-4 transition-transform group-hover:scale-110"
+        style={{ color: "#1FC3EB" }} // text-primary dark mode
+      >
+        {icon}
       </div>
+      <h3 style={{ fontSize: "1.125rem", fontWeight: 500, lineHeight: 1.5, color: "#ffffff" }} className="mb-2">{title}</h3>
+      <p style={{ fontSize: "0.875rem", color: "#9ca3af", lineHeight: 1.5 }} className="flex-1">
+        {description}
+      </p>
     </button>
   );
 }

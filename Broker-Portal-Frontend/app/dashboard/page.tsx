@@ -8,6 +8,7 @@ export default function Dashboard() {
       <DashboardHeader
         title="Broker Portal Dashboard"
         subtitle="Welcome back, manage your leads and policies"
+        showUser={false}
       />
       <DashboardPage />
     </DashboardLayout>
