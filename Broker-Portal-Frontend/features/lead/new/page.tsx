@@ -502,7 +502,7 @@ export default function StartNewLeadPage() {
       {/* Toast */}
       {toast && (
         <div style={{
-          position: "fixed", bottom: "24px", right: "24px", zIndex: 9999,
+          position: "fixed", top: "24px", right: "24px", zIndex: 9999,
           background: "#1e1e1e", border: "1px solid #3a3a3a", borderRadius: "8px",
           padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px",
           boxShadow: "0 4px 24px rgba(0,0,0,0.4)", minWidth: "220px",

@@ -79,16 +79,10 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
     >
       {/* Logo */}
       <div
-        className="flex items-center px-6 py-6"
-        style={{
-          borderBottomWidth: "1px",
-          borderBottomStyle: "solid",
-          borderBottomColor: C.border,
-        }}
+        className={isNewLead || isQuoteJourney ? "p-4" : "p-6"}
+        style={{ borderBottom: `1px solid ${C.border}` }}
       >
-        <span className="font-bold text-3xl tracking-tight" style={{ color: C.primary }}>
-          RMA
-        </span>
+        <img src="/rma-logo.png" alt="RMA Logo" className={isNewLead || isQuoteJourney ? "h-10 w-auto" : "h-12 w-auto"} />
       </div>
 
       {/* Nav */}
