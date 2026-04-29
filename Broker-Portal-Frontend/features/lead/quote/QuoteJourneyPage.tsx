@@ -5,13 +5,14 @@ import QuickQuoteInputs from "./QuickQuoteInputs";
 import GeneratedQuote from "./GeneratedQuote";
 import FullQuoteCapture from "./FullQuoteCapture";
 import FullGeneratedQuote from "./FullGeneratedQuote";
+import QuoteDocumentPage from "./QuoteDocumentPage";
 
 interface QuoteJourneyPageProps {
   leadReference: string;
   companyName: string;
 }
 
-type Step = "SELECT_TYPE" | "QUICK_QUOTE" | "QUICK_QUOTE_GENERATED" | "FULL_QUOTE" | "FULL_QUOTE_GENERATED";
+type Step = "SELECT_TYPE" | "QUICK_QUOTE" | "QUICK_QUOTE_GENERATED" | "FULL_QUOTE" | "FULL_QUOTE_GENERATED" | "QUOTE_DOCUMENT";
 
 interface QuoteData {
   coverageAmount: number;
@@ -114,7 +115,18 @@ export default function QuoteJourneyPage({
         benefitsIncluded={fullQuoteData.benefitsIncluded}
         onBack={() => setStep("FULL_QUOTE")}
         onCustomize={() => setStep("FULL_QUOTE")}
-        onGenerateDocument={() => console.log("Generate document")}
+        onGenerateDocument={() => setStep("QUOTE_DOCUMENT")}
+      />
+    );
+  }
+
+  if (step === "QUOTE_DOCUMENT") {
+    return (
+      <QuoteDocumentPage
+        leadReference={leadReference}
+        companyName={companyName}
+        onBack={() => setStep("FULL_QUOTE_GENERATED")}
+        onEmployerAccepted={() => console.log("Employer accepted quote")}
       />
     );
   }
