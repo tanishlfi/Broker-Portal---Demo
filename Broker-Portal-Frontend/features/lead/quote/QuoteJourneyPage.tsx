@@ -87,86 +87,69 @@ export default function QuoteJourneyPage({
     );
   }
 
+  const quoteCards = [
+    {
+      key: "QUICK_QUOTE" as Step,
+      title: "Quick Quote",
+      description: "Generate an indicative quote with estimated pricing based on employee count",
+      bullets: ["Fast generation", "Indicative pricing", "No employee data required", "Can upgrade to full quote"],
+    },
+    {
+      key: "FULL_QUOTE" as Step,
+      title: "Full Quote",
+      description: "Generate a comprehensive quote with detailed employee data and accurate pricing",
+      bullets: ["Comprehensive coverage details", "Accurate pricing", "Employee data upload required", "Ready for employer approval"],
+    },
+  ];
+
   return (
-    <div className="w-full max-w-[720px]">
-      {/* Main Card */}
-      <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl px-10 py-8 w-full shadow-md">
-        
-        {/* Header */}
-        <h2 className="text-white text-sm font-semibold mb-1">
+    <div style={{ width: "100%", maxWidth: "896px" }}>
+      <div style={{ background: "#2d2d2d", border: "1px solid #4a4a4a", borderRadius: "8px", padding: "24px" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 500, color: "#ffffff", marginBottom: "16px" }}>
           Select Quote Type
         </h2>
-        <p className="text-gray-400 text-xs mb-6">
+        <p style={{ fontSize: "0.875rem", color: "#a0a0a0", marginBottom: "24px" }}>
           Choose the type of quote you'd like to generate for this lead.
         </p>
-
-        {/* Options */}
-        <div className="grid grid-cols-2 gap-5">
-          
-          {/* Quick Quote */}
-          <button 
-            onClick={() => setStep("QUICK_QUOTE")}
-            className="group text-left bg-[#303030] border border-[#444] hover:border-[#29abe2] rounded-lg p-5 transition-all duration-200 hover:shadow-[0_0_0_1px_#29abe2]"
-          >
-            
-            <h3 className="text-white text-sm font-semibold mb-2">
-              Quick Quote
-            </h3>
-
-            <p className="text-gray-400 text-xs leading-relaxed mb-4">
-              Generate an indicative quote with estimated pricing based on employee count
-            </p>
-
-            <ul className="space-y-1">
-              {[
-                "Fast generation",
-                "Indicative pricing",
-                "No employee data required",
-                "Can upgrade to full quote",
-              ].map((item) => (
-                <li
-                  key={item}
-                  className="text-gray-400 text-xs flex gap-2"
-                >
-                  <span className="text-gray-500">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </button>
-
-          {/* Full Quote */}
-          <button 
-            onClick={() => setStep("FULL_QUOTE")}
-            className="group text-left bg-[#303030] border border-[#444] hover:border-[#29abe2] rounded-lg p-5 transition-all duration-200 hover:shadow-[0_0_0_1px_#29abe2]"
-          >
-            
-            <h3 className="text-white text-sm font-semibold mb-2">
-              Full Quote
-            </h3>
-
-            <p className="text-gray-400 text-xs leading-relaxed mb-4">
-              Generate a comprehensive quote with detailed employee data and accurate pricing
-            </p>
-
-            <ul className="space-y-1">
-              {[
-                "Comprehensive coverage details",
-                "Accurate pricing",
-                "Employee data upload required",
-                "Ready for employer approval",
-              ].map((item) => (
-                <li
-                  key={item}
-                  className="text-gray-400 text-xs flex gap-2"
-                >
-                  <span className="text-gray-500">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </button>
-
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          {quoteCards.map(({ key, title, description, bullets }) => (
+            <button
+              key={key}
+              onClick={() => setStep(key)}
+              style={{
+                textAlign: "left",
+                background: "#2d2d2d",
+                border: "2px solid #4a4a4a",
+                borderRadius: "8px",
+                padding: "24px",
+                cursor: "pointer",
+                transition: "border-color 0.2s",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = "#1FC3EB";
+                (e.currentTarget.querySelector("h3") as HTMLElement).style.color = "#1FC3EB";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = "#4a4a4a";
+                (e.currentTarget.querySelector("h3") as HTMLElement).style.color = "#ffffff";
+              }}
+            >
+              <h3 style={{ fontSize: "1.125rem", fontWeight: 500, color: "#ffffff", marginBottom: "8px", transition: "color 0.2s" }}>
+                {title}
+              </h3>
+              <p style={{ fontSize: "0.875rem", color: "#a0a0a0", marginBottom: "16px" }}>
+                {description}
+              </p>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                {bullets.map(item => (
+                  <li key={item} style={{ fontSize: "0.875rem", color: "#a0a0a0", display: "flex", gap: "8px" }}>
+                    <span style={{ color: "#a0a0a0" }}>•</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </button>
+          ))}
         </div>
       </div>
     </div>
