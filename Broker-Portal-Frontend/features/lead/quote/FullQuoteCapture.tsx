@@ -15,7 +15,7 @@ interface Employee {
 
 interface FullQuoteCaptureProps {
   onBack: () => void;
-  onGenerate: () => void;
+  onGenerate: (employees: Employee[]) => void;
 }
 
 const SCHEMES = [
@@ -285,7 +285,7 @@ export default function FullQuoteCapture({ onBack, onGenerate }: FullQuoteCaptur
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
           Back
         </button>
-        <button onClick={onGenerate} disabled={employees.length === 0 && !fileName}
+        <button onClick={() => onGenerate(employees)} disabled={employees.length === 0 && !fileName}
           style={{
             height: "40px", padding: "0 20px", fontSize: "1rem", fontWeight: 500,
             background: "#1FC3EB", color: "#ffffff", border: "none", borderRadius: "6px",
@@ -295,8 +295,7 @@ export default function FullQuoteCapture({ onBack, onGenerate }: FullQuoteCaptur
           }}
           onMouseEnter={e => { if (employees.length > 0 || fileName) (e.currentTarget as HTMLElement).style.opacity = "0.9"; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = employees.length === 0 && !fileName ? "0.5" : "1"; }}>
-          Generate Full Quote
-        </button>
+          Generate Full Quote        </button>
       </div>
     </div>
   );

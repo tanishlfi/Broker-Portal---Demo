@@ -4,18 +4,27 @@ import { useState } from "react";
 import QuickQuoteInputs from "./QuickQuoteInputs";
 import GeneratedQuote from "./GeneratedQuote";
 import FullQuoteCapture from "./FullQuoteCapture";
+import FullGeneratedQuote from "./FullGeneratedQuote";
 
 interface QuoteJourneyPageProps {
   leadReference: string;
   companyName: string;
 }
 
-type Step = "SELECT_TYPE" | "QUICK_QUOTE" | "QUICK_QUOTE_GENERATED" | "FULL_QUOTE";
+type Step = "SELECT_TYPE" | "QUICK_QUOTE" | "QUICK_QUOTE_GENERATED" | "FULL_QUOTE" | "FULL_QUOTE_GENERATED";
 
 interface QuoteData {
   coverageAmount: number;
   monthlyPremium: number;
   numberOfEmployees: number;
+  benefitsIncluded: string;
+}
+
+interface FullQuoteData {
+  coverageAmount: number;
+  monthlyPremium: number;
+  employeesCovered: number;
+  avgSalary: number;
   benefitsIncluded: string;
 }
 
@@ -35,6 +44,7 @@ export default function QuoteJourneyPage({
 }: QuoteJourneyPageProps) {
   const [step, setStep] = useState<Step>("SELECT_TYPE");
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
+  const [fullQuoteData, setFullQuoteData] = useState<FullQuoteData | null>(null);
   const [formData, setFormData] = useState<FormData>({
     employees: "",
     genderSplit: "",
@@ -79,10 +89,32 @@ export default function QuoteJourneyPage({
     return (
       <FullQuoteCapture
         onBack={() => setStep("SELECT_TYPE")}
-        onGenerate={() => {
-          // TODO: hook up full quote generation
-          console.log("Generate full quote");
+        onGenerate={(employees) => {
+          const count = employees.length;
+          setFullQuoteData({
+            coverageAmount: 48600000,
+            monthlyPremium: 81000,
+            employeesCovered: count || 324,
+            avgSalary: 25442,
+            benefitsIncluded: "Comprehensive medical coverage, Life insurance, Disability coverage, Family assistance",
+          });
+          setStep("FULL_QUOTE_GENERATED");
         }}
+      />
+    );
+  }
+
+  if (step === "FULL_QUOTE_GENERATED" && fullQuoteData) {
+    return (
+      <FullGeneratedQuote
+        coverageAmount={fullQuoteData.coverageAmount}
+        monthlyPremium={fullQuoteData.monthlyPremium}
+        employeesCovered={fullQuoteData.employeesCovered}
+        avgSalary={fullQuoteData.avgSalary}
+        benefitsIncluded={fullQuoteData.benefitsIncluded}
+        onBack={() => setStep("FULL_QUOTE")}
+        onCustomize={() => setStep("FULL_QUOTE")}
+        onGenerateDocument={() => console.log("Generate document")}
       />
     );
   }
