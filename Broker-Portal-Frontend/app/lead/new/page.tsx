@@ -5,7 +5,7 @@ import StartNewLeadPage from "@/features/lead/new/page";
 export default function LeadNewRoute() {
   return (
     <DashboardLayout>
-      <DashboardHeader title="Start New Lead" userEmail="adkkj@djd.xx" />
+      <DashboardHeader title="Start New Lead" />
       <StartNewLeadPage />
     </DashboardLayout>
   );

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { createLead } from "@/lib/api/leads";
 import {
   validateSAMobileNumber,
@@ -149,11 +148,18 @@ export default function StartNewLeadPage() {
     setBrokerId(localStorage.getItem("bp_broker_id") ?? "");
   }, []);
 
-  const base = "w-full bg-[#3d3d3d] border border-[#4d4d4d] rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors";
-  const validInput = `${base} focus:border-[#29abe2]`;
-  const errorInput = `${base} border-red-500 focus:border-red-400`;
-  const lbl = "block text-xs text-gray-400 mb-1";
-  const errMsg = (msg?: string) => msg ? <p className="text-red-400 text-xs mt-1">{msg}</p> : null;
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  const inp = (hasError: boolean) => `bp-input${hasError ? " error" : ""}`;
+  const lbl = "block font-medium text-white text-sm";
+  const errMsg = (msg?: string) => msg ? (
+    <p style={{ fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.5, color: "var(--destructive)", marginTop: "0.25rem" }}>{msg}</p>
+  ) : null;
 
   function handleNext() {
     if (step === 0) { const e = validateEmployer(employer); setEmployerErrors(e); if (Object.keys(e).length) return; }
@@ -182,7 +188,10 @@ export default function StartNewLeadPage() {
         brokerId: brokerId || "00000000-0000-0000-0000-000000000000",
       }, token);
       const { leadId, leadReference } = result.data;
-      router.push(`/lead/${leadId}/quote?ref=${leadReference}&company=${encodeURIComponent(employer.companyName)}`);
+      showToast("Lead created successfully");
+      setTimeout(() => {
+        router.push(`/lead/${leadId}/quote?ref=${leadReference}&company=${encodeURIComponent(employer.companyName)}`);
+      }, 1200);
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Submission failed");
     } finally {
@@ -192,37 +201,69 @@ export default function StartNewLeadPage() {
 
   return (
     <>
-      <div className="px-8 pt-5">
-        <button onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors cursor-pointer">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </button>
-      </div>
-
-      <div className="px-8 pt-6 pb-2">
-        <div className="flex max-w-2xl mx-auto">
+      {/* Progress bar */}
+      <div className="px-6 pt-6 pb-2" style={{ background: "var(--background)" }}>
+        <div className="flex max-w-4xl mx-auto mb-2 justify-between">
           {STEPS.map((label, i) => (
-            <div key={label} className="flex-1 flex flex-col items-center">
-              <span className={`text-xs mb-1 ${i === step ? "text-[#29abe2] font-medium" : i < step ? "text-gray-400" : "text-gray-600"}`}>{label}</span>
-              <div className="w-full h-1 rounded-full overflow-hidden bg-[#2a2a2a]">
-                <div className={`h-full rounded-full ${i <= step ? "bg-[#29abe2]" : ""}`} />
-              </div>
-            </div>
+            <span
+              key={label}
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 400,
+                lineHeight: 1,
+                color: i === step ? "var(--primary)" : "var(--muted-foreground)",
+                marginBottom: "0.25rem",
+                display: "block",
+                textAlign: i === STEPS.length - 1 ? "right" : "left",
+              }}
+            >
+              {label}
+            </span>
           ))}
+        </div>
+        {/* Single track with animated fill */}
+        <div
+          className="max-w-4xl mx-auto"
+          style={{
+            height: "8px",
+            backgroundColor: "#3a3a3a",
+            borderRadius: "9999px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              backgroundColor: "#1FC3EB",
+              borderRadius: "9999px",
+              width: `${((step + 1) / STEPS.length) * 100}%`,
+              transition: "width 300ms ease",
+            }}
+          />
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center px-8 py-8">
-        <div className="w-full max-w-2xl flex flex-col gap-4">
-        <div className="w-full bg-[#2b2b2b] border border-[#3a3a3a] rounded-lg p-8">
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center px-6 py-6" style={{ background: "var(--background)" }}>
+        <div className="w-full max-w-4xl flex flex-col gap-4">
+        <div
+          className="w-full rounded-lg p-6"
+          style={{
+            background: "var(--card)",
+            border: "2px solid var(--border)",
+            borderRadius: "8px",
+          }}
+        >
 
           {step === 0 && (
             <>
-              <h2 className="text-white font-semibold text-base mb-6">Employer Information</h2>
-              <div className="flex flex-col gap-4">
+              <h2 className="font-medium mb-6" style={{ fontSize: "1.25rem", color: "var(--foreground)" }}>Employer Information</h2>
+              <div className="space-y-6">
                 <div>
                   <label className={lbl}>Company Name *</label>
-                  <input className={employerErrors.companyName ? errorInput : validInput} value={employer.companyName}
+                  <input
+                    className={inp(!!employerErrors.companyName)}
+                    value={employer.companyName}
                     onChange={e => { setEmployer({ ...employer, companyName: e.target.value }); setEmployerErrors({ ...employerErrors, companyName: undefined }); }} 
                     placeholder="e.g., Acme Corporation" />
                   {errMsg(employerErrors.companyName)}
@@ -230,7 +271,9 @@ export default function StartNewLeadPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>Registration Number</label>
-                    <input className={employerErrors.registrationNumber ? errorInput : validInput} value={employer.registrationNumber}
+                    <input
+                      className={inp(!!employerErrors.registrationNumber)}
+                      value={employer.registrationNumber}
                       onChange={e => { 
                         const value = e.target.value.replace(/[^\d/]/g, "");
                         setEmployer({ ...employer, registrationNumber: value }); 
@@ -242,7 +285,9 @@ export default function StartNewLeadPage() {
                   </div>
                   <div>
                     <label className={lbl}>Industry *</label>
-                    <select className={employerErrors.industry ? errorInput : validInput} value={employer.industry}
+                    <select
+                      className={inp(!!employerErrors.industry)}
+                      value={employer.industry}
                       onChange={e => { setEmployer({ ...employer, industry: e.target.value }); setEmployerErrors({ ...employerErrors, industry: undefined }); }}>
                       <option value="">Select industry</option>
                       {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
@@ -252,7 +297,9 @@ export default function StartNewLeadPage() {
                 </div>
                 <div>
                   <label className={lbl}>Number of Employees *</label>
-                  <input className={employerErrors.numberOfEmployees ? errorInput : validInput} type="number" min="1" value={employer.numberOfEmployees}
+                  <input
+                    className={inp(!!employerErrors.numberOfEmployees)}
+                    type="number" min="1" value={employer.numberOfEmployees}
                     onChange={e => { 
                       const value = e.target.value.replace(/\D/g, "");
                       setEmployer({ ...employer, numberOfEmployees: value }); 
@@ -264,7 +311,9 @@ export default function StartNewLeadPage() {
                 </div>
                 <div>
                   <label className={lbl}>Company Address *</label>
-                  <input className={employerErrors.companyAddress ? errorInput : validInput} value={employer.companyAddress}
+                  <input
+                    className={inp(!!employerErrors.companyAddress)}
+                    value={employer.companyAddress}
                     onChange={e => { setEmployer({ ...employer, companyAddress: e.target.value }); setEmployerErrors({ ...employerErrors, companyAddress: undefined }); }} 
                     placeholder="e.g., 123 Main Street" />
                   {errMsg(employerErrors.companyAddress)}
@@ -272,14 +321,18 @@ export default function StartNewLeadPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>City *</label>
-                    <input className={employerErrors.city ? errorInput : validInput} value={employer.city}
+                    <input
+                      className={inp(!!employerErrors.city)}
+                      value={employer.city}
                       onChange={e => { setEmployer({ ...employer, city: e.target.value }); setEmployerErrors({ ...employerErrors, city: undefined }); }} 
                       placeholder="e.g., Johannesburg" />
                     {errMsg(employerErrors.city)}
                   </div>
                   <div>
                     <label className={lbl}>Province *</label>
-                    <select className={employerErrors.province ? errorInput : validInput} value={employer.province}
+                    <select
+                      className={inp(!!employerErrors.province)}
+                      value={employer.province}
                       onChange={e => { setEmployer({ ...employer, province: e.target.value }); setEmployerErrors({ ...employerErrors, province: undefined }); }}>
                       <option value="">Select province</option>
                       {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -289,7 +342,9 @@ export default function StartNewLeadPage() {
                 </div>
                 <div>
                   <label className={lbl}>Postal Code *</label>
-                  <input className={employerErrors.postalCode ? errorInput : validInput} value={employer.postalCode}
+                  <input
+                    className={inp(!!employerErrors.postalCode)}
+                    value={employer.postalCode}
                     onChange={e => { 
                       const value = e.target.value.replace(/\D/g, "").slice(0, 4);
                       setEmployer({ ...employer, postalCode: value }); 
@@ -306,19 +361,23 @@ export default function StartNewLeadPage() {
 
           {step === 1 && (
             <>
-              <h2 className="text-white font-semibold text-base mb-6">Primary Contact Information</h2>
-              <div className="flex flex-col gap-4">
+              <h2 className="font-medium mb-6" style={{ fontSize: "1.25rem", color: "var(--foreground)" }}>Primary Contact Information</h2>
+              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>Contact Person Name *</label>
-                    <input className={contactErrors.contactName ? errorInput : validInput} value={contact.contactName}
+                    <input
+                      className={inp(!!contactErrors.contactName)}
+                      value={contact.contactName}
                       onChange={e => { setContact({ ...contact, contactName: e.target.value }); setContactErrors({ ...contactErrors, contactName: undefined }); }} 
                       placeholder="e.g., John Smith" />
                     {errMsg(contactErrors.contactName)}
                   </div>
                   <div>
                     <label className={lbl}>Position *</label>
-                    <input className={contactErrors.position ? errorInput : validInput} value={contact.position}
+                    <input
+                      className={inp(!!contactErrors.position)}
+                      value={contact.position}
                       onChange={e => { setContact({ ...contact, position: e.target.value }); setContactErrors({ ...contactErrors, position: undefined }); }} 
                       placeholder="e.g., HR Manager" />
                     {errMsg(contactErrors.position)}
@@ -327,14 +386,18 @@ export default function StartNewLeadPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>Email Address *</label>
-                    <input className={contactErrors.email ? errorInput : validInput} type="email" value={contact.email}
+                    <input
+                      className={inp(!!contactErrors.email)}
+                      type="email" value={contact.email}
                       onChange={e => { setContact({ ...contact, email: e.target.value }); setContactErrors({ ...contactErrors, email: undefined }); }} 
                       placeholder="e.g., john@company.com" />
                     {errMsg(contactErrors.email)}
                   </div>
                   <div>
                     <label className={lbl}>Phone Number *</label>
-                    <input className={contactErrors.phone ? errorInput : validInput} type="tel" placeholder="0821234567" 
+                    <input
+                      className={inp(!!contactErrors.phone)}
+                      type="tel" placeholder="0821234567" 
                       value={contact.phone}
                       onChange={e => { 
                         const value = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -352,25 +415,50 @@ export default function StartNewLeadPage() {
 
           {step === 2 && (
             <>
-              <h2 className="text-white font-semibold text-base mb-5">Review Lead Information</h2>
-              <p className="text-[#29abe2] text-sm font-medium mb-3">Employer Details</p>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-2">
-                <div><p className="text-xs text-gray-500 mb-0.5">Company Name</p><p className="text-sm text-white">{employer.companyName || "—"}</p></div>
-                <div><p className="text-xs text-gray-500 mb-0.5">Registration Number</p><p className="text-sm text-white">{employer.registrationNumber || "—"}</p></div>
-                <div><p className="text-xs text-gray-500 mb-0.5">Industry</p><p className="text-sm text-white">{employer.industry || "—"}</p></div>
-                <div><p className="text-xs text-gray-500 mb-0.5">Number of Employees</p><p className="text-sm text-white">{employer.numberOfEmployees || "—"}</p></div>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 500, color: "var(--foreground)", marginBottom: "24px" }}>Review Lead Information</h2>
+              <h3 style={{ fontSize: "1.125rem", fontWeight: 500, color: "var(--primary)", marginBottom: "12px" }}>Employer Details</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Company Name</p>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{employer.companyName || "—"}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Registration Number</p>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{employer.registrationNumber || "—"}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Industry</p>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{employer.industry || "—"}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Number of Employees</p>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{employer.numberOfEmployees || "—"}</p>
+                </div>
                 <div className="col-span-2">
-                  <p className="text-xs text-gray-500 mb-0.5">Address</p>
-                  <p className="text-sm text-white">{[employer.companyAddress, employer.city, employer.province, employer.postalCode].filter(Boolean).join(", ") || "—"}</p>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Address</p>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{[employer.companyAddress, employer.city, employer.province, employer.postalCode].filter(Boolean).join(", ") || "—"}</p>
                 </div>
               </div>
-              <hr className="border-[#2a2a2a] my-5" />
-              <p className="text-[#29abe2] text-sm font-medium mb-3">Contact Details</p>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                <div><p className="text-xs text-gray-500 mb-0.5">Contact Person</p><p className="text-sm text-white">{contact.contactName || "—"}</p></div>
-                <div><p className="text-xs text-gray-500 mb-0.5">Position</p><p className="text-sm text-white">{contact.position || "—"}</p></div>
-                <div><p className="text-xs text-gray-500 mb-0.5">Email</p><p className="text-sm text-white">{contact.email || "—"}</p></div>
-                <div><p className="text-xs text-gray-500 mb-0.5">Phone</p><p className="text-sm text-white">{contact.phone || "—"}</p></div>
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: "24px", marginTop: "24px" }}>
+                <h3 style={{ fontSize: "1.125rem", fontWeight: 500, color: "var(--primary)", marginBottom: "12px" }}>Contact Details</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Contact Person</p>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{contact.contactName || "—"}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Position</p>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{contact.position || "—"}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Email</p>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{contact.email || "—"}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)" }}>Phone</p>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--foreground)" }}>{contact.phone || "—"}</p>
+                  </div>
+                </div>
               </div>
             </>
           )}
@@ -382,26 +470,26 @@ export default function StartNewLeadPage() {
         <div>
           {step > 0 && (
             <button onClick={() => setStep(s => s - 1)}
-              className="px-5 py-2 text-sm text-gray-300 bg-[#2a2a2a] hover:bg-[#333] rounded transition-colors cursor-pointer border border-[#3a3a3a]">
+              style={{ fontSize: "1rem", fontWeight: 500, height: "40px", padding: "0 20px", background: "transparent", border: "1px solid var(--border)", color: "#ffffff", borderRadius: "6px", cursor: "pointer" }}>
               Back
             </button>
           )}
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <button onClick={() => router.push("/dashboard")}
-            className="px-5 py-2 text-sm text-gray-300 bg-[#2a2a2a] hover:bg-[#333] rounded transition-colors cursor-pointer border border-[#3a3a3a]">
+            style={{ fontSize: "1rem", fontWeight: 500, height: "40px", padding: "0 20px", background: "transparent", border: "1px solid var(--border)", color: "#ffffff", borderRadius: "6px", cursor: "pointer" }}>
             Cancel
           </button>
           {step < 2 ? (
             <button onClick={handleNext}
-              className="px-5 py-2 text-sm text-white bg-[#29abe2] hover:bg-[#1a9fd6] rounded transition-colors cursor-pointer font-medium">
+              style={{ fontSize: "1rem", fontWeight: 500, height: "40px", padding: "0 20px", background: "var(--primary)", color: "var(--primary-foreground)", border: "none", borderRadius: "6px", cursor: "pointer" }}>
               {step === 0 ? "Next: Contact Details" : "Review"}
             </button>
           ) : (
             <>
               {submitError && <p className="text-red-400 text-xs mr-3 self-center">{submitError}</p>}
               <button onClick={handleSubmit} disabled={submitting}
-                className="px-5 py-2 text-sm text-white bg-[#29abe2] hover:bg-[#1a9fd6] rounded transition-colors cursor-pointer font-medium disabled:opacity-50">
+                style={{ fontSize: "1rem", fontWeight: 500, height: "40px", padding: "0 20px", background: "var(--primary)", color: "var(--primary-foreground)", border: "none", borderRadius: "6px", cursor: "pointer", opacity: submitting ? 0.5 : 1 }}>
                 {submitting ? "Submitting..." : "Submit Lead"}
               </button>
             </>
@@ -410,6 +498,22 @@ export default function StartNewLeadPage() {
         </div>
         </div>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: "24px", right: "24px", zIndex: 9999,
+          background: "#1e1e1e", border: "1px solid #3a3a3a", borderRadius: "8px",
+          padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)", minWidth: "220px",
+        }}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="9" fill="#22c55e" opacity="0.15"/>
+            <path d="M5.5 9.5l2.5 2.5 4.5-5" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ fontSize: "14px", fontWeight: 500, color: "#ffffff" }}>{toast}</span>
+        </div>
+      )}
     </>
   );
 }

@@ -4,11 +4,21 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Plus, Eye, FileText, Shield,
-  AlertCircle, HelpCircle, GraduationCap,
-  ChevronLeft, ChevronRight
+  AlertCircle, HelpCircle, GraduationCap, ArrowLeft,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 import { useUser } from "@/lib/context/UserContext";
+
+// Exact colors from reference app computed styles
+const C = {
+  bg: "var(--sidebar)",
+  border: "var(--sidebar-border)",
+  primary: "var(--primary)",
+  fg: "var(--sidebar-foreground)",
+  fgMuted: "var(--sidebar-foreground-muted)",
+  activeBg: "var(--sidebar-active-bg)",
+  hoverBg: "var(--sidebar-accent)",
+};
 
 const quickActions = [
   { label: "Start New Lead", icon: Plus, href: ROUTES.newLead },
@@ -25,31 +35,25 @@ const toolsSupport = [
 
 interface SidebarProps {
   userEmail?: string;
-  collapsed?: boolean;
-  onToggle?: () => void;
 }
 
-export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp, onToggle }: SidebarProps) {
+export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [userEmail, setUserEmail] = useState(propEmail ?? "");
-  const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const collapsed = collapsedProp !== undefined ? collapsedProp : internalCollapsed;
-  const handleToggle = onToggle ?? (() => setInternalCollapsed((v) => !v));
 
-  // Safely use useUser with try-catch for SSR
   let user = null;
   try {
     const userContext = useUser();
     user = userContext?.user;
-  } catch (error) {
-    // Context not available during SSR, will use localStorage
-  }
+  } catch {}
 
   useEffect(() => {
     setMounted(true);
-    // Use user from context first, then prop, then localStorage
+  }, []);
+
+  useEffect(() => {
     if (user?.email) {
       setUserEmail(user.email);
     } else if (propEmail) {
@@ -59,82 +63,180 @@ export default function Sidebar({ userEmail: propEmail, collapsed: collapsedProp
     }
   }, [user, propEmail]);
 
+  const isNewLead = mounted && pathname === ROUTES.newLead;
+  const isQuoteJourney = mounted && /^\/lead\/[^/]+\/quote/.test(pathname ?? "");
+
   return (
     <aside
-      className={`${collapsed ? "w-20" : "w-44"} h-screen bg-[#1a1a1a] flex flex-col border-r border-[#2a2a2a] flex-shrink-0 transition-all duration-300 fixed left-0 top-0 z-10`}
+      className="h-screen flex flex-col flex-shrink-0 fixed left-0 top-0 z-10"
+      style={{
+        width: "16rem",
+        background: C.bg,
+        borderRightWidth: "1px",
+        borderRightStyle: "solid",
+        borderRightColor: C.border,
+      }}
     >
-      {/* Logo + collapse toggle inline */}
-      <div className={`flex items-center justify-between h-16 border-b border-[#2a2a2a] flex-shrink-0 px-4`}>
-        {!collapsed && <span className="text-[#29abe2] font-black italic text-2xl tracking-tight leading-none">RMA</span>}
-        <button
-          onClick={handleToggle}
-          aria-label="Toggle sidebar"
-          className={`text-gray-400 hover:text-white transition-colors ${collapsed ? "mx-auto" : ""}`}
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+      {/* Logo */}
+      <div
+        className="flex items-center px-6 py-6"
+        style={{
+          borderBottomWidth: "1px",
+          borderBottomStyle: "solid",
+          borderBottomColor: C.border,
+        }}
+      >
+        <span className="font-bold text-3xl tracking-tight" style={{ color: C.primary }}>
+          RMA
+        </span>
       </div>
 
       {/* Nav */}
-      <div className={`flex-1 overflow-y-auto py-5 ${collapsed ? "px-2" : "px-4"}`}>
-        {/* Quick Actions */}
-        <div className="mb-6">
-          {!collapsed && (
-            <p className="text-gray-500 text-[9px] uppercase tracking-[0.15em] mb-2 px-2">Quick Actions</p>
-          )}
-          <nav className="flex flex-col gap-0.5">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        {!mounted ? null : isNewLead || isQuoteJourney ? (
+          <>
+            {[
+              { label: "Back to Dashboard", icon: ArrowLeft, href: ROUTES.dashboard },
+              ...(isQuoteJourney ? [{ label: "View All Leads", icon: Eye, href: "#" }] : []),
+            ].map(({ label, icon: Icon, href }) => (
+              <button
+                key={label}
+                onClick={() => router.push(href)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  width: "100%",
+                  height: "2.75rem",
+                  padding: "0 12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "transparent",
+                  color: C.fg,
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  gap: "12px",
+                  cursor: "pointer",
+                  transition: "background 0.15s, color 0.15s",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.hoverBg; (e.currentTarget as HTMLElement).style.color = C.primary; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = C.fg; }}
+              >
+                <Icon size={20} style={{ flexShrink: 0 }} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </>
+        ) : (
+          <>
+            <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
+              Quick Actions
+            </p>
+
             {quickActions.map(({ label, icon: Icon, href }) => {
               const isActive = pathname === href;
               return (
                 <button
                   key={label}
                   onClick={() => router.push(href)}
-                  title={collapsed ? label : undefined}
-                  className={`flex items-center gap-2.5 text-[11px] py-2 px-2 rounded transition-colors text-left w-full ${
-                    isActive
-                      ? "bg-[#29abe2] text-white"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
+                  className="w-full flex items-center gap-3 px-3 rounded-md text-sm text-left"
+                  style={{
+                    height: "2.75rem",
+                    color: isActive ? C.primary : C.fg,
+                    background: isActive ? C.activeBg : "transparent",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = C.hoverBg;
+                    el.style.color = C.primary;
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = isActive ? C.activeBg : "transparent";
+                    el.style.color = isActive ? C.primary : C.fg;
+                  }}
                 >
-                  <Icon size={13} className={`flex-shrink-0 ${isActive ? "text-white" : "text-gray-400"}`} />
-                  {!collapsed && label}
+                  <Icon size={20} className="flex-shrink-0" />
+                  <span>{label}</span>
                 </button>
               );
             })}
-          </nav>
-        </div>
 
-        {/* Tools & Support */}
-        <div>
-          {!collapsed && (
-            <p className="text-gray-500 text-[9px] uppercase tracking-[0.15em] mb-2 px-2">Tools & Support</p>
-          )}
-          <nav className="flex flex-col gap-0.5">
+            {/* Divider */}
+            <div
+              className="my-3"
+              style={{
+                borderTopWidth: "1px",
+                borderTopStyle: "solid",
+                borderTopColor: C.border,
+              }}
+            />
+
+            <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
+              Tools &amp; Support
+            </p>
+
             {toolsSupport.map(({ label, icon: Icon, href }) => (
               <button
                 key={label}
                 onClick={() => router.push(href)}
-                title={collapsed ? label : undefined}
-                className="flex items-center gap-2.5 text-gray-400 hover:text-white text-[11px] py-2 px-2 rounded hover:bg-white/5 transition-colors text-left w-full"
+                className="w-full flex items-center gap-3 px-3 rounded-md text-sm text-left"
+                style={{
+                  height: "2.75rem",
+                  color: C.fg,
+                  background: "transparent",
+                  transition: "background 0.15s, color 0.15s",
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.background = C.hoverBg;
+                  el.style.color = C.primary;
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.background = "transparent";
+                  el.style.color = C.fg;
+                }}
               >
-                <Icon size={13} className="text-gray-400 flex-shrink-0" />
-                {!collapsed && label}
+                <Icon size={20} className="flex-shrink-0" />
+                <span>{label}</span>
               </button>
             ))}
-          </nav>
-        </div>
-      </div>
+          </>
+        )}
+      </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="border-t border-[#2a2a2a] py-4 px-4">
-          <p className="text-gray-600 text-[9px] mb-0.5">Logged in as</p>
-          <p className="text-gray-400 text-[10px] mb-3 truncate">{userEmail || "—"}</p>
-          <button className="w-full py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-gray-400 text-[10px] rounded transition-colors border border-[#3a3a3a]">
-            Reset All Data
-          </button>
+      <div
+        className="p-4 space-y-3"
+        style={{
+          borderTopWidth: "1px",
+          borderTopStyle: "solid",
+          borderTopColor: C.border,
+        }}
+      >
+        <div>
+          <p className="text-xs mb-0.5" style={{ color: C.fgMuted }}>Logged in as</p>
+          <p className="text-sm truncate" style={{ color: C.fg }}>{userEmail || "—"}</p>
         </div>
-      )}
+        <button
+          className="w-full py-1.5 rounded-md text-xs"
+          style={{
+            color: C.fg,
+            background: "transparent",
+            borderWidth: "1px",
+            borderStyle: "solid",
+            borderColor: C.border,
+            transition: "background 0.15s",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.hoverBg; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+          onClick={() => { localStorage.clear(); window.location.reload(); }}
+        >
+          Reset All Data
+        </button>
+      </div>
     </aside>
   );
 }

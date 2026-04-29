@@ -24,7 +24,7 @@ export default async function QuoteRoute({ params, searchParams }: QuotePageProp
         subtitle={companyName ? `${companyName} – ${leadReference}` : leadReference}
       />
 
-      <div className="flex-1 flex overflow-y-auto justify-center pt-10 px-6 pb-10">
+      <div className="flex-1 flex justify-center pt-10 px-6 pb-10">
         {/* ✅ ONLY ONE ENTRY POINT */}
         <QuoteJourneyPage 
           leadReference={leadReference} 
