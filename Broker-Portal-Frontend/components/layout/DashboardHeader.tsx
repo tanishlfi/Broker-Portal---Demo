@@ -40,7 +40,7 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
             Current User: {currentUser}
           </span>
         )}
-        <button className="header-bell" aria-label="Notifications">
+        <button suppressHydrationWarning className="header-bell" aria-label="Notifications">
           <Bell size={20} />
           <span
             className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
@@ -48,6 +48,7 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
           />
         </button>
         <button
+          suppressHydrationWarning
           className="header-logout"
           style={{ fontSize: "14px" }}
           onClick={() =>
