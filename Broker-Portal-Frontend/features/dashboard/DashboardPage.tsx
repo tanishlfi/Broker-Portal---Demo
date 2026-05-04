@@ -15,7 +15,7 @@ const sections = [
     description: "Create and manage insurance leads",
     cards: [
       { title: "Start New Lead", description: "Create a new lead and begin the quote journey", icon: <Plus size={40} />, href: ROUTES.newLead },
-      { title: "View Leads", description: "Search, filter and manage existing leads", icon: <Eye size={40} />, href: "#" },
+      { title: "View Leads", description: "Search, filter and manage existing leads", icon: <Eye size={40} />, href: ROUTES.viewLeads },
     ],
   },
   {
