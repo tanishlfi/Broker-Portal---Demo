@@ -94,9 +94,11 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
         {!mounted ? null : isNewLead || isQuoteJourney || isQuoteTypeSelection ? (
           /* Minimal nav for new lead / quote journey / quote type selection */
           <>
+            <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
+              Actions
+            </p>
             {[
               { label: "Back", icon: ArrowLeft, href: isQuoteTypeSelection ? ROUTES.quotes : ROUTES.dashboard },
-              ...(isQuoteJourney ? [{ label: "View All Leads", icon: Eye, href: ROUTES.viewLeads }] : []),
             ].map(({ label, icon: Icon, href }) => (
               <button
                 key={label}
@@ -110,8 +112,8 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   padding: "0 12px",
                   borderRadius: "6px",
                   border: "none",
-                  background: "transparent",
-                  color: C.fg,
+                  background: C.activeBg,
+                  color: C.primary,
                   fontSize: "0.875rem",
                   fontWeight: 500,
                   gap: "12px",
@@ -119,12 +121,10 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   transition: "background 0.15s, color 0.15s",
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.background = C.hoverBg;
-                  (e.currentTarget as HTMLElement).style.color = C.primary;
+                  (e.currentTarget as HTMLElement).style.background = "rgba(31,195,235,0.18)";
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.background = "transparent";
-                  (e.currentTarget as HTMLElement).style.color = C.fg;
+                  (e.currentTarget as HTMLElement).style.background = C.activeBg;
                 }}
               >
                 <Icon size={20} style={{ flexShrink: 0 }} />
@@ -314,20 +314,33 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
         </div>
         <button
           suppressHydrationWarning
-          className="w-full py-1.5 rounded-md text-xs"
+          className="w-full flex items-center gap-3 px-3 rounded-md text-sm text-left"
           style={{
+            height: "2.75rem",
             color: C.fg,
             background: "transparent",
-            borderWidth: "1px",
-            borderStyle: "solid",
-            borderColor: C.border,
-            transition: "background 0.15s",
+            border: "none",
+            cursor: "pointer",
+            transition: "background 0.15s, color 0.15s",
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.hoverBg; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-          onClick={() => { localStorage.clear(); window.location.reload(); }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = C.hoverBg;
+            (e.currentTarget as HTMLElement).style.color = C.primary;
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = C.fg;
+          }}
+          onClick={() => {
+            window.location.href = process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200";
+          }}
         >
-          Reset All Data
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Logout</span>
         </button>
       </div>
     </aside>

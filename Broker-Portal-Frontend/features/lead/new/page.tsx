@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createLead } from "@/lib/api/leads";
+import { getValidToken, redirectToAuth } from "@/lib/auth";
 import {
   validateSAMobileNumber,
   validateEmail,
@@ -144,7 +145,12 @@ export default function StartNewLeadPage() {
   const [brokerId, setBrokerId] = useState<string>("");
 
   useEffect(() => {
-    setToken(localStorage.getItem("bp_token") ?? "");
+    const validToken = getValidToken();
+    if (!validToken) {
+      redirectToAuth();
+      return;
+    }
+    setToken(validToken);
     setBrokerId(localStorage.getItem("bp_broker_id") ?? "");
   }, []);
 
@@ -171,7 +177,14 @@ export default function StartNewLeadPage() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      if (!token) throw new Error("No auth token found. Please navigate from Client Connect.");
+      // Validate token before submission
+      const validToken = getValidToken();
+      if (!validToken) {
+        setSubmitError("Your session has expired. Redirecting to login...");
+        setTimeout(() => redirectToAuth(), 2000);
+        return;
+      }
+
       const [firstName, ...rest] = contact.contactName.trim().split(" ");
       const result = await createLead({
         employerName: employer.companyName,
@@ -186,14 +199,21 @@ export default function StartNewLeadPage() {
         preferredCommunicationMethod: "Email",
         representativeId: brokerId || "00000000-0000-0000-0000-000000000000",
         brokerId: brokerId || "00000000-0000-0000-0000-000000000000",
-      }, token);
+      }, validToken);
       const { leadId, leadReference } = result.data;
       showToast("Lead created successfully");
       setTimeout(() => {
-        router.push(`/lead/${leadId}/quote?ref=${leadReference}&company=${encodeURIComponent(employer.companyName)}`);
+        router.push(`/quotes/new?leadId=${leadId}&ref=${leadReference}&company=${encodeURIComponent(employer.companyName)}`);
       }, 1200);
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : "Submission failed");
+      const errorMessage = err instanceof Error ? err.message : "Submission failed";
+      // Check if it's an auth error
+      if (errorMessage.includes("not authorized") || errorMessage.includes("EXPIRED")) {
+        setSubmitError("Your session has expired. Redirecting to login...");
+        setTimeout(() => redirectToAuth(), 2000);
+      } else {
+        setSubmitError(errorMessage);
+      }
     } finally {
       setSubmitting(false);
     }
