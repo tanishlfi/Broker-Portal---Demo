@@ -4,4 +4,5 @@ export const ROUTES = {
   dashboard: "/dashboard",
   newLead: "/lead/new",
   viewLeads: "/lead/view",
+  quotes: "/quotes",
 } as const;

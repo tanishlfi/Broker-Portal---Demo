@@ -23,7 +23,7 @@ const C = {
 const quickActions = [
   { label: "Start New Lead", icon: Plus, href: ROUTES.newLead },
   { label: "View Leads", icon: Eye, href: ROUTES.viewLeads },
-  { label: "Quotes", icon: FileText, href: "#" },
+  { label: "Quotes", icon: FileText, href: ROUTES.quotes },
   { label: "My Policies", icon: Shield, href: "#" },
 ];
 
@@ -64,6 +64,7 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
   const isNewLead = mounted && pathname === ROUTES.newLead;
   const isQuoteJourney = mounted && /^\/lead\/[^/]+\/quote/.test(pathname ?? "");
   const isViewLeads = mounted && pathname === ROUTES.viewLeads;
+  const isQuoteTypeSelection = mounted && pathname === "/quotes/new";
 
   return (
     <aside
@@ -90,11 +91,11 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-        {!mounted ? null : isNewLead || isQuoteJourney ? (
-          /* Minimal nav for new lead / quote journey */
+        {!mounted ? null : isNewLead || isQuoteJourney || isQuoteTypeSelection ? (
+          /* Minimal nav for new lead / quote journey / quote type selection */
           <>
             {[
-              { label: "Back to Dashboard", icon: ArrowLeft, href: ROUTES.dashboard },
+              { label: "Back", icon: ArrowLeft, href: isQuoteTypeSelection ? ROUTES.quotes : ROUTES.dashboard },
               ...(isQuoteJourney ? [{ label: "View All Leads", icon: Eye, href: ROUTES.viewLeads }] : []),
             ].map(({ label, icon: Icon, href }) => (
               <button
@@ -230,7 +231,7 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
             ))}
           </>
         ) : (
-          /* Full nav for dashboard, view leads, and all other pages */
+          /* Full nav for dashboard, quotes page, and all other pages */
           <>
             <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
               Quick Actions
