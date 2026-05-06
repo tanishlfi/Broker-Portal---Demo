@@ -22,8 +22,8 @@ const C = {
 
 const quickActions = [
   { label: "Start New Lead", icon: Plus, href: ROUTES.newLead },
-  { label: "View Leads", icon: Eye, href: "#" },
-  { label: "Quotes", icon: FileText, href: "#" },
+  { label: "View Leads", icon: Eye, href: ROUTES.viewLeads },
+  { label: "Quotes", icon: FileText, href: ROUTES.quotes },
   { label: "My Policies", icon: Shield, href: "#" },
 ];
 
@@ -65,6 +65,8 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
 
   const isNewLead = mounted && pathname === ROUTES.newLead;
   const isQuoteJourney = mounted && /^\/lead\/[^/]+\/quote/.test(pathname ?? "");
+  const isViewLeads = mounted && pathname === ROUTES.viewLeads;
+  const isQuoteTypeSelection = mounted && pathname === "/quotes/new";
 
   return (
     <aside
@@ -87,11 +89,12 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-        {!mounted ? null : isNewLead || isQuoteJourney ? (
+        {!mounted ? null : isNewLead || isQuoteJourney || isQuoteTypeSelection ? (
+          /* Minimal nav for new lead / quote journey / quote type selection */
           <>
             {[
-              { label: "Back to Dashboard", icon: ArrowLeft, href: ROUTES.dashboard },
-              ...(isQuoteJourney ? [{ label: "View All Leads", icon: Eye, href: "#" }] : []),
+              { label: "Back", icon: ArrowLeft, href: isQuoteTypeSelection ? ROUTES.quotes : ROUTES.dashboard },
+              ...(isQuoteJourney ? [{ label: "View All Leads", icon: Eye, href: ROUTES.viewLeads }] : []),
             ].map(({ label, icon: Icon, href }) => (
               <button
                 key={label}
