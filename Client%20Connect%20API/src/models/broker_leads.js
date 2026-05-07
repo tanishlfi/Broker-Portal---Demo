@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "lead_id",
         as: "quotes",
       });
+      this.hasMany(models.BrokerEmployee, {
+        foreignKey: "lead_id",
+        as: "employees",
+      });
     }
   }
 
@@ -42,7 +46,6 @@ module.exports = (sequelize, DataTypes) => {
           "Pending Approval",
           "Approved",
           "Rejected",
-          "Policy Created",
           "Expired",
           "Cancelled",
         ),

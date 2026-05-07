@@ -12,6 +12,14 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "quote_id",
         as: "quick_quote_data",
       });
+      this.hasMany(models.BrokerQuoteBenefit, {
+        foreignKey: "quote_id",
+        as: "benefits",
+      });
+      this.belongsTo(models.BrokerProduct, {
+        foreignKey: "product_id",
+        as: "product",
+      });
     }
   }
 
@@ -25,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
       lead_id: {
         type: DataTypes.UUID,
         allowNull: false,
+      },
+      product_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
       },
       quote_reference: {
         type: DataTypes.STRING,

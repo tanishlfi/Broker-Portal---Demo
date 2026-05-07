@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as Yup from "yup";
+import { sequelizeErrorHandler } from "../middleware/sequelize_error";
 
 const {
   BrokerLead,
@@ -81,25 +82,7 @@ export const createLead = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     if (t) await t.rollback();
-    
-    if (error instanceof Yup.ValidationError) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: "Validation failed",
-        errors: error.inner.map((e: any) => ({
-          field: e.path,
-          message: e.message,
-        })),
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: error.message || "Internal Server Error",
-      errors: [],
-    });
+    return res.status(error instanceof Yup.ValidationError ? 400 : 500).json(sequelizeErrorHandler(error));
   }
 };
 
@@ -117,9 +100,8 @@ export const getLeads = async (req: Request, res: Response) => {
     if (!representativeId) {
       return res.status(400).json({
         success: false,
-        data: null,
-        message: "Validation failed",
-        errors: [{ field: "representativeId", message: "representativeId query parameter is required" }],
+        message: "Validation failed: representativeId query parameter is required",
+        error_code: "ValidationError"
       });
     }
 
@@ -173,12 +155,7 @@ export const getLeads = async (req: Request, res: Response) => {
       message: "Leads fetched successfully",
     });
   } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: error.message || "Internal Server Error",
-      errors: [],
-    });
+    return res.status(500).json(sequelizeErrorHandler(error));
   }
 };
 
@@ -208,12 +185,7 @@ export const getLeadById = async (req: Request, res: Response) => {
       message: "Lead fetched successfully",
     });
   } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: error.message || "Internal Server Error",
-      errors: [],
-    });
+    return res.status(500).json(sequelizeErrorHandler(error));
   }
 };
 
@@ -298,25 +270,7 @@ export const updateLead = async (req: Request, res: Response) => {
       .json({ success: true, message: "Lead updated successfully" });
   } catch (error: any) {
     if (t) await t.rollback();
-
-    if (error instanceof Yup.ValidationError) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: "Validation failed",
-        errors: error.inner.map((e: any) => ({
-          field: e.path,
-          message: e.message,
-        })),
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: error.message || "Internal Server Error",
-      errors: [],
-    });
+    return res.status(error instanceof Yup.ValidationError ? 400 : 500).json(sequelizeErrorHandler(error));
   }
 };
 
@@ -364,12 +318,7 @@ export const cancelLead = async (req: Request, res: Response) => {
       .status(200)
       .json({ success: true, message: "Lead cancelled successfully" });
   } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: error.message || "Internal Server Error",
-      errors: [],
-    });
+    return res.status(500).json(sequelizeErrorHandler(error));
   }
 };
 
@@ -415,11 +364,6 @@ export const continueLead = async (req: Request, res: Response) => {
       .status(200)
       .json({ success: true, data: lead, message: "Lead resumed" });
   } catch (error: any) {
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: error.message || "Internal Server Error",
-      errors: [],
-    });
+    return res.status(500).json(sequelizeErrorHandler(error));
   }
 };
