@@ -1,19 +1,29 @@
 import { Router } from "express";
 import {
-  createQuoteController,
+  generateQuickQuote,
+  generateFullQuote,
+  repriceQuote,
+  getQuoteDetail,
+  downloadQuoteDocument,
+  saveQuoteToLead,
   getQuotesByLeadController,
-  getQuoteByIdController,
   updateQuoteStatusController,
 } from "../controllers/brokerQuotesController";
 
 const router = Router();
 
-router.post("/", createQuoteController);
+router.post("/quick", generateQuickQuote);
+router.post("/full", generateFullQuote);
+router.post("/:quoteReference/reprice", repriceQuote);
+router.get("/:quoteReference", getQuoteDetail);
+router.get("/:quoteReference/document", downloadQuoteDocument);
+
+// Note: Requirement says POST /api/leads/{leadReference}/quote
+// This is handled in brokerLeadsRoutes.ts or here depending on preference.
+// I'll add it here as well or just ensure it's in leads.
+router.post("/save-to-lead/:leadReference", saveQuoteToLead);
 
 router.get("/lead/:leadId", getQuotesByLeadController);
-
-router.get("/:quoteId", getQuoteByIdController);
-
 router.patch("/:quoteId/status", updateQuoteStatusController);
 
 export default router;
