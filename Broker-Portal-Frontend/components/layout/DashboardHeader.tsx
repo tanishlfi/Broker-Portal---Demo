@@ -9,6 +9,7 @@ interface DashboardHeaderProps {
   title: string;
   subtitle?: string;
   showUser?: boolean;
+  headerAction?: React.ReactNode;
 }
 
 interface DecodedToken {
@@ -26,7 +27,7 @@ const C = {
   primary: "#1FC3EB",
 };
 
-export default function DashboardHeader({ title, subtitle, showUser = true }: DashboardHeaderProps) {
+export default function DashboardHeader({ title, subtitle, showUser = true, headerAction }: DashboardHeaderProps) {
   const [displayName, setDisplayName] = useState("");
   let user = null;
   try {
@@ -94,47 +95,88 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
 
   return (
     <header
-      className="flex items-center justify-between py-4 flex-shrink-0"
       style={{
         background: "#0B0D10",
-        borderBottom: "none",
-        paddingLeft: "0px",
+        borderBottom: "1px solid rgba(29, 51, 68, 0.4)",
+        paddingLeft: "24px",
         paddingRight: "24px",
-        height: "56px",
+        paddingTop: "16px",
+        paddingBottom: "16px",
         position: "sticky",
         top: 0,
         zIndex: 20,
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
       }}
     >
-      <div className="flex items-center h-full">
-        <div style={{ width: "1px", height: "17px", background: "#797979", marginRight: "16px" }} />
-        <div>
+      {/* Top row: Welcome message and notification bell */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ width: "1px", height: "17px", background: "#797979" }} />
           {showUser && (
-            <p style={{ fontSize: "0.8125rem", fontWeight: 400, color: "var(--muted-foreground)", marginBottom: "0.125rem" }}>
-              Welcome Back{displayName && <>! <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{displayName}</span></>}
-            </p>
-          )}
-          {title ? (
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 500, color: "var(--foreground)", lineHeight: 1.5 }}>
-              {title}
-            </h1>
-          ) : null}
-          {subtitle && (
-            <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)", marginTop: "0.25rem", lineHeight: 1.5 }}>
-              {subtitle}
+            <p style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "12px",
+              fontWeight: 500,
+              lineHeight: "15px",
+              color: "#A8A8A8",
+              margin: 0,
+            }}>
+              Welcome Back! {displayName && <span style={{ color: "#A8A8A8" }}>{displayName}</span>}
             </p>
           )}
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <button suppressHydrationWarning className="header-bell" aria-label="Notifications">
-          <Bell size={20} />
-          <span
-            className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
-            style={{ background: "var(--primary)" }}
-          />
+        <button
+          suppressHydrationWarning
+          style={{
+            position: "relative",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            padding: "4px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          aria-label="Notifications"
+        >
+          <Bell size={20} color="#E6E6E6" />
         </button>
       </div>
+
+      {/* Bottom row: Title and action button */}
+      {title && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: "17px" }}>
+          <div>
+            <h1 style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "24px",
+              fontWeight: 500,
+              lineHeight: "36px",
+              letterSpacing: "0.0703125px",
+              color: "#FFFFFF",
+              margin: 0,
+            }}>
+              {title}
+            </h1>
+            {subtitle && (
+              <p style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 400,
+                lineHeight: "17px",
+                color: "#A8A8A8",
+                margin: 0,
+                marginTop: "4px",
+              }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+          {headerAction && <div>{headerAction}</div>}
+        </div>
+      )}
     </header>
   );
 }

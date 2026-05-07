@@ -91,6 +91,18 @@ export default function ViewLeadsPage() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [quoteOpen, setQuoteOpen]   = useState(false);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClick = () => {
+      setStatusOpen(false);
+      setQuoteOpen(false);
+    };
+    if (statusOpen || quoteOpen) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [statusOpen, quoteOpen]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -131,37 +143,35 @@ export default function ViewLeadsPage() {
   const quoteOptions  = ["All", "Quick Quote", "Full Quote", "Submitted for Onboarding", "Expired", "Cancelled", "Approved"];
 
   return (
-    <div className="relative w-full h-full overflow-y-auto">
+    <div style={{
+      position: "relative",
+      width: "100%",
+      minHeight: "calc(100vh - 120px)",
+      background: "rgba(24, 24, 24, 0.8)",
+      border: "1px solid rgba(29, 51, 68, 0.4)",
+      borderRadius: "16px",
+      padding: "24px",
+      boxSizing: "border-box",
+      fontFamily: "'Inter', sans-serif",
+    }}>
       {/* Background blur */}
-      <div className="absolute pointer-events-none" style={{
-        width: "608px", height: "608px",
-        right: "-100px", bottom: "-100px",
-        background: "#00C0E8", opacity: 0.05,
-        filter: "blur(172px)", borderRadius: "50%",
+      <div style={{
+        position: "absolute",
+        width: "608px",
+        height: "608px",
+        right: "-100px",
+        bottom: "-100px",
+        background: "#00C0E8",
+        opacity: 0.05,
+        filter: "blur(172px)",
+        borderRadius: "50%",
+        pointerEvents: "none",
+        zIndex: 0,
       }} />
 
-      <div className="px-6 pt-6 pb-6 space-y-6">
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 style={{ fontSize: "18px", fontWeight: 500, color: "#FFFFFF", letterSpacing: "0.07px" }}>Leads</h1>
-          <button
-            onClick={() => router.push(ROUTES.newLead)}
-            className="flex items-center gap-2"
-            style={{
-              background: "#1FC3EB", color: "#0A0A0A",
-              border: "none", borderRadius: "8px",
-              padding: "8px 13px", height: "40px",
-              fontWeight: 700, fontSize: "14px", cursor: "pointer",
-            }}
-          >
-            <Plus size={20} />
-            Add New Lead
-          </button>
-        </div>
-
+      <div style={{ position: "relative", zIndex: 1 }}>
         {/* Stats Cards */}
-        <div className="flex gap-[22px]">
+        <div style={{ display: "flex", gap: "22px", marginBottom: "26px" }}>
           {[
             { label: "Total Leads", value: total },
             { label: "Active",      value: active },
@@ -170,6 +180,7 @@ export default function ViewLeadsPage() {
           ].map(({ label, value }) => (
             <div key={label} style={{
               flex: 1,
+              boxSizing: "border-box",
               background: "#262626",
               border: "1px solid #30363D",
               borderRadius: "12px",
@@ -180,16 +191,34 @@ export default function ViewLeadsPage() {
               justifyContent: "center",
               gap: "3px",
             }}>
-              <p style={{ fontSize: "20px", fontWeight: 700, color: "#E6E6E6", lineHeight: "24px" }}>{value}</p>
-              <p style={{ fontSize: "14px", fontWeight: 400, color: "#C5C5C5", lineHeight: "17px" }}>{label}</p>
+              <p style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "20px",
+                fontWeight: 700,
+                lineHeight: "24px",
+                color: "#E6E6E6",
+                margin: 0,
+              }}>
+                {value}
+              </p>
+              <p style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 400,
+                lineHeight: "17px",
+                color: "#C5C5C5",
+                margin: 0,
+              }}>
+                {label}
+              </p>
             </div>
           ))}
         </div>
 
         {/* Search & Filters */}
-        <div className="flex items-center gap-4">
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "26px" }}>
           {/* Search */}
-          <div className="relative" style={{ width: "648px" }}>
+          <div style={{ position: "relative", width: "648px" }}>
             <Search size={20} style={{
               position: "absolute", left: "10px", top: "50%",
               transform: "translateY(-50%)", color: "#A0A0A0",
@@ -201,31 +230,39 @@ export default function ViewLeadsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
+                boxSizing: "border-box",
                 width: "100%", height: "40px",
                 background: "#262626", border: "1.875px solid #333333",
                 borderRadius: "8px", padding: "8px 12px 8px 40px",
-                fontSize: "14px", color: "#FFFFFF",
-                outline: "none", letterSpacing: "-0.15px",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px", fontWeight: 400,
+                lineHeight: "17px",
+                letterSpacing: "-0.150391px",
+                color: "#FFFFFF",
+                outline: "none",
               }}
             />
           </div>
 
           {/* Status Filter */}
-          <div className="relative" style={{ width: "220px" }}>
+          <div style={{ position: "relative", width: "220px" }}>
             <button
-              onClick={() => { setStatusOpen(!statusOpen); setQuoteOpen(false); }}
+              onClick={(e) => { e.stopPropagation(); setStatusOpen(!statusOpen); setQuoteOpen(false); }}
               style={{
+                boxSizing: "border-box",
                 width: "100%", height: "40px",
                 background: "#262626", border: "1.875px solid #333333",
                 borderRadius: "8px", padding: "8px 12px",
-                fontSize: "14px", color: "#A0A0A0",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px", fontWeight: 500,
+                lineHeight: "14px",
+                letterSpacing: "-0.150391px",
+                color: "#A0A0A0",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 cursor: "pointer", outline: "none",
               }}
             >
-              <span style={{ fontWeight: 500, letterSpacing: "-0.15px" }}>
-                {statusFilter === "All" ? "Status" : statusFilter}
-              </span>
+              <span>{statusFilter === "All" ? "Status" : statusFilter}</span>
               <ChevronDown size={16} style={{ opacity: 0.5 }} />
             </button>
             {statusOpen && (
@@ -238,6 +275,7 @@ export default function ViewLeadsPage() {
                   <button key={opt} onClick={() => { setStatus(opt); setStatusOpen(false); }}
                     style={{
                       width: "100%", padding: "9px 14px", textAlign: "left",
+                      fontFamily: "'Inter', sans-serif",
                       fontSize: "14px", color: statusFilter === opt ? "#1FC3EB" : "#FFFFFF",
                       background: statusFilter === opt ? "rgba(31,195,235,0.08)" : "transparent",
                       border: "none", cursor: "pointer",
@@ -251,21 +289,24 @@ export default function ViewLeadsPage() {
           </div>
 
           {/* Quote Status Filter */}
-          <div className="relative" style={{ width: "220px" }}>
+          <div style={{ position: "relative", width: "220px" }}>
             <button
-              onClick={() => { setQuoteOpen(!quoteOpen); setStatusOpen(false); }}
+              onClick={(e) => { e.stopPropagation(); setQuoteOpen(!quoteOpen); setStatusOpen(false); }}
               style={{
+                boxSizing: "border-box",
                 width: "100%", height: "40px",
                 background: "#262626", border: "1.875px solid #333333",
                 borderRadius: "8px", padding: "8px 12px",
-                fontSize: "14px", color: "#A0A0A0",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px", fontWeight: 500,
+                lineHeight: "14px",
+                letterSpacing: "-0.150391px",
+                color: "#A0A0A0",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 cursor: "pointer", outline: "none",
               }}
             >
-              <span style={{ fontWeight: 500, letterSpacing: "-0.15px" }}>
-                {quoteFilter === "All" ? "Quote Status" : quoteFilter}
-              </span>
+              <span>{quoteFilter === "All" ? "Quote Status" : quoteFilter}</span>
               <ChevronDown size={16} style={{ opacity: 0.5 }} />
             </button>
             {quoteOpen && (
@@ -278,6 +319,7 @@ export default function ViewLeadsPage() {
                   <button key={opt} onClick={() => { setQuote(opt); setQuoteOpen(false); }}
                     style={{
                       width: "100%", padding: "9px 14px", textAlign: "left",
+                      fontFamily: "'Inter', sans-serif",
                       fontSize: "14px", color: quoteFilter === opt ? "#1FC3EB" : "#FFFFFF",
                       background: quoteFilter === opt ? "rgba(31,195,235,0.08)" : "transparent",
                       border: "none", cursor: "pointer", whiteSpace: "nowrap",
@@ -293,6 +335,7 @@ export default function ViewLeadsPage() {
 
         {/* Table */}
         <div style={{
+          boxSizing: "border-box",
           background: "#2D2D2D",
           border: "0.625px solid #4A4A4A",
           borderRadius: "10px",
@@ -313,7 +356,7 @@ export default function ViewLeadsPage() {
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Inter', sans-serif" }}>
                 {/* Header */}
                 <thead>
                   <tr style={{ background: "rgba(58,58,58,0.5)", borderBottom: "0.625px solid #4A4A4A" }}>
@@ -321,10 +364,12 @@ export default function ViewLeadsPage() {
                       <th key={h} style={{
                         padding: "10px 8px",
                         textAlign: "left",
+                        fontFamily: "'Inter', sans-serif",
                         fontSize: "14px",
                         fontWeight: 500,
+                        lineHeight: "20px",
+                        letterSpacing: "-0.150391px",
                         color: "#FFFFFF",
-                        letterSpacing: "-0.15px",
                         whiteSpace: "nowrap",
                       }}>
                         {h}
@@ -338,26 +383,83 @@ export default function ViewLeadsPage() {
                   {rows.map((lead) => (
                     <tr key={lead.leadId} style={{ borderBottom: "0.625px solid #4A4A4A" }}>
                       {/* Lead ID */}
-                      <td style={{ padding: "16px 8px", fontFamily: "Menlo, monospace", fontSize: "14px", color: "#FFFFFF", whiteSpace: "nowrap" }}>
+                      <td style={{
+                        padding: "16px 8px",
+                        fontFamily: "'Menlo', monospace",
+                        fontSize: "14px",
+                        fontWeight: 400,
+                        lineHeight: "20px",
+                        color: "#FFFFFF",
+                        whiteSpace: "nowrap"
+                      }}>
                         {lead.leadReference}
                       </td>
 
                       {/* Company Name */}
                       <td style={{ padding: "8px 8px" }}>
-                        <p style={{ fontSize: "14px", fontWeight: 500, color: "#FFFFFF", letterSpacing: "-0.15px" }}>{lead.employerName}</p>
+                        <p style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          lineHeight: "20px",
+                          letterSpacing: "-0.150391px",
+                          color: "#FFFFFF",
+                          margin: 0,
+                        }}>
+                          {lead.employerName}
+                        </p>
                         {lead.registrationNumber && (
-                          <p style={{ fontSize: "12px", color: "#A0A0A0", marginTop: "2px" }}>{lead.registrationNumber}</p>
+                          <p style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: "12px",
+                            fontWeight: 400,
+                            lineHeight: "16px",
+                            color: "#A0A0A0",
+                            marginTop: "2px",
+                            marginBottom: 0,
+                          }}>
+                            {lead.registrationNumber}
+                          </p>
                         )}
                       </td>
 
                       {/* Contact Person */}
                       <td style={{ padding: "8px 8px" }}>
-                        <p style={{ fontSize: "14px", color: "#FFFFFF", letterSpacing: "-0.15px" }}>{lead.contactFirstName} {lead.contactLastName}</p>
-                        <p style={{ fontSize: "12px", color: "#A0A0A0", marginTop: "2px" }}>{lead.contactEmail}</p>
+                        <p style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          fontWeight: 400,
+                          lineHeight: "20px",
+                          letterSpacing: "-0.150391px",
+                          color: "#FFFFFF",
+                          margin: 0,
+                        }}>
+                          {lead.contactFirstName} {lead.contactLastName}
+                        </p>
+                        <p style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "12px",
+                          fontWeight: 400,
+                          lineHeight: "16px",
+                          color: "#A0A0A0",
+                          marginTop: "2px",
+                          marginBottom: 0,
+                        }}>
+                          {lead.contactEmail}
+                        </p>
                       </td>
 
                       {/* Employees */}
-                      <td style={{ padding: "16px 8px", fontSize: "14px", color: "#FFFFFF", textAlign: "center", letterSpacing: "-0.15px" }}>
+                      <td style={{
+                        padding: "16px 8px",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "14px",
+                        fontWeight: 400,
+                        lineHeight: "20px",
+                        letterSpacing: "-0.150391px",
+                        color: "#FFFFFF",
+                        textAlign: "center",
+                      }}>
                         {lead.numberOfEmployees.toLocaleString()}
                       </td>
 
@@ -384,27 +486,40 @@ export default function ViewLeadsPage() {
                       </td>
 
                       {/* Created Date */}
-                      <td style={{ padding: "16px 8px", fontSize: "14px", color: "#FFFFFF", letterSpacing: "-0.15px", whiteSpace: "nowrap" }}>
+                      <td style={{
+                        padding: "16px 8px",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "14px",
+                        fontWeight: 400,
+                        lineHeight: "20px",
+                        letterSpacing: "-0.150391px",
+                        color: "#FFFFFF",
+                        whiteSpace: "nowrap"
+                      }}>
                         {fmt(lead.createdAt)}
                       </td>
 
                       {/* Actions */}
                       <td style={{ padding: "10px 8px" }}>
                         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                          <button
-                            onClick={() => router.push(`/lead/${lead.leadId}/quote`)}
-                            style={{
-                              display: "flex", alignItems: "center", gap: "6px",
-                              padding: "6px 10px", height: "32px",
-                              background: "rgba(58,58,58,0.5)", border: "0.625px solid #4A4A4A",
-                              borderRadius: "8px", color: "#FFFFFF",
-                              fontSize: "14px", fontWeight: 500, cursor: "pointer",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            <Eye size={14} />
-                            View
-                          </button>
+                            <button
+                              onClick={() => router.push(`/lead/${lead.leadId}`)}
+                              style={{
+                                display: "flex", alignItems: "center", gap: "6px",
+                                padding: "6px 10px", height: "32px",
+                                background: "rgba(58,58,58,0.5)", border: "0.625px solid #4A4A4A",
+                                borderRadius: "8px", color: "#FFFFFF",
+                                fontFamily: "'Inter', sans-serif",
+                                fontSize: "14px", fontWeight: 500,
+                                lineHeight: "20px",
+                                letterSpacing: "-0.150391px",
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <Eye size={14} />
+                              View
+                            </button>
                           {lead.status !== "Cancelled" && lead.status !== "Completed" && (
                             <button
                               onClick={() => router.push(`/quotes/new?leadId=${lead.leadId}&ref=${lead.leadReference}&company=${encodeURIComponent(lead.employerName)}`)}
@@ -437,7 +552,14 @@ export default function ViewLeadsPage() {
               background: "rgba(58,58,58,0.3)",
               display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
-              <span style={{ fontSize: "14px", color: "#A0A0A0", letterSpacing: "-0.15px" }}>
+              <span style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 400,
+                lineHeight: "20px",
+                letterSpacing: "-0.150391px",
+                color: "#A0A0A0",
+              }}>
                 Showing {start + 1} to {Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length} entries
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -450,7 +572,11 @@ export default function ViewLeadsPage() {
                     padding: "6px 10px", height: "32px",
                     background: "transparent", border: "0.625px solid #4A4A4A",
                     borderRadius: "8px", color: safePage === 1 ? "#4A4A4A" : "#FFFFFF",
-                    fontSize: "14px", fontWeight: 500, cursor: safePage === 1 ? "default" : "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px", fontWeight: 500,
+                    lineHeight: "20px",
+                    letterSpacing: "-0.150391px",
+                    cursor: safePage === 1 ? "default" : "pointer",
                     opacity: safePage === 1 ? 0.5 : 1,
                   }}
                 >
@@ -465,7 +591,11 @@ export default function ViewLeadsPage() {
                     border: n === safePage ? "none" : "0.625px solid #4A4A4A",
                     borderRadius: "8px",
                     color: n === safePage ? "#0A0A0A" : "#FFFFFF",
-                    fontSize: "14px", fontWeight: 500, cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px", fontWeight: 500,
+                    lineHeight: "20px",
+                    letterSpacing: "-0.150391px",
+                    cursor: "pointer",
                   }}>
                     {n}
                   </button>
@@ -480,7 +610,11 @@ export default function ViewLeadsPage() {
                     padding: "6px 10px", height: "32px",
                     background: "transparent", border: "0.625px solid #4A4A4A",
                     borderRadius: "8px", color: safePage === totalPages ? "#4A4A4A" : "#FFFFFF",
-                    fontSize: "14px", fontWeight: 500, cursor: safePage === totalPages ? "default" : "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px", fontWeight: 500,
+                    lineHeight: "20px",
+                    letterSpacing: "-0.150391px",
+                    cursor: safePage === totalPages ? "default" : "pointer",
                     opacity: safePage === totalPages ? 0.5 : 1,
                   }}
                 >

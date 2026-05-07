@@ -7,9 +7,10 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
+  headerAction?: React.ReactNode;
 }
 
-export default function DashboardLayout({ children, title = "", subtitle }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title = "", subtitle, headerAction }: DashboardLayoutProps) {
   return (
     <>
       <Sidebar />
@@ -17,7 +18,7 @@ export default function DashboardLayout({ children, title = "", subtitle }: Dash
         className="flex flex-col flex-1 overflow-y-auto h-screen"
         style={{ marginLeft: "var(--sidebar-width)", background: "var(--background)", fontFamily: "'Inter', sans-serif" }}
       >
-        <DashboardHeader title={title} subtitle={subtitle} showUser={true} />
+        <DashboardHeader title={title} subtitle={subtitle} showUser={true} headerAction={headerAction} />
         {children}
       </div>
     </>
