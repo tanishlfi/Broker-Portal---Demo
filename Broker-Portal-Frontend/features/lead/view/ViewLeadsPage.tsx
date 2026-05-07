@@ -1,230 +1,113 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import * as React from "react";
-import * as ReactDOM from "react-dom";
 import { useRouter } from "next/navigation";
-import { Plus, Filter, Search, Eye, Play, X, ChevronDown, Check } from "lucide-react";
+import { Plus, Search, Eye, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getLeads, cancelLead, Lead } from "@/lib/api/leads";
-import { getValidToken, redirectToAuth } from "@/lib/auth";
+import { getValidToken } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
-import {
-  Table, TableHeader, TableBody,
-  TableRow, TableHead, TableCell,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
-// ── mock data ────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 10;
 
 const MOCK_LEADS: Lead[] = [
-  { leadId: "LD-1001", leadReference: "LD-1001", employerName: "Micro-Tech Solutions",   registrationNumber: "2023/123456/07", numberOfEmployees: 1,    contactFirstName: "Alice",  contactLastName: "Smith",    contactEmail: "alice@microtech.co.za",    status: "Draft",         quoteStatus: "Pending Approval", createdAt: "2026-04-30" },
-  { leadId: "LD-1002", leadReference: "LD-1002", employerName: "Mining Giants SA",        registrationNumber: "1995/654321/07", numberOfEmployees: 1250, contactFirstName: "Bob",    contactLastName: "Johnson",  contactEmail: "bob@mininggiants.co.za",   status: "In Progress",   quoteStatus: "Quick Quote",      createdAt: "2026-04-28" },
-  { leadId: "LD-1003", leadReference: "LD-1003", employerName: "H Plus Construction",     registrationNumber: "2008/445566/07", numberOfEmployees: 45,   contactFirstName: "Claire", contactLastName: "Davis",    contactEmail: "claire@hplus.co.za",       status: "Completed",     quoteStatus: "Accepted",         createdAt: "2026-04-20" },
-  { leadId: "LD-1004", leadReference: "LD-1004", employerName: "Agri Growth SA",          registrationNumber: "2001/778899/07", numberOfEmployees: 500,  contactFirstName: "Dirk",   contactLastName: "Snyman",   contactEmail: "dirk@agrigrowth.co.za",    status: "Quote Expired", quoteStatus: "Rejected",         createdAt: "2026-04-25" },
-  { leadId: "LD-1005", leadReference: "LD-1005", employerName: "Safe Build Construction", registrationNumber: "2015/334455/07", numberOfEmployees: 150,  contactFirstName: "Edward", contactLastName: "Norton",   contactEmail: "edward@safebuild.co.za",   status: "In Progress",   quoteStatus: "Full Quote",       createdAt: "2026-04-29" },
-  { leadId: "LD-1006", leadReference: "LD-1006", employerName: "Cape Retail Group",       registrationNumber: "2010/987654/07", numberOfEmployees: 340,  contactFirstName: "Carol",  contactLastName: "Williams", contactEmail: "carol@caperetail.co.za",   status: "In Progress",   quoteStatus: "Full Quote",       createdAt: "2026-04-27" },
-  { leadId: "LD-1007", leadReference: "LD-1007", employerName: "Joburg Finance Ltd",      registrationNumber: "2005/112233/07", numberOfEmployees: 85,   contactFirstName: "David",  contactLastName: "Brown",    contactEmail: "david@joburgfinance.co.za",status: "Completed",     quoteStatus: "Approved",         createdAt: "2026-04-25" },
-  { leadId: "LD-1008", leadReference: "LD-1008", employerName: "Sunrise Logistics",       registrationNumber: "2012/556677/07", numberOfEmployees: 220,  contactFirstName: "Fatima", contactLastName: "Moosa",    contactEmail: "fatima@sunrise.co.za",     status: "Draft",         quoteStatus: "Pending Approval", createdAt: "2026-04-22" },
-  { leadId: "LD-1009", leadReference: "LD-1009", employerName: "Blue Ocean Trading",      registrationNumber: "2018/223344/07", numberOfEmployees: 60,   contactFirstName: "George", contactLastName: "Nkosi",    contactEmail: "george@blueocean.co.za",   status: "Cancelled",     quoteStatus: undefined,          createdAt: "2026-04-18" },
-  { leadId: "LD-1010", leadReference: "LD-1010", employerName: "Pinnacle Energy",         registrationNumber: "2020/667788/07", numberOfEmployees: 410,  contactFirstName: "Hannah", contactLastName: "Pretorius",contactEmail: "hannah@pinnacle.co.za",    status: "In Progress",   quoteStatus: "Quick Quote",      createdAt: "2026-04-15" },
+  { leadId: "LEAD-1744147200000-847", leadReference: "LEAD-1744147200000-847", employerName: "Tech Innovations Pty Ltd",    registrationNumber: "2019/123456/07", numberOfEmployees: 85,  contactFirstName: "Sarah",   contactLastName: "Mitchell",  contactEmail: "sarah.mitchell@techinnovations.co.za", status: "Active",    quoteStatus: "Expired",                  createdAt: "2026-04-01" },
+  { leadId: "LEAD-1744060800000-392", leadReference: "LEAD-1744060800000-392", employerName: "Green Energy Solutions",       registrationNumber: "2020/987654/07", numberOfEmployees: 142, contactFirstName: "David",   contactLastName: "Chen",      contactEmail: "david.chen@greenenergy.co.za",         status: "Active",    quoteStatus: "Submitted for Onboarding", createdAt: "2026-03-30" },
+  { leadId: "LEAD-1743974400000-621", leadReference: "LEAD-1743974400000-621", employerName: "Medical Care Group",           registrationNumber: "2018/456789/07", numberOfEmployees: 67,  contactFirstName: "Dr. Priya",contactLastName: "Naidoo",    contactEmail: "priya.naidoo@medicalcare.co.za",       status: "Active",    quoteStatus: undefined,                  createdAt: "2026-03-28" },
+  { leadId: "LEAD-1743888000000-158", leadReference: "LEAD-1743888000000-158", employerName: "Build Master Construction",    registrationNumber: "2017/654321/07", numberOfEmployees: 210, contactFirstName: "John",    contactLastName: "van der Merwe", contactEmail: "john.vdm@buildmaster.co.za",       status: "Draft",     quoteStatus: undefined,                  createdAt: "2026-03-25" },
+  { leadId: "LEAD-1743801600000-943", leadReference: "LEAD-1743801600000-943", employerName: "Retail Excellence Ltd",        registrationNumber: "2021/111222/07", numberOfEmployees: 178, contactFirstName: "Amanda",  contactLastName: "Botha",     contactEmail: "amanda.botha@retailexcellence.co.za",  status: "Active",    quoteStatus: "Expired",                  createdAt: "2026-03-22" },
+  { leadId: "LEAD-1743715200000-276", leadReference: "LEAD-1743715200000-276", employerName: "EduTech Academy",              registrationNumber: "2019/333444/07", numberOfEmployees: 52,  contactFirstName: "Michael", contactLastName: "Sithole",   contactEmail: "michael.sithole@edutech.co.za",        status: "Cancelled", quoteStatus: "Cancelled",                createdAt: "2026-03-20" },
+  { leadId: "LEAD-1743628800000-512", leadReference: "LEAD-1743628800000-512", employerName: "FinServe Financial Solutions",  registrationNumber: "2016/555666/07", numberOfEmployees: 95,  contactFirstName: "Lisa",    contactLastName: "Malherbe",  contactEmail: "lisa.malherbe@finserve.co.za",         status: "Active",    quoteStatus: "Cancelled",                createdAt: "2026-03-18" },
+  { leadId: "LEAD-1743542400000-789", leadReference: "LEAD-1743542400000-789", employerName: "Manufacturing Pro Industries", registrationNumber: "2015/777888/07", numberOfEmployees: 320, contactFirstName: "Thabo",   contactLastName: "Mdluli",    contactEmail: "thabo.mdluli@mfgpro.co.za",            status: "Active",    quoteStatus: "Submitted for Onboarding", createdAt: "2026-03-15" },
+  { leadId: "LEAD-1743456000000-034", leadReference: "LEAD-1743456000000-034", employerName: "Digital Marketing Hub",        registrationNumber: "2022/999000/07", numberOfEmployees: 41,  contactFirstName: "Emma",    contactLastName: "Watson",    contactEmail: "emma.watson@digitalhub.co.za",         status: "Draft",     quoteStatus: undefined,                  createdAt: "2026-03-12" },
+  { leadId: "LEAD-1743369600000-467", leadReference: "LEAD-1743369600000-467", employerName: "Transport & Logistics Co",     registrationNumber: "2014/222333/07", numberOfEmployees: 156, contactFirstName: "Raymond", contactLastName: "Kgosi",     contactEmail: "raymond.kgosi@transport.co.za",        status: "Active",    quoteStatus: "Submitted for Onboarding", createdAt: "2026-03-10" },
 ];
-
-const PAGE_SIZE  = 5;
-// Continue + Cancel only shown for these statuses — never for Completed or Cancelled
-const ACTIONABLE = ["Draft", "In Progress", "Quote Expired"];
 
 const fmt = (d: string) => {
   const dt = new Date(d);
   return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
 };
 
-// ── CustomSelect — portal-based dropdown, always opens downward ──────────────
-
-function CustomSelect({ value, onChange, options }: {
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
-  const [open, setOpen] = React.useState(false);
-  const [hovered, setHovered] = React.useState(false);
-  const [dropPos, setDropPos] = React.useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-
-  // close on outside click + reposition on scroll/resize
-  React.useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
-        const portal = document.getElementById("custom-select-portal");
-        if (portal && portal.contains(e.target as Node)) return;
-        setOpen(false);
-      }
-    }
-    function handleScroll() {
-      if (!triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-    }
-    document.addEventListener("mousedown", handleClick);
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleScroll);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
-    };
-  }, []);
-
-  const openDropdown = () => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    setDropPos({
-      top:   rect.bottom + 4,
-      left:  rect.left,
-      width: rect.width,
-    });
-    setOpen((o) => !o);
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, { bg: string; color: string }> = {
+    "Active":    { bg: "#00B8DB", color: "#fff" },
+    "Draft":     { bg: "#3A3A3A", color: "#fff" },
+    "Cancelled": { bg: "#EF4444", color: "#fff" },
+    "Completed": { bg: "#22c55e", color: "#fff" },
   };
-
-  // always force downward — recalc on scroll/resize already uses rect.bottom
-
-  const borderColor = open
-    ? "var(--primary)"
-    : hovered
-    ? "color-mix(in srgb, var(--primary) 50%, transparent)"
-    : "var(--border)";
-
-  const boxShadow = open
-    ? "0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent)"
-    : "none";
-
-  // portal dropdown rendered via createPortal
-  const dropdown = open ? ReactDOM.createPortal(
-    <div
-      id="custom-select-portal"
-      style={{
-        position:     "fixed",
-        top:          dropPos.top,
-        left:         dropPos.left,
-        width:        dropPos.width,
-        background:   "var(--card)",
-        border:       "1px solid var(--border)",
-        borderRadius: "8px",
-        zIndex:       9999,
-        boxShadow:    "0 8px 24px rgba(0,0,0,0.5)",
-        overflow:     "hidden",
-        maxHeight:    `calc(100vh - ${dropPos.top + 8}px)`,
-        overflowY:    "auto",
-      }}
-    >
-      {options.map((opt) => {
-        const isSelected = opt === value;
-        return (
-          <button
-            key={opt}
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); onChange(opt); setOpen(false); }}
-            style={{
-              display:        "flex",
-              alignItems:     "center",
-              justifyContent: "space-between",
-              width:          "100%",
-              textAlign:      "left",
-              padding:        "9px 14px",
-              fontSize:       "14px",
-              color:          isSelected ? "var(--primary)" : "var(--foreground)",
-              background:     isSelected ? "rgba(31,195,235,0.08)" : "transparent",
-              border:         "none",
-              cursor:         "pointer",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = isSelected
-                ? "rgba(31,195,235,0.14)"
-                : "var(--sidebar-accent)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = isSelected
-                ? "rgba(31,195,235,0.08)"
-                : "transparent";
-            }}
-          >
-            <span>{opt}</span>
-            {isSelected && <Check size={14} style={{ color: "var(--primary)", flexShrink: 0 }} />}
-          </button>
-        );
-      })}
-    </div>,
-    document.body
-  ) : null;
-
+  const s = styles[status] ?? { bg: "#4B4B4B", color: "#fff" };
   return (
-    <>
-      <button
-        ref={triggerRef}
-        suppressHydrationWarning
-        type="button"
-        onClick={openDropdown}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          height: "40px", width: "100%", borderRadius: "6px",
-          border: `2px solid ${borderColor}`,
-          background: "var(--input)",
-          padding: "0 36px 0 12px",
-          fontSize: "14px", color: "var(--foreground)",
-          outline: "none", cursor: "pointer",
-          display: "flex", alignItems: "center",
-          boxShadow, transition: "border-color 0.15s, box-shadow 0.15s",
-          whiteSpace: "nowrap", textAlign: "left",
-          boxSizing: "border-box", position: "relative",
-        }}
-      >
-        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{value}</span>
-        <ChevronDown
-          size={16}
-          style={{
-            position: "absolute", right: "10px", top: "50%",
-            transform: open ? "translateY(-50%) rotate(180deg)" : "translateY(-50%)",
-            pointerEvents: "none", opacity: 0.5,
-            color: "var(--muted-foreground)",
-            transition: "transform 0.15s",
-          }}
-        />
-      </button>
-      {dropdown}
-    </>
+    <span style={{
+      display: "inline-block",
+      padding: "2px 8px",
+      borderRadius: "8px",
+      background: s.bg,
+      color: s.color,
+      fontSize: "12px",
+      fontWeight: 500,
+      whiteSpace: "nowrap",
+    }}>
+      {status}
+    </span>
   );
 }
 
-// ── component ────────────────────────────────────────────────────────────────
+function QuoteBadge({ quoteStatus }: { quoteStatus?: string }) {
+  if (!quoteStatus) return <span style={{ color: "#A0A0A0", fontSize: "14px" }}>—</span>;
+
+  const styles: Record<string, { bg: string; color: string; opacity?: number }> = {
+    "Quick Quote":              { bg: "#4B4B4B", color: "#fff" },
+    "Full Quote":               { bg: "#6B6B6B", color: "#fff" },
+    "Submitted for Onboarding": { bg: "rgba(0,201,80,0.9)", color: "#fff" },
+    "Expired":                  { bg: "#4B4B4B", color: "#fff", opacity: 0.5 },
+    "Cancelled":                { bg: "#EF4444", color: "#fff" },
+    "Approved":                 { bg: "rgba(0,201,80,0.9)", color: "#fff" },
+  };
+  const s = styles[quoteStatus] ?? { bg: "#4B4B4B", color: "#fff" };
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "2px 8px",
+      borderRadius: "8px",
+      background: s.bg,
+      color: s.color,
+      fontSize: "12px",
+      fontWeight: 500,
+      opacity: s.opacity ?? 1,
+      whiteSpace: "nowrap",
+    }}>
+      {quoteStatus}
+    </span>
+  );
+}
 
 export default function ViewLeadsPage() {
   const router = useRouter();
   const [leads, setLeads]         = useState<Lead[]>([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");
-  const [statusFilter, setStatus] = useState("All Statuses");
-  const [quoteFilter, setQuote]   = useState("All Quote Statuses");
+  const [statusFilter, setStatus] = useState("All");
+  const [quoteFilter, setQuote]   = useState("All");
   const [page, setPage]           = useState(1);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen]   = useState(false);
 
-  const handleCancel = (leadId: string) => {
-    // optimistic update
-    setLeads((prev) =>
-      prev.map((l) => l.leadId === leadId ? { ...l, status: "Cancelled" } : l)
-    );
-    const token = getValidToken() ?? "";
-    cancelLead(leadId, token);
-  };
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClick = () => {
+      setStatusOpen(false);
+      setQuoteOpen(false);
+    };
+    if (statusOpen || quoteOpen) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [statusOpen, quoteOpen]);
 
   useEffect(() => {
     (async () => {
       try {
-        const token = getValidToken();
-        if (!token) {
-          redirectToAuth();
-          return;
-        }
-        const representativeId = localStorage.getItem("bp_broker_id") ?? localStorage.getItem("bp_representative_id") ?? undefined;
+        const token = getValidToken() ?? "dev-token";
+        const representativeId = localStorage.getItem("bp_broker_id") ?? undefined;
         const data = await getLeads(token, representativeId);
         setLeads(data.length ? data : MOCK_LEADS);
       } catch {
@@ -241,8 +124,8 @@ export default function ViewLeadsPage() {
     const q = search.toLowerCase();
     return (
       (!q || l.employerName.toLowerCase().includes(q) || l.leadReference.toLowerCase().includes(q) || (l.registrationNumber ?? "").toLowerCase().includes(q)) &&
-      (statusFilter === "All Statuses"       || l.status      === statusFilter) &&
-      (quoteFilter  === "All Quote Statuses" || l.quoteStatus === quoteFilter)
+      (statusFilter === "All" || l.status === statusFilter) &&
+      (quoteFilter  === "All" || l.quoteStatus === quoteFilter)
     );
   });
 
@@ -252,286 +135,490 @@ export default function ViewLeadsPage() {
   const rows       = filtered.slice(start, start + PAGE_SIZE);
 
   const total     = leads.length;
-  const active    = leads.filter((l) => l.status === "In Progress").length;
-  const completed = leads.filter((l) => l.status === "Completed").length;
+  const active    = leads.filter((l) => l.status === "Active" || l.status === "In Progress").length;
+  const accepted  = leads.filter((l) => l.status === "Completed").length;
   const cancelled = leads.filter((l) => l.status === "Cancelled").length;
 
-  const card: React.CSSProperties = {
-    background: "var(--card)",
-    border: "1px solid var(--border)",
-    borderRadius: "8px",
-  };
-
-  const inputStyle: React.CSSProperties = {
-    background: "var(--input)",
-    border: "1px solid var(--border)",
-    borderRadius: "6px",
-    padding: "0 12px",
-    height: "40px",
-    fontSize: "0.875rem",
-    color: "var(--foreground)",
-    outline: "none",
-    width: "100%",
-  };
-
-  const pageBtn = (isActive: boolean, disabled?: boolean): React.CSSProperties => ({
-    height: "32px",
-    minWidth: "32px",
-    padding: "0 10px",
-    borderRadius: "6px",
-    border: isActive ? "none" : "1px solid var(--border)",
-    background: isActive ? "var(--primary)" : "transparent",
-    color: isActive ? "#0a0a0a" : disabled ? "#4b5563" : "var(--foreground)",
-    fontSize: "14px",
-    fontWeight: isActive ? 700 : 400,
-    cursor: disabled ? "default" : "pointer",
-    transition: "background 0.15s",
-  });
+  const statusOptions = ["All", "Active", "Draft", "Cancelled", "Completed"];
+  const quoteOptions  = ["All", "Quick Quote", "Full Quote", "Submitted for Onboarding", "Expired", "Cancelled", "Approved"];
 
   return (
-    <main className="flex-1 overflow-y-auto p-6" style={{ background: "var(--background)" }}>
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div style={{
+      position: "relative",
+      width: "100%",
+      minHeight: "calc(100vh - 120px)",
+      background: "rgba(24, 24, 24, 0.8)",
+      border: "1px solid rgba(29, 51, 68, 0.4)",
+      borderRadius: "16px",
+      padding: "24px",
+      boxSizing: "border-box",
+      fontFamily: "'Inter', sans-serif",
+    }}>
+      {/* Background blur */}
+      <div style={{
+        position: "absolute",
+        width: "608px",
+        height: "608px",
+        right: "-100px",
+        bottom: "-100px",
+        background: "#00C0E8",
+        opacity: 0.05,
+        filter: "blur(172px)",
+        borderRadius: "50%",
+        pointerEvents: "none",
+        zIndex: 0,
+      }} />
 
-        {/* ── Stats ── */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "16px",
-        }}
-          className="grid-cols-1 sm:grid-cols-4"
-        >
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {/* Stats Cards */}
+        <div style={{ display: "flex", gap: "22px", marginBottom: "26px" }}>
           {[
-            { label: "Total Leads", value: total,     color: "var(--primary)" },
-            { label: "Active",      value: active,    color: "var(--foreground)" },
-            { label: "Completed",   value: completed, color: "#22c55e" },
-            { label: "Cancelled",   value: cancelled, color: "var(--destructive)" },
-          ].map(({ label, value, color }) => (
+            { label: "Total Leads", value: total },
+            { label: "Active",      value: active },
+            { label: "Accepted",    value: accepted },
+            { label: "Cancelled",   value: cancelled },
+          ].map(({ label, value }) => (
             <div key={label} style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: "0.625rem",
-              padding: "16px",
-              width: "100%",
-              height: "auto",
+              flex: 1,
+              boxSizing: "border-box",
+              background: "#262626",
+              border: "1px solid #30363D",
+              borderRadius: "12px",
+              height: "88px",
+              padding: "0 23px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: "3px",
             }}>
-              <p style={{ fontSize: "14px", color: "var(--muted-foreground)", marginBottom: "4px" }}>{label}</p>
-              <p style={{ fontSize: "1.5rem", lineHeight: "2rem", fontWeight: 400, color }}>{value}</p>
+              <p style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "20px",
+                fontWeight: 700,
+                lineHeight: "24px",
+                color: "#E6E6E6",
+                margin: 0,
+              }}>
+                {value}
+              </p>
+              <p style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 400,
+                lineHeight: "17px",
+                color: "#C5C5C5",
+                margin: 0,
+              }}>
+                {label}
+              </p>
             </div>
           ))}
         </div>
 
-        {/* ── Separator ── */}
-        <div style={{ borderTop: "1px solid var(--border)" }} />
-
-        {/* ── Search & Filter ── */}
-        <div style={{ ...card, padding: "20px 24px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Filter size={20} style={{ color: "var(--primary)", flexShrink: 0 }} />
-              <span style={{ fontWeight: 600, fontSize: "20px", color: "var(--foreground)" }}>Search &amp; Filter</span>
-            </div>
-            <button
-              suppressHydrationWarning
-              onClick={() => router.push(ROUTES.newLead)}
+        {/* Search & Filters */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "26px" }}>
+          {/* Search */}
+          <div style={{ position: "relative", width: "648px" }}>
+            <Search size={20} style={{
+              position: "absolute", left: "10px", top: "50%",
+              transform: "translateY(-50%)", color: "#A0A0A0",
+              pointerEvents: "none",
+            }} />
+            <input
+              type="text"
+              placeholder="Search by company name or lead ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               style={{
-                display: "inline-flex", alignItems: "center", gap: "8px",
-                background: "rgb(31, 195, 235)", color: "rgb(255, 255, 255)",
-                border: "none", borderRadius: "8px",
-                padding: "8px 12px", height: "36px",
-                fontWeight: 500, fontSize: "14px", cursor: "pointer",
-                transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
-                flexShrink: 0, whiteSpace: "nowrap",
+                boxSizing: "border-box",
+                width: "100%", height: "40px",
+                background: "#262626", border: "1.875px solid #333333",
+                borderRadius: "8px", padding: "8px 12px 8px 40px",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px", fontWeight: 400,
+                lineHeight: "17px",
+                letterSpacing: "-0.150391px",
+                color: "#FFFFFF",
+                outline: "none",
               }}
-            >
-              <Plus size={16} /> Start New Lead
-            </button>
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            {/* Search input — spans 2 cols */}
-            <div style={{ position: "relative", gridColumn: "span 2" }}>
-              <Search size={16} style={{
-                position: "absolute", left: "12px", top: "50%",
-                transform: "translateY(-50%)", color: "var(--muted-foreground)",
-                pointerEvents: "none", flexShrink: 0,
-              }} />
-              <input
-                suppressHydrationWarning
-                type="text"
-                placeholder="Search by company name, lead ID, registration number..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  height: "40px", width: "100%", borderRadius: "6px",
-                  border: "2px solid var(--border)",
-                  background: "var(--input)",
-                  padding: "8px 12px 8px 40px",
-                  fontSize: "14px", color: "var(--foreground)", outline: "none",
-                  transition: "border-color 0.15s, box-shadow 0.15s",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "var(--primary)";
-                  e.currentTarget.style.boxShadow = "0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-                onMouseEnter={(e) => {
-                  if (document.activeElement !== e.currentTarget)
-                    e.currentTarget.style.borderColor = "color-mix(in srgb, var(--primary) 50%, transparent)";
-                }}
-                onMouseLeave={(e) => {
-                  if (document.activeElement !== e.currentTarget)
-                    e.currentTarget.style.borderColor = "var(--border)";
-                }}
-              />
-            </div>
+          {/* Status Filter */}
+          <div style={{ position: "relative", width: "220px" }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setStatusOpen(!statusOpen); setQuoteOpen(false); }}
+              style={{
+                boxSizing: "border-box",
+                width: "100%", height: "40px",
+                background: "#262626", border: "1.875px solid #333333",
+                borderRadius: "8px", padding: "8px 12px",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px", fontWeight: 500,
+                lineHeight: "14px",
+                letterSpacing: "-0.150391px",
+                color: "#A0A0A0",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                cursor: "pointer", outline: "none",
+              }}
+            >
+              <span>{statusFilter === "All" ? "Status" : statusFilter}</span>
+              <ChevronDown size={16} style={{ opacity: 0.5 }} />
+            </button>
+            {statusOpen && (
+              <div style={{
+                position: "absolute", top: "44px", left: 0, width: "100%",
+                background: "#262626", border: "1px solid #333333",
+                borderRadius: "8px", zIndex: 50, overflow: "hidden",
+              }}>
+                {statusOptions.map((opt) => (
+                  <button key={opt} onClick={() => { setStatus(opt); setStatusOpen(false); }}
+                    style={{
+                      width: "100%", padding: "9px 14px", textAlign: "left",
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "14px", color: statusFilter === opt ? "#1FC3EB" : "#FFFFFF",
+                      background: statusFilter === opt ? "rgba(31,195,235,0.08)" : "transparent",
+                      border: "none", cursor: "pointer",
+                    }}
+                  >
+                    {opt === "All" ? "All Statuses" : opt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-            {/* Status select */}
-            <CustomSelect
-              value={statusFilter}
-              onChange={setStatus}
-              options={["All Statuses", "Draft", "In Progress", "Completed", "Cancelled", "Quote Expired"]}
-            />
-
-            {/* Quote Status select */}
-            <CustomSelect
-              value={quoteFilter}
-              onChange={setQuote}
-              options={["All Quote Statuses", "Pending Approval", "Quick Quote", "Full Quote", "Approved", "Accepted", "Rejected"]}
-            />
+          {/* Quote Status Filter */}
+          <div style={{ position: "relative", width: "220px" }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setQuoteOpen(!quoteOpen); setStatusOpen(false); }}
+              style={{
+                boxSizing: "border-box",
+                width: "100%", height: "40px",
+                background: "#262626", border: "1.875px solid #333333",
+                borderRadius: "8px", padding: "8px 12px",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px", fontWeight: 500,
+                lineHeight: "14px",
+                letterSpacing: "-0.150391px",
+                color: "#A0A0A0",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                cursor: "pointer", outline: "none",
+              }}
+            >
+              <span>{quoteFilter === "All" ? "Quote Status" : quoteFilter}</span>
+              <ChevronDown size={16} style={{ opacity: 0.5 }} />
+            </button>
+            {quoteOpen && (
+              <div style={{
+                position: "absolute", top: "44px", left: 0, width: "220px",
+                background: "#262626", border: "1px solid #333333",
+                borderRadius: "8px", zIndex: 50, overflow: "hidden",
+              }}>
+                {quoteOptions.map((opt) => (
+                  <button key={opt} onClick={() => { setQuote(opt); setQuoteOpen(false); }}
+                    style={{
+                      width: "100%", padding: "9px 14px", textAlign: "left",
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "14px", color: quoteFilter === opt ? "#1FC3EB" : "#FFFFFF",
+                      background: quoteFilter === opt ? "rgba(31,195,235,0.08)" : "transparent",
+                      border: "none", cursor: "pointer", whiteSpace: "nowrap",
+                    }}
+                  >
+                    {opt === "All" ? "All Quote Statuses" : opt}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ── Separator ── */}
-        <div style={{ borderTop: "1px solid var(--border)", marginTop: "-8px" }} />
-
-        {/* ── Table container: bg-card border border-border rounded-lg overflow-hidden ── */}
-        <div style={{ ...card, overflow: "hidden" }}>
-          <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)" }}>
-            <p style={{ fontWeight: 600, fontSize: "1rem", color: "var(--foreground)" }}>Your Leads</p>
-            <p style={{ fontSize: "0.8rem", color: "#9ca3af", marginTop: "2px" }}>
-              Showing {filtered.length} of {total} leads
-            </p>
-          </div>
-
+        {/* Table */}
+        <div style={{
+          boxSizing: "border-box",
+          background: "#2D2D2D",
+          border: "0.625px solid #4A4A4A",
+          borderRadius: "10px",
+          overflow: "hidden",
+        }}>
           {loading ? (
-            <div style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}>Loading leads…</div>
+            <div style={{ padding: "48px", textAlign: "center", color: "#A0A0A0" }}>Loading leads…</div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: "48px", textAlign: "center" }}>
-              <p style={{ color: "#9ca3af", marginBottom: "16px" }}>No leads found.</p>
-              <button
-                onClick={() => router.push(ROUTES.newLead)}
-                style={{ background: "var(--primary)", color: "#0a0a0a", border: "none", borderRadius: "6px", padding: "8px 20px", fontWeight: 600, fontSize: "0.875rem", cursor: "pointer" }}
-              >
+              <p style={{ color: "#A0A0A0", marginBottom: "16px" }}>No leads found.</p>
+              <button onClick={() => router.push(ROUTES.newLead)} style={{
+                background: "#1FC3EB", color: "#0A0A0A", border: "none",
+                borderRadius: "6px", padding: "8px 20px", fontWeight: 600,
+                fontSize: "14px", cursor: "pointer",
+              }}>
                 Create First Lead
               </button>
             </div>
           ) : (
-            /* Table — relative w-full overflow-x-auto wraps the <table> w-full caption-bottom text-sm */
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {["Lead ID", "Company Name", "Contact Person", "Employees", "Status", "Quote Status", "Created Date", "Actions"].map((h) => (
-                    <TableHead key={h}>{h}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((lead) => {
-                  const actionable = ACTIONABLE.includes(lead.status);
-                  return (
-                    <TableRow key={lead.leadId}>
-                      {/* Lead ID — font-mono text-sm */}
-                      <TableCell className="font-mono" style={{ color: "var(--primary)", fontWeight: 500, fontSize: "14px" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Inter', sans-serif" }}>
+                {/* Header */}
+                <thead>
+                  <tr style={{ background: "rgba(58,58,58,0.5)", borderBottom: "0.625px solid #4A4A4A" }}>
+                    {["Lead ID", "Company Name", "Contact Person", "Employees", "Status", "Quote", "Quote Status", "Created Date", "Actions"].map((h) => (
+                      <th key={h} style={{
+                        padding: "10px 8px",
+                        textAlign: "left",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        lineHeight: "20px",
+                        letterSpacing: "-0.150391px",
+                        color: "#FFFFFF",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                {/* Body */}
+                <tbody>
+                  {rows.map((lead) => (
+                    <tr key={lead.leadId} style={{ borderBottom: "0.625px solid #4A4A4A" }}>
+                      {/* Lead ID */}
+                      <td style={{
+                        padding: "16px 8px",
+                        fontFamily: "'Menlo', monospace",
+                        fontSize: "14px",
+                        fontWeight: 400,
+                        lineHeight: "20px",
+                        color: "#FFFFFF",
+                        whiteSpace: "nowrap"
+                      }}>
                         {lead.leadReference}
-                      </TableCell>
+                      </td>
 
-                      {/* Company */}
-                      <TableCell>
-                        <p style={{ fontSize: "14px", color: "var(--foreground)", fontWeight: 500 }}>{lead.employerName}</p>
+                      {/* Company Name */}
+                      <td style={{ padding: "8px 8px" }}>
+                        <p style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          lineHeight: "20px",
+                          letterSpacing: "-0.150391px",
+                          color: "#FFFFFF",
+                          margin: 0,
+                        }}>
+                          {lead.employerName}
+                        </p>
                         {lead.registrationNumber && (
-                          <p style={{ fontSize: "14px", color: "#9ca3af" }}>{lead.registrationNumber}</p>
+                          <p style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: "12px",
+                            fontWeight: 400,
+                            lineHeight: "16px",
+                            color: "#A0A0A0",
+                            marginTop: "2px",
+                            marginBottom: 0,
+                          }}>
+                            {lead.registrationNumber}
+                          </p>
                         )}
-                      </TableCell>
+                      </td>
 
-                      {/* Contact */}
-                      <TableCell>
-                        <p style={{ fontSize: "14px", color: "var(--foreground)" }}>{lead.contactFirstName} {lead.contactLastName}</p>
-                        <p style={{ fontSize: "14px", color: "#9ca3af" }}>{lead.contactEmail}</p>
-                      </TableCell>
+                      {/* Contact Person */}
+                      <td style={{ padding: "8px 8px" }}>
+                        <p style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          fontWeight: 400,
+                          lineHeight: "20px",
+                          letterSpacing: "-0.150391px",
+                          color: "#FFFFFF",
+                          margin: 0,
+                        }}>
+                          {lead.contactFirstName} {lead.contactLastName}
+                        </p>
+                        <p style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "12px",
+                          fontWeight: 400,
+                          lineHeight: "16px",
+                          color: "#A0A0A0",
+                          marginTop: "2px",
+                          marginBottom: 0,
+                        }}>
+                          {lead.contactEmail}
+                        </p>
+                      </td>
 
                       {/* Employees */}
-                      <TableCell style={{ fontSize: "14px", color: "var(--foreground)" }}>
+                      <td style={{
+                        padding: "16px 8px",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "14px",
+                        fontWeight: 400,
+                        lineHeight: "20px",
+                        letterSpacing: "-0.150391px",
+                        color: "#FFFFFF",
+                        textAlign: "center",
+                      }}>
                         {lead.numberOfEmployees.toLocaleString()}
-                      </TableCell>
+                      </td>
 
                       {/* Status */}
-                      <TableCell>
-                        <Badge label={lead.status} type="status" />
-                      </TableCell>
+                      <td style={{ padding: "16px 8px" }}>
+                        <StatusBadge status={lead.status} />
+                      </td>
+
+                      {/* Quote type */}
+                      <td style={{ padding: "16px 8px" }}>
+                        {lead.quoteStatus && (lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote")
+                          ? <QuoteBadge quoteStatus={lead.quoteStatus} />
+                          : <span style={{ color: "#A0A0A0", fontSize: "14px" }}>—</span>
+                        }
+                      </td>
 
                       {/* Quote Status */}
-                      <TableCell>
-                        <Badge label={lead.quoteStatus} type="quote" />
-                      </TableCell>
+                      <td style={{ padding: "16px 8px" }}>
+                        <QuoteBadge quoteStatus={
+                          lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote"
+                            ? undefined
+                            : lead.quoteStatus
+                        } />
+                      </td>
 
-                      {/* Date */}
-                      <TableCell style={{ fontSize: "14px", color: "var(--foreground)" }}>
+                      {/* Created Date */}
+                      <td style={{
+                        padding: "16px 8px",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "14px",
+                        fontWeight: 400,
+                        lineHeight: "20px",
+                        letterSpacing: "-0.150391px",
+                        color: "#FFFFFF",
+                        whiteSpace: "nowrap"
+                      }}>
                         {fmt(lead.createdAt)}
-                      </TableCell>
+                      </td>
 
                       {/* Actions */}
-                      <TableCell>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          {/* View */}
-                          <Button variant="view" size="sm" onClick={() => router.push(`/lead/${lead.leadId}/quote`)}>
-                            <Eye size={14} /> View
-                          </Button>
-
-                          {/* Continue — navigates to quote journey */}
-                          {actionable && (
-                            <Button variant="continue" size="sm" onClick={() =>
-                              router.push(`/lead/${lead.leadId}/quote?ref=${lead.leadReference}&company=${encodeURIComponent(lead.employerName)}`)
-                            }>
-                              <Play size={12} /> Continue
-                            </Button>
-                          )}
-
-                          {/* Cancel — sets status to Cancelled */}
-                          {actionable && (
-                            <Button variant="destructive" size="sm" onClick={() => handleCancel(lead.leadId)}>
-                              <X size={12} /> Cancel
-                            </Button>
+                      <td style={{ padding: "10px 8px" }}>
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                            <button
+                              onClick={() => router.push(`/lead/${lead.leadId}`)}
+                              style={{
+                                display: "flex", alignItems: "center", gap: "6px",
+                                padding: "6px 10px", height: "32px",
+                                background: "rgba(58,58,58,0.5)", border: "0.625px solid #4A4A4A",
+                                borderRadius: "8px", color: "#FFFFFF",
+                                fontFamily: "'Inter', sans-serif",
+                                fontSize: "14px", fontWeight: 500,
+                                lineHeight: "20px",
+                                letterSpacing: "-0.150391px",
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <Eye size={14} />
+                              View
+                            </button>
+                          {lead.status !== "Cancelled" && lead.status !== "Completed" && (
+                            <button
+                              onClick={() => router.push(`/quotes/new?leadId=${lead.leadId}&ref=${lead.leadReference}&company=${encodeURIComponent(lead.employerName)}`)}
+                              style={{
+                                display: "flex", alignItems: "center", gap: "6px",
+                                padding: "6px 10px", height: "32px",
+                                background: "#1FC3EB", border: "none",
+                                borderRadius: "8px", color: "#0A0A0A",
+                                fontSize: "14px", fontWeight: 500, cursor: "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              Continue
+                            </button>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
-          {/* ── Pagination — p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4 ── */}
+          {/* Pagination */}
           {!loading && filtered.length > 0 && (
-            <div style={{ padding: "14px 24px", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-              <span style={{ fontSize: "14px", color: "#9ca3af" }}>
+            <div style={{
+              padding: "12px 16px",
+              borderTop: "0.625px solid #4A4A4A",
+              background: "rgba(58,58,58,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <span style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 400,
+                lineHeight: "20px",
+                letterSpacing: "-0.150391px",
+                color: "#A0A0A0",
+              }}>
                 Showing {start + 1} to {Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length} entries
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                <button disabled={safePage === 1} onClick={() => setPage((p) => p - 1)} style={pageBtn(false, safePage === 1)}>
-                  Previous
+                {/* Previous */}
+                <button
+                  disabled={safePage === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "4px",
+                    padding: "6px 10px", height: "32px",
+                    background: "transparent", border: "0.625px solid #4A4A4A",
+                    borderRadius: "8px", color: safePage === 1 ? "#4A4A4A" : "#FFFFFF",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px", fontWeight: 500,
+                    lineHeight: "20px",
+                    letterSpacing: "-0.150391px",
+                    cursor: safePage === 1 ? "default" : "pointer",
+                    opacity: safePage === 1 ? 0.5 : 1,
+                  }}
+                >
+                  <ChevronLeft size={14} /> Previous
                 </button>
+
+                {/* Page numbers */}
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <button key={n} onClick={() => setPage(n)} style={pageBtn(n === safePage)}>
+                  <button key={n} onClick={() => setPage(n)} style={{
+                    width: "32px", height: "32px",
+                    background: n === safePage ? "#1FC3EB" : "transparent",
+                    border: n === safePage ? "none" : "0.625px solid #4A4A4A",
+                    borderRadius: "8px",
+                    color: n === safePage ? "#0A0A0A" : "#FFFFFF",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px", fontWeight: 500,
+                    lineHeight: "20px",
+                    letterSpacing: "-0.150391px",
+                    cursor: "pointer",
+                  }}>
                     {n}
                   </button>
                 ))}
-                <button disabled={safePage === totalPages} onClick={() => setPage((p) => p + 1)} style={pageBtn(false, safePage === totalPages)}>
-                  Next
+
+                {/* Next */}
+                <button
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "4px",
+                    padding: "6px 10px", height: "32px",
+                    background: "transparent", border: "0.625px solid #4A4A4A",
+                    borderRadius: "8px", color: safePage === totalPages ? "#4A4A4A" : "#FFFFFF",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px", fontWeight: 500,
+                    lineHeight: "20px",
+                    letterSpacing: "-0.150391px",
+                    cursor: safePage === totalPages ? "default" : "pointer",
+                    opacity: safePage === totalPages ? 0.5 : 1,
+                  }}
+                >
+                  Next <ChevronRight size={14} />
                 </button>
               </div>
             </div>
@@ -539,6 +626,6 @@ export default function ViewLeadsPage() {
         </div>
 
       </div>
-    </main>
+    </div>
   );
 }
