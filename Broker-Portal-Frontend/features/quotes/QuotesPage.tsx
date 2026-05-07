@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, ChevronDown, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
+import CancelQuoteModal from "@/components/quotes/CancelQuoteModal";
 
 interface Quote {
   id: string;
@@ -13,6 +15,7 @@ interface Quote {
   monthlyPremium: string;
   coverageAmount: string;
   createdDate: string;
+  status: "new" | "onboarding" | "approved" | "pending" | "cancelled";
 }
 
 interface Lead {
@@ -23,7 +26,7 @@ interface Lead {
   leadId: string;
 }
 
-const mockQuotes: Quote[] = [
+const mockQuotesData: Quote[] = [
   {
     id: "1",
     companyName: "Tech Innovations Pty Ltd",
@@ -33,6 +36,7 @@ const mockQuotes: Quote[] = [
     monthlyPremium: "R 26,629",
     coverageAmount: "R 395,666",
     createdDate: "04/05/2026",
+    status: "new",
   },
   {
     id: "2",
@@ -43,6 +47,7 @@ const mockQuotes: Quote[] = [
     monthlyPremium: "R 26,629",
     coverageAmount: "R 395,666",
     createdDate: "04/05/2026",
+    status: "new",
   },
   {
     id: "3",
@@ -53,6 +58,7 @@ const mockQuotes: Quote[] = [
     monthlyPremium: "R 26,629",
     coverageAmount: "R 395,666",
     createdDate: "04/05/2026",
+    status: "new",
   },
   {
     id: "4",
@@ -63,6 +69,7 @@ const mockQuotes: Quote[] = [
     monthlyPremium: "R 26,629",
     coverageAmount: "R 395,666",
     createdDate: "04/05/2026",
+    status: "new",
   },
 ];
 
@@ -84,18 +91,35 @@ const mockLeads: Lead[] = [
 
 export default function QuotesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [quotes, setQuotes] = useState<Quote[]>(mockQuotesData);
   const [activeTab, setActiveTab] = useState<"new" | "onboarding" | "approved" | "pending" | "cancelled">("new");
   const [searchQuery, setSearchQuery] = useState("");
   const [openActionsMenu, setOpenActionsMenu] = useState<string | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [selectedQuoteForApproval, setSelectedQuoteForApproval] = useState<Quote | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedQuoteForCancel, setSelectedQuoteForCancel] = useState<Quote | null>(null);
 
+  // Check for tab query parameter on mount
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && ["new", "onboarding", "approved", "pending", "cancelled"].includes(tab)) {
+      setActiveTab(tab as "new" | "onboarding" | "approved" | "pending" | "cancelled");
+    }
+  }, [searchParams]);
+
+  // Filter quotes by active tab
+  const filteredQuotes = quotes.filter((quote) => quote.status === activeTab);
+
+  // Update tab counts dynamically
   const tabs = [
-    { key: "new" as const, label: "New Quotes (13)", count: 13 },
-    { key: "onboarding" as const, label: "In Onboarding (4)", count: 4 },
-    { key: "approved" as const, label: "Approved (0)", count: 0 },
-    { key: "pending" as const, label: "Pending (0)", count: 0 },
-    { key: "cancelled" as const, label: "Cancelled (0)", count: 0 },
+    { key: "new" as const, label: `New Quotes (${quotes.filter(q => q.status === "new").length})`, count: quotes.filter(q => q.status === "new").length },
+    { key: "onboarding" as const, label: `In Onboarding (${quotes.filter(q => q.status === "onboarding").length})`, count: quotes.filter(q => q.status === "onboarding").length },
+    { key: "cancelled" as const, label: `Cancelled (${quotes.filter(q => q.status === "cancelled").length})`, count: quotes.filter(q => q.status === "cancelled").length },
+    { key: "approved" as const, label: `Expired Quoted`, count: 0 },
   ];
 
   const handleProceedWithQuote = () => {
@@ -103,6 +127,55 @@ export default function QuotesPage() {
       // Navigate to quote type selection page with lead data
       router.push(`/quotes/new?leadId=${selectedLead.leadId}&ref=${selectedLead.leadId}&company=${encodeURIComponent(selectedLead.companyName)}`);
     }
+  };
+
+  const handleMarkAsApproved = (quote: Quote) => {
+    setSelectedQuoteForApproval(quote);
+    setShowApproveModal(true);
+    setOpenActionsMenu(null);
+  };
+
+  const handleCancelQuote = (quote: Quote) => {
+    setSelectedQuoteForCancel(quote);
+    setShowCancelModal(true);
+    setOpenActionsMenu(null);
+  };
+
+  const handleConfirmCancel = () => {
+    if (selectedQuoteForCancel) {
+      // Update the quote status to cancelled
+      setQuotes(prevQuotes =>
+        prevQuotes.map(q =>
+          q.id === selectedQuoteForCancel.id
+            ? { ...q, status: "cancelled" as const }
+            : q
+        )
+      );
+      console.log("Quote cancelled:", selectedQuoteForCancel.quoteId);
+    }
+    setShowCancelModal(false);
+    setSelectedQuoteForCancel(null);
+    // Switch to cancelled tab to show the cancelled quote
+    setActiveTab("cancelled");
+  };
+
+  const handleSendOTP = () => {
+    // In real app, this would call API to update quote status
+    if (selectedQuoteForApproval) {
+      // Update the quote status to approved
+      setQuotes(prevQuotes =>
+        prevQuotes.map(q =>
+          q.id === selectedQuoteForApproval.id
+            ? { ...q, status: "approved" as const }
+            : q
+        )
+      );
+      console.log("Quote approved:", selectedQuoteForApproval.quoteId);
+    }
+    setShowApproveModal(false);
+    setSelectedQuoteForApproval(null);
+    // Switch to approved tab to show the approved quote
+    setActiveTab("approved");
   };
 
   return (
@@ -173,87 +246,114 @@ export default function QuotesPage() {
 
         {/* Quotes List */}
         <div className="space-y-4">
-          {mockQuotes.map((quote) => (
-            <div
-              key={quote.id}
-              className="relative bg-[#1E1E1E] border border-[#4A4A4A] rounded-[10px] p-6"
-            >
-              <div className="flex justify-between items-start">
-                {/* Left Section */}
-                <div className="space-y-4 flex-1">
-                  {/* Company Name & Badges */}
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-medium text-white">{quote.companyName}</h3>
-                    <span
-                      className={`px-2 py-0.5 text-xs font-medium rounded-lg border ${
-                        quote.quoteType === "Quick Quote"
-                          ? "bg-[rgba(43,127,255,0.1)] border-[rgba(43,127,255,0.2)] text-[#2B7FFF]"
-                          : "bg-[rgba(31,195,235,0.1)] border-[rgba(31,195,235,0.2)] text-[#1FC3EB]"
-                      }`}
-                    >
-                      {quote.quoteType}
-                    </span>
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-lg border border-[#4A4A4A] text-white">
-                      {quote.daysRemaining} days remaining
-                    </span>
-                  </div>
+          {filteredQuotes.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-[#A0A0A0] text-sm">No quotes in this category</p>
+            </div>
+          ) : (
+            filteredQuotes.map((quote) => (
+              <div
+                key={quote.id}
+                className="relative bg-[#1E1E1E] border border-[#4A4A4A] rounded-[10px] p-6"
+              >
+                <div className="flex justify-between items-start">
+                  {/* Left Section */}
+                  <div className="space-y-4 flex-1">
+                    {/* Company Name & Badges */}
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-medium text-white">{quote.companyName}</h3>
+                      <span
+                        className={`px-2 py-0.5 text-xs font-medium rounded-lg border ${
+                          quote.quoteType === "Quick Quote"
+                            ? "bg-[rgba(43,127,255,0.1)] border-[rgba(43,127,255,0.2)] text-[#2B7FFF]"
+                            : "bg-[rgba(31,195,235,0.1)] border-[rgba(31,195,235,0.2)] text-[#1FC3EB]"
+                        }`}
+                      >
+                        {quote.quoteType}
+                      </span>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-lg border border-[#4A4A4A] text-white">
+                        {quote.daysRemaining} days remaining
+                      </span>
+                    </div>
 
-                  {/* Quote Details Grid */}
-                  <div className="grid grid-cols-4 gap-6">
-                    <div className="space-y-1">
-                      <p className="text-sm text-[#A0A0A0]">Quote ID</p>
-                      <p className="text-sm font-medium text-white">{quote.quoteId}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-[#A0A0A0]">Monthly Premium</p>
-                      <p className="text-sm font-medium text-[#1FC3EB]">{quote.monthlyPremium}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-[#A0A0A0]">Coverage Amount</p>
-                      <p className="text-sm font-medium text-white">{quote.coverageAmount}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-[#A0A0A0]">Created Date</p>
-                      <p className="text-sm font-medium text-white">{quote.createdDate}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions Button */}
-                <div className="relative">
-                  <button
-                    onClick={() =>
-                      setOpenActionsMenu(openActionsMenu === quote.id ? null : quote.id)
-                    }
-                    className="flex items-center gap-1 px-4 h-9 bg-[rgba(58,58,58,0.3)] border border-[#3A3A3A] rounded-lg text-sm font-medium text-white hover:bg-[rgba(58,58,58,0.5)] transition-colors"
-                  >
-                    Actions
-                    <ChevronDown size={20} />
-                  </button>
-
-                  {/* Actions Dropdown */}
-                  {openActionsMenu === quote.id && (
-                    <div className="absolute right-0 top-12 w-52 bg-[#262626] border border-[#3A3A3A] rounded-lg shadow-lg z-10">
-                      <div className="p-4 space-y-5">
-                        <button className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors">
-                          View Details
-                        </button>
-                        <button className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors">
-                          Mark as Approved
-                        </button>
-                        <button className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors">
-                          Cancel Quote
-                        </button>
-                        <button className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors">
-                          Download
-                        </button>
+                    {/* Quote Details Grid */}
+                    <div className="grid grid-cols-4 gap-6">
+                      <div className="space-y-1">
+                        <p className="text-sm text-[#A0A0A0]">Quote ID</p>
+                        <p className="text-sm font-medium text-white">{quote.quoteId}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-[#A0A0A0]">Monthly Premium</p>
+                        <p className="text-sm font-medium text-[#1FC3EB]">{quote.monthlyPremium}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-[#A0A0A0]">Coverage Amount</p>
+                        <p className="text-sm font-medium text-white">{quote.coverageAmount}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-[#A0A0A0]">Created Date</p>
+                        <p className="text-sm font-medium text-white">{quote.createdDate}</p>
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Actions Button */}
+                  <div className="relative">
+                    <button
+                      onClick={() =>
+                        setOpenActionsMenu(openActionsMenu === quote.id ? null : quote.id)
+                      }
+                      className="flex items-center gap-1 px-4 h-9 bg-[rgba(58,58,58,0.3)] border border-[#3A3A3A] rounded-lg text-sm font-medium text-white hover:bg-[rgba(58,58,58,0.5)] transition-colors"
+                    >
+                      Actions
+                      <ChevronDown size={20} />
+                    </button>
+
+                    {/* Actions Dropdown */}
+                    {openActionsMenu === quote.id && (
+                      <div className="absolute right-0 top-12 w-52 bg-[#262626] border border-[#3A3A3A] rounded-lg shadow-lg z-10">
+                        <div className="p-4 space-y-5">
+                          <button
+                            onClick={() => {
+                              // Pass quote data through URL params
+                              const params = new URLSearchParams({
+                                companyName: quote.companyName,
+                                quoteType: quote.quoteType,
+                                quoteId: quote.quoteId,
+                                monthlyPremium: quote.monthlyPremium,
+                                coverageAmount: quote.coverageAmount,
+                                createdDate: quote.createdDate,
+                              });
+                              router.push(`/quotes/${quote.id}?${params.toString()}`);
+                              setOpenActionsMenu(null);
+                            }}
+                            className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleMarkAsApproved(quote)}
+                            className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors"
+                          >
+                            Mark as Approved
+                          </button>
+                          <button
+                            onClick={() => handleCancelQuote(quote)}
+                            className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors"
+                          >
+                            Cancel Quote
+                          </button>
+                          <button className="w-full text-left text-sm font-medium text-white hover:text-[#1FC3EB] transition-colors">
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -315,6 +415,33 @@ export default function QuotesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Approve Quote Modal */}
+      {showApproveModal && selectedQuoteForApproval && (
+        <ApproveQuoteModal
+          isOpen={showApproveModal}
+          onClose={() => {
+            setShowApproveModal(false);
+            setSelectedQuoteForApproval(null);
+          }}
+          quoteId={selectedQuoteForApproval.quoteId}
+          companyName={selectedQuoteForApproval.companyName}
+          onSendOTP={handleSendOTP}
+        />
+      )}
+
+      {/* Cancel Quote Modal */}
+      {showCancelModal && selectedQuoteForCancel && (
+        <CancelQuoteModal
+          isOpen={showCancelModal}
+          onClose={() => {
+            setShowCancelModal(false);
+            setSelectedQuoteForCancel(null);
+          }}
+          quoteId={selectedQuoteForCancel.quoteId}
+          onConfirm={handleConfirmCancel}
+        />
       )}
     </div>
   );
