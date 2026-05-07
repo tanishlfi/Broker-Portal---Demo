@@ -34,6 +34,18 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(18, 2),
         allowNull: true,
       },
+      province: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      industry_type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      gender_split: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -45,7 +57,6 @@ module.exports = (sequelize, DataTypes) => {
       schema: "broker",
       tableName: "broker_quick_quote_data",
       timestamps: true,
-      updatedAt: false, // Since updated_at wasn't in the schema for this table
     },
   );
 

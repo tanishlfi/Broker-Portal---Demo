@@ -11,6 +11,8 @@ import AppMetaData from "./AppMetaData";
 import notifications from "./notifications";
 import brokers from "./brokers";
 import brokerLeadsRoutes from "./brokerLeadsRoutes";
+import brokerQuotesRoutes from "./brokerQuotesRoutes";
+import productCatalog from "./productCatalogRoutes";
 import tasks from "./tasksRoutes";
 import rules from "./rules";
 import premiumCalculator from "./premiumCalculator";
@@ -21,6 +23,8 @@ const router = Router();
 
 // load all routes
 router.use("/broker/leads", brokerLeadsRoutes);
+router.use("/broker/quotes", brokerQuotesRoutes);
+router.use("/product", productCatalog);
 
 router.use([
   vopd,
