@@ -14,10 +14,17 @@ interface DashboardHeaderProps {
 interface DecodedToken {
   name?: string;
   email?: string;
+  preferred_username?: string;
+  upn?: string;
+  unique_name?: string;
   given_name?: string;
   family_name?: string;
   [key: string]: any;
 }
+
+const C = {
+  primary: "#1FC3EB",
+};
 
 export default function DashboardHeader({ title, subtitle, showUser = true }: DashboardHeaderProps) {
   const [displayName, setDisplayName] = useState("");
@@ -29,21 +36,22 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
     // UserContext not available, will use fallback
   }
 
-  useEffect(() => {
-    // Try to get name from UserContext first
-    if (user?.name || user?.email) {
-      setDisplayName(user.name || user.email);
+  const resolveDisplayIdentity = () => {
+    // Prefer persisted user identity from localStorage for consistent header display.
+    const storedIdentity =
+      localStorage.getItem("bp_broker_email") ||
+      localStorage.getItem("userEmail") ||
+      localStorage.getItem("bp_broker_name") ||
+      localStorage.getItem("userName");
+
+    if (storedIdentity) {
+      setDisplayName(storedIdentity);
       return;
     }
 
-    // Fallback to localStorage
-    const storedName = localStorage.getItem("userName") || 
-                       localStorage.getItem("bp_broker_name") ||
-                       localStorage.getItem("userEmail") ||
-                       localStorage.getItem("bp_broker_email");
-    
-    if (storedName) {
-      setDisplayName(storedName);
+    // Fallback to UserContext
+    if (user?.email || user?.name) {
+      setDisplayName(user.email || user.name);
       return;
     }
 
@@ -52,44 +60,71 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
       const token = localStorage.getItem("bp_token");
       if (token) {
         const decoded = jwtDecode<DecodedToken>(token);
-        const name = decoded.name || 
-                     decoded.email || 
-                     (decoded.given_name && decoded.family_name ? `${decoded.given_name} ${decoded.family_name}` : "") ||
-                     decoded.given_name ||
-                     "";
-        if (name) {
-          setDisplayName(name);
-          // Store it for future use
-          localStorage.setItem("userName", name);
+        const identity =
+          decoded.email ||
+          decoded.preferred_username ||
+          decoded.upn ||
+          decoded.unique_name ||
+          decoded.name ||
+          (decoded.given_name && decoded.family_name ? `${decoded.given_name} ${decoded.family_name}` : "") ||
+          decoded.given_name ||
+          "";
+
+        if (identity) {
+          setDisplayName(identity);
+          // Persist for future page loads.
+          if (identity.includes("@")) {
+            localStorage.setItem("userEmail", identity);
+          } else {
+            localStorage.setItem("userName", identity);
+          }
         }
       }
     } catch (error) {
       console.error("Error decoding token:", error);
     }
+  };
+
+  useEffect(() => {
+    resolveDisplayIdentity();
+    // Retry once after mount in case localStorage is populated slightly later.
+    const t = setTimeout(resolveDisplayIdentity, 250);
+    return () => clearTimeout(t);
   }, [user]);
 
   return (
     <header
-      className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+      className="flex items-center justify-between py-4 flex-shrink-0"
       style={{
-        background: "#1E1E1E",
-        borderBottom: "1px solid var(--border)",
+        background: "#0B0D10",
+        borderBottom: "none",
+        paddingLeft: "0px",
+        paddingRight: "24px",
+        height: "56px",
+        position: "sticky",
+        top: 0,
+        zIndex: 20,
       }}
     >
-      <div>
-        {showUser && (
-          <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)", marginBottom: "0.25rem" }}>
-            Welcome Back!{displayName && <> <strong style={{ color: "var(--foreground)" }}>{displayName}</strong></>}
-          </p>
-        )}
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 500, color: "var(--foreground)", lineHeight: 1.5 }}>
-          {title}
-        </h1>
-        {subtitle && (
-          <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)", marginTop: "0.25rem", lineHeight: 1.5 }}>
-            {subtitle}
-          </p>
-        )}
+      <div className="flex items-center h-full">
+        <div style={{ width: "1px", height: "17px", background: "#797979", marginRight: "16px" }} />
+        <div>
+          {showUser && (
+            <p style={{ fontSize: "0.8125rem", fontWeight: 400, color: "var(--muted-foreground)", marginBottom: "0.125rem" }}>
+              Welcome Back{displayName && <>! <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{displayName}</span></>}
+            </p>
+          )}
+          {title ? (
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 500, color: "var(--foreground)", lineHeight: 1.5 }}>
+              {title}
+            </h1>
+          ) : null}
+          {subtitle && (
+            <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)", marginTop: "0.25rem", lineHeight: 1.5 }}>
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <button suppressHydrationWarning className="header-bell" aria-label="Notifications">

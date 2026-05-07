@@ -48,6 +48,129 @@ export function BackButton({ onClick, label = "Back" }: BackButtonProps) {
   );
 }
 
+interface SaveDraftButtonProps {
+  onClick: () => void;
+  label?: string;
+}
+
+export function SaveDraftButton({ onClick, label = "Save Draft" }: SaveDraftButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: "115px",
+        height: "33px",
+        borderRadius: "100px",
+        border: "1px solid #333333",
+        background: "transparent",
+        color: "#d1d5db",
+        fontSize: "0.875rem",
+        fontWeight: 400,
+        cursor: "pointer",
+        padding: "8px 22px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "10px",
+        boxSizing: "border-box",
+        transition: "border-color 0.15s, color 0.15s",
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = "#9ca3af";
+        (e.currentTarget as HTMLElement).style.color = "#ffffff";
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = "#333333";
+        (e.currentTarget as HTMLElement).style.color = "#d1d5db";
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+interface SaveLeadButtonProps {
+  onClick: () => void;
+  label?: string;
+  disabled?: boolean;
+}
+
+interface ProceedButtonProps {
+  onClick: () => void;
+  label?: string;
+  disabled?: boolean;
+}
+
+export function SaveLeadButton({ onClick, label = "Save Lead Details", disabled = false }: SaveLeadButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        height: "36px",
+        padding: "0 20px",
+        borderRadius: "8px",
+        background: "transparent",
+        border: "1px solid #C4CDD8",
+        color: "#C4CDD8",
+        fontSize: "0.875rem",
+        fontWeight: 500,
+        cursor: disabled ? "not-allowed" : "pointer",
+        boxSizing: "border-box",
+        whiteSpace: "nowrap",
+        opacity: disabled ? 0.6 : 1,
+        transition: "border-color 0.15s, color 0.15s",
+      }}
+      onMouseEnter={e => {
+        if (!disabled) {
+          (e.currentTarget as HTMLElement).style.borderColor = "#ffffff";
+          (e.currentTarget as HTMLElement).style.color = "#ffffff";
+        }
+      }}
+      onMouseLeave={e => {
+        if (!disabled) {
+          (e.currentTarget as HTMLElement).style.borderColor = "#C4CDD8";
+          (e.currentTarget as HTMLElement).style.color = "#C4CDD8";
+        }
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+export function ProceedButton({ onClick, label = "Proceed to Quote Generation", disabled = false }: ProceedButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        height: "36px",
+        padding: "0 20px",
+        borderRadius: "8px",
+        background: disabled ? "#2a7a8f" : "#1FC3EB",
+        border: "none",
+        color: "#ffffff",
+        fontSize: "0.875rem",
+        fontWeight: 500,
+        cursor: disabled ? "not-allowed" : "pointer",
+        boxSizing: "border-box",
+        whiteSpace: "nowrap",
+        opacity: disabled ? 0.6 : 1,
+        transition: "opacity 0.15s",
+      }}
+      onMouseEnter={e => {
+        if (!disabled) (e.currentTarget as HTMLElement).style.opacity = "0.85";
+      }}
+      onMouseLeave={e => {
+        if (!disabled) (e.currentTarget as HTMLElement).style.opacity = "1";
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function NextButton({ onClick, label = "Next Step", disabled = false }: NextButtonProps) {
   return (
     <button
