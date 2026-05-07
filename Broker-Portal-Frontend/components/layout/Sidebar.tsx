@@ -11,26 +11,30 @@ import { getLeads } from "@/lib/api/leads";
 import { useUser } from "@/lib/context/UserContext";
 
 const C = {
-  bg: "var(--sidebar)",
-  border: "var(--sidebar-border)",
-  primary: "var(--primary)",
-  fg: "var(--sidebar-foreground)",
-  fgMuted: "var(--sidebar-foreground-muted)",
-  activeBg: "var(--sidebar-active-bg)",
-  hoverBg: "var(--sidebar-accent)",
+  bg: "#0B0D10",
+  border: "#1D2A36",
+  primary: "#1FC3EB",
+  fg: "#C4CDD8",
+  fgMuted: "#5E6A77",
+  activeBg: "rgba(31, 195, 235, 0.14)",
+  hoverBg: "rgba(255,255,255,0.06)",
 };
 
 const quickActions = [
-  { label: "Start New Lead", icon: Plus, href: ROUTES.newLead },
-  { label: "View Leads", icon: Eye, href: ROUTES.viewLeads },
+  { label: "Dashboard", icon: Plus, href: ROUTES.dashboard },
+];
+
+const leadsAndPolicies = [
+  { label: "Leads", icon: Eye, href: ROUTES.viewLeads },
   { label: "Quotes", icon: FileText, href: ROUTES.quotes },
-  { label: "My Policies", icon: Shield, href: "#" },
+  { label: "Policies", icon: Shield, href: "#" },
 ];
 
 const toolsSupport = [
   { label: "Failed Invoices", icon: AlertCircle, href: "#" },
   { label: "FAQ", icon: HelpCircle, href: "#" },
   { label: "Training", icon: GraduationCap, href: "#" },
+  { label: "Chatbot", icon: MessageCircle, href: "#" },
 ];
 
 interface SidebarProps {
@@ -70,31 +74,40 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
     <aside
       className="h-screen flex flex-col flex-shrink-0 fixed left-0 top-0 z-10"
       style={{
-        width: "16rem",
+        width: "240px",
         background: C.bg,
-        borderRightWidth: "1px",
-        borderRightStyle: "solid",
-        borderRightColor: C.border,
+        borderRightWidth: "0px",
       }}
     >
       {/* Logo */}
       <div
-        className={isNewLead || isQuoteJourney ? "p-4" : "p-6"}
-        style={{ borderBottom: `1px solid ${C.border}` }}
+        className="px-4 py-3"
+        style={{ 
+          margin: "6px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px"
+        }}
       >
         <img
           src="/rma-logo.png"
           alt="RMA Logo"
-          className={isNewLead || isQuoteJourney ? "h-10 w-auto" : "h-12 w-auto"}
+          className="h-6 w-auto"
         />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="9" y1="9" x2="15" y2="9"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
         {!mounted ? null : isNewLead || isQuoteJourney || isQuoteTypeSelection ? (
           /* Minimal nav for new lead / quote journey / quote type selection */
           <>
-            <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
+            <p className="text-[10px] uppercase tracking-wide px-3 mb-1.5" style={{ color: C.fgMuted }}>
               Actions
             </p>
             {[
@@ -108,15 +121,15 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   alignItems: "center",
                   justifyContent: "flex-start",
                   width: "100%",
-                  height: "2.75rem",
-                  padding: "0 12px",
+                  height: "2rem",
+                  padding: "0 10px",
                   borderRadius: "6px",
                   border: "none",
                   background: C.activeBg,
                   color: C.primary,
-                  fontSize: "0.875rem",
+                  fontSize: "12px",
                   fontWeight: 500,
-                  gap: "12px",
+                  gap: "8px",
                   cursor: "pointer",
                   transition: "background 0.15s, color 0.15s",
                 }}
@@ -127,7 +140,7 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   (e.currentTarget as HTMLElement).style.background = C.activeBg;
                 }}
               >
-                <Icon size={20} style={{ flexShrink: 0 }} />
+                <Icon size={14} style={{ flexShrink: 0 }} />
                 <span>{label}</span>
               </button>
             ))}
@@ -143,15 +156,15 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                 onClick={() => router.push(href)}
                 style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "flex-start",
-                  width: "100%", height: "2.75rem", padding: "0 12px", borderRadius: "6px",
+                  width: "100%", height: "2rem", padding: "0 10px", borderRadius: "6px",
                   border: "none", background: "transparent", color: C.fg,
-                  fontSize: "0.875rem", fontWeight: 500, gap: "12px", cursor: "pointer",
+                  fontSize: "12px", fontWeight: 500, gap: "8px", cursor: "pointer",
                   transition: "background 0.15s, color 0.15s",
                 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.hoverBg; (e.currentTarget as HTMLElement).style.color = C.primary; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = C.fg; }}
               >
-                <Icon size={20} style={{ flexShrink: 0 }} />
+                <Icon size={14} style={{ flexShrink: 0 }} />
                 <span>{label}</span>
               </button>
             ))}
@@ -173,21 +186,21 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
               }}
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "flex-start",
-                width: "100%", height: "2.75rem", padding: "0 12px", borderRadius: "6px",
+                width: "100%", height: "2rem", padding: "0 10px", borderRadius: "6px",
                 border: "none", background: "transparent", color: C.fg,
-                fontSize: "0.875rem", fontWeight: 500, gap: "12px", cursor: "pointer",
+                fontSize: "12px", fontWeight: 500, gap: "8px", cursor: "pointer",
                 transition: "background 0.15s, color 0.15s",
               }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.hoverBg; (e.currentTarget as HTMLElement).style.color = C.primary; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = C.fg; }}
             >
-              <FileText size={20} style={{ flexShrink: 0 }} />
+              <FileText size={14} style={{ flexShrink: 0 }} />
               <span>Quotes</span>
             </button>
 
             <div className="my-3" style={{ borderTop: `1px solid ${C.border}` }} />
 
-            <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
+            <p className="text-[10px] uppercase tracking-wide px-3 mb-1.5" style={{ color: C.fgMuted }}>
               Support
             </p>
 
@@ -204,15 +217,15 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   alignItems: "center",
                   justifyContent: "flex-start",
                   width: "100%",
-                  height: "2.75rem",
-                  padding: "0 12px",
+                  height: "2rem",
+                  padding: "0 10px",
                   borderRadius: "6px",
                   border: "none",
                   background: "transparent",
                   color: C.fg,
-                  fontSize: "0.875rem",
+                  fontSize: "12px",
                   fontWeight: 500,
-                  gap: "12px",
+                  gap: "8px",
                   cursor: "pointer",
                   transition: "background 0.15s, color 0.15s",
                 }}
@@ -225,7 +238,7 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   (e.currentTarget as HTMLElement).style.color = C.fg;
                 }}
               >
-                <Icon size={20} style={{ flexShrink: 0 }} />
+                <Icon size={14} style={{ flexShrink: 0 }} />
                 <span>{label}</span>
               </button>
             ))}
@@ -233,8 +246,8 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
         ) : (
           /* Full nav for dashboard, quotes page, and all other pages */
           <>
-            <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
-              Quick Actions
+            <p className="text-[10px] uppercase tracking-wide px-3" style={{ color: C.fgMuted, marginBottom: "4px" }}>
+              Actions
             </p>
 
             {quickActions.map(({ label, icon: Icon, href }) => {
@@ -242,13 +255,15 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
               return (
                 <button
                   key={label}
-                  onClick={() => href !== "#" && router.push(href)}
-                  className="w-full flex items-center gap-3 px-3 rounded-md text-sm text-left"
+                  onClick={() => router.push(href)}
+                  className="w-full flex items-center gap-2 px-3 rounded-md text-left relative"
                   style={{
-                    height: "2.75rem",
+                    height: "2rem",
                     color: isActive ? C.primary : C.fg,
                     background: isActive ? C.activeBg : "transparent",
                     transition: "background 0.15s, color 0.15s",
+                    fontSize: "12px",
+                    fontWeight: 500,
                   }}
                   onMouseEnter={e => {
                     const el = e.currentTarget as HTMLElement;
@@ -261,7 +276,13 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                     el.style.color = isActive ? C.primary : C.fg;
                   }}
                 >
-                  <Icon size={20} className="flex-shrink-0" />
+                  {isActive && (
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-4 rounded"
+                      style={{ width: "2px", background: C.primary }}
+                    />
+                  )}
+                  <Icon size={14} className="flex-shrink-0" />
                   <span>{label}</span>
                 </button>
               );
@@ -269,20 +290,70 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
 
             <div className="my-3" style={{ borderTop: `1px solid ${C.border}` }} />
 
-            <p className="text-xs uppercase tracking-wider px-3 mb-2" style={{ color: C.fgMuted }}>
+            <p className="text-[10px] uppercase tracking-wide px-3" style={{ color: C.fgMuted, marginBottom: "4px" }}>
+              Leads and Policies
+            </p>
+
+            {leadsAndPolicies.map(({ label, icon: Icon, href }) => {
+              const isActive = mounted && pathname === href;
+              return (
+                <button
+                  key={label}
+                  onClick={() => router.push(href)}
+                  className="w-full flex items-center gap-2 px-3 rounded-md text-left relative"
+                  style={{
+                    height: "2rem",
+                    color: isActive ? C.primary : C.fg,
+                    background: isActive ? C.activeBg : "transparent",
+                    transition: "background 0.15s, color 0.15s",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                  }}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = C.hoverBg;
+                    el.style.color = C.primary;
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = isActive ? C.activeBg : "transparent";
+                    el.style.color = isActive ? C.primary : C.fg;
+                  }}
+                >
+                  {isActive && (
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-4 rounded"
+                      style={{ width: "2px", background: C.primary }}
+                    />
+                  )}
+                  <Icon size={14} className="flex-shrink-0" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+
+            <div className="my-3" style={{ borderTop: `1px solid ${C.border}` }} />
+
+            <p className="text-[10px] uppercase tracking-wide px-3" style={{ color: C.fgMuted, marginBottom: "4px" }}>
               Tools &amp; Support
             </p>
 
             {toolsSupport.map(({ label, icon: Icon, href }) => (
               <button
                 key={label}
-                onClick={() => href !== "#" && router.push(href)}
-                className="w-full flex items-center gap-3 px-3 rounded-md text-sm text-left"
+                onClick={() => {
+                  if (href !== "#") {
+                    router.push(href);
+                  }
+                }}
+                className="w-full flex items-center gap-2 px-3 rounded-md text-left"
                 style={{
-                  height: "2.75rem",
+                  height: "2rem",
                   color: C.fg,
                   background: "transparent",
                   transition: "background 0.15s, color 0.15s",
+                  fontSize: "12px",
+                  fontWeight: 500,
                 }}
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement;
@@ -295,7 +366,7 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   el.style.color = C.fg;
                 }}
               >
-                <Icon size={20} className="flex-shrink-0" />
+                <Icon size={14} className="flex-shrink-0" />
                 <span>{label}</span>
               </button>
             ))}
@@ -304,38 +375,31 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div
-        className="p-4 space-y-3"
-        style={{ borderTop: `1px solid ${C.border}` }}
-      >
-        <div>
-          <p className="text-xs mb-0.5" style={{ color: C.fgMuted }}>Logged in as</p>
-          <p className="text-sm truncate" style={{ color: C.fg }}>{userEmail || "—"}</p>
-        </div>
+      <div className="px-3 pb-4 pt-2">
         <button
           suppressHydrationWarning
-          className="w-full flex items-center gap-3 px-3 rounded-md text-sm text-left"
+          className="w-full flex items-center gap-2 px-2 rounded-md text-left"
           style={{
-            height: "2.75rem",
-            color: C.fg,
+            height: "1.875rem",
+            color: "#8D98A5",
             background: "transparent",
             border: "none",
             cursor: "pointer",
-            transition: "background 0.15s, color 0.15s",
+            transition: "color 0.15s",
+            fontSize: "12px",
+            fontWeight: 400,
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = C.hoverBg;
-            (e.currentTarget as HTMLElement).style.color = C.primary;
+            (e.currentTarget as HTMLElement).style.color = "#A7B1BC";
           }}
           onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = "transparent";
-            (e.currentTarget as HTMLElement).style.color = C.fg;
+            (e.currentTarget as HTMLElement).style.color = "#8D98A5";
           }}
           onClick={() => {
             window.location.href = process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200";
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>

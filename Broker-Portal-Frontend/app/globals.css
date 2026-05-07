@@ -25,7 +25,7 @@
   --sidebar-active-bg: rgba(31, 195, 235, 0.1);
   --sidebar-active-text: #ffffff;
   --sidebar-logo-color: #1FC3EB;
-  --sidebar-width: 16rem;
+  --sidebar-width: 240px;
 }
 
 * {

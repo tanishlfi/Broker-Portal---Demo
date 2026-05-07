@@ -66,13 +66,9 @@ export default function AdjustCoverageStep({ onBack, onGenerateQuote, onContinue
         Quick Cost Estimate
       </h2>
 
-      <StepProgress steps={QUICK_STEPS} currentStep={1} />
+      <StepProgress steps={QUICK_STEPS} currentStep={1} variant="continuous" />
 
       <div style={{
-        background: "#181818CC",
-        border: "1px solid #30363D",
-        borderRadius: "12px",
-        padding: "24px",
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: "24px",

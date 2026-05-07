@@ -140,11 +140,7 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
   return (
     /* Inner form card: #1E1E1E, border 1px #30363D, radius 12px */
     <>
-      <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#ffffff", marginBottom: "16px" }}>
-        Quick Cost Estimate
-      </h2>
-
-      <StepProgress steps={QUICK_STEPS} currentStep={0} />
+      <StepProgress steps={QUICK_STEPS} currentStep={0} variant="continuous" />
 
       <div style={{
         background: "#181818CC",

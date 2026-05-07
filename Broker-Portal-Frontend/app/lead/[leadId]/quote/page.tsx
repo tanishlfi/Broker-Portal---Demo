@@ -1,5 +1,4 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import DashboardHeader from "@/components/layout/DashboardHeader";
 import QuoteJourneyPage from "@/features/lead/quote/QuoteJourneyPage";
 
 interface QuotePageProps {
@@ -21,18 +20,11 @@ export default async function QuoteRoute({ params, searchParams }: QuotePageProp
 
   return (
     <DashboardLayout>
-      <DashboardHeader
-        title=""
-        showUser={true}
+      <QuoteJourneyPage 
+        leadReference={leadReference} 
+        companyName={companyName}
+        initialType={quoteType}
       />
-
-      <div style={{ flex: 1, padding: "16px", overflow: "auto" }}>
-        <QuoteJourneyPage 
-          leadReference={leadReference} 
-          companyName={companyName}
-          initialType={quoteType}
-        />
-      </div>
     </DashboardLayout>
   );
 }

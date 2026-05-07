@@ -1,55 +1,58 @@
 "use client";
 
 import {
-  Plus, Eye, Shield, Users,
-  Upload, FileText, BarChart3, AlertCircle,
-  HelpCircle, GraduationCap, MessageCircle,
+  Plus,
+  ClipboardList,
+  FileText,
+  Users,
+  TriangleAlert,
+  CircleDollarSign,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants";
 import DashboardCard from "@/components/ui/DashboardCard";
 
-const sections = [
+const statCards = [
   {
-    title: "Lead Management",
-    description: "Create and manage insurance leads",
-    cards: [
-      { title: "Start New Lead", description: "Create a new lead and begin the quote journey", icon: <Plus size={40} />, href: ROUTES.newLead },
-      { title: "View Leads", description: "Search, filter and manage existing leads", icon: <Eye size={40} />, href: ROUTES.viewLeads },
-    ],
+    value: "1000",
+    label: "Active Leads",
+    icon: Users,
   },
   {
-    title: "Policy Management",
-    description: "View and manage insurance policies",
-    cards: [
-      { title: "My Policies", description: "View and manage your policies", icon: <FileText size={40} />, href: "#" },
-      { title: "All Policies", description: "Browse all active policies", icon: <Users size={40} />, href: "#" },
-    ],
+    value: "1000",
+    label: "Failed Invoices",
+    icon: CircleDollarSign,
   },
   {
-    title: "Document Management",
-    description: "Upload and manage policy documents",
-    cards: [
-      { title: "File Upload", description: "Upload policy documents and files", icon: <Upload size={40} />, href: "#" },
-      { title: "My Files", description: "Access your uploaded files", icon: <FileText size={40} />, href: "#" },
-    ],
+    value: "100",
+    label: "Active Quotes",
+    icon: ClipboardList,
   },
   {
-    title: "Reports & Tools",
-    description: "Analytics and administrative tools",
-    cards: [
-      { title: "Reports", description: "View analytics and generate reports", icon: <BarChart3 size={40} />, href: "#" },
-      { title: "Failed Invoices", description: "Review and retry failed payments", icon: <AlertCircle size={40} />, href: "#" },
-    ],
+    value: "12",
+    label: "Quotes Near Expiry (Today)",
+    icon: TriangleAlert,
+  },
+];
+
+const quickActions = [
+  {
+    title: "Start New Lead",
+    description: "Create new lead and begin the quote journey",
+    icon: Plus,
+    href: ROUTES.newLead,
   },
   {
-    title: "Support & Resources",
-    description: "Get help and access training materials",
-    cards: [
-      { title: "FAQ", description: "Find answers to common questions", icon: <HelpCircle size={40} />, href: "#" },
-      { title: "Training", description: "Access training modules and resources", icon: <GraduationCap size={40} />, href: "#" },
-      { title: "Chatbot Support", description: "Get instant help from our AI assistant", icon: <MessageCircle size={40} />, href: "#" },
-    ],
+    title: "View All Leads",
+    description: "Search, filter and manage existing leads",
+    icon: ClipboardList,
+    href: ROUTES.viewLeads,
+  },
+  {
+    title: "View Quotes",
+    description: "Manage and track insurance quotes",
+    icon: FileText,
+    href: ROUTES.quotes,
   },
 ];
 
@@ -58,44 +61,62 @@ export default function DashboardPage() {
 
   return (
     <main
-      className="flex-1 overflow-y-auto p-6"
+      className="flex-1 overflow-y-auto p-5"
       style={{ background: "var(--background)" }}
     >
-      <div className="max-w-7xl mx-auto space-y-8">
-        {sections.map((section, i) => (
-          <div key={section.title}>
-            {/* Section header */}
-            <div className="space-y-1 mb-4">
-              <h2 style={{ fontSize: "1.25rem", fontWeight: 500, lineHeight: 1.5, color: "#1FC3EB" }}>
-                {section.title}
-              </h2>
-              <p style={{ fontSize: "0.875rem", color: "#9ca3af", lineHeight: 1.5 }}>
-                {section.description}
+      <h2 className="mb-6 text-2xl font-medium" style={{ color: "#f4f4f5" }}>
+        Dashboard
+      </h2>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4 mb-8">
+        {statCards.map(({ value, label, icon: Icon }) => (
+          <div
+            key={label}
+            className="rounded-xl border p-4"
+            style={{
+              background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
+              borderColor: "rgba(100, 116, 139, 0.24)",
+            }}
+          >
+            <div className="mb-1 flex items-start justify-between gap-3">
+              <p className="text-2xl font-semibold leading-none" style={{ color: "#f7f7f7" }}>
+                {value}
               </p>
+              <Icon size={16} style={{ color: "#aeb4c0" }} />
             </div>
-
-            {/* Cards grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {section.cards.map((card) => (
-                <DashboardCard
-                  key={card.title}
-                  title={card.title}
-                  description={card.description}
-                  icon={card.icon}
-                  onClick={card.href !== "#" ? () => router.push(card.href) : undefined}
-                />
-              ))}
-            </div>
-
-            {/* Separator between sections */}
-            {i < sections.length - 1 && (
-              <div
-                className="mt-8"
-                style={{ borderTop: "1px solid rgb(58, 58, 58)" }}
-              />
-            )}
+            <p className="text-xs" style={{ color: "#9ca3af" }}>
+              {label}
+            </p>
           </div>
         ))}
+      </div>
+
+      <div>
+        <h3 className="mb-6 text-lg font-medium" style={{ color: "#ededed" }}>
+          Quick Actions
+        </h3>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          {quickActions.map(({ title, description, icon: Icon, href }) => (
+            <DashboardCard
+              key={title}
+              title={title}
+              description={description}
+              icon={<Icon size={15} />}
+              onClick={() => router.push(href)}
+              className="rounded-2xl p-4"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(48,48,48,0.8) 0%, rgba(42,42,42,0.75) 100%)",
+                borderColor: "#30363d",
+              }}
+              iconWrapperClassName="inline-flex h-7 w-7 items-center justify-center rounded-full"
+              iconWrapperStyle={{ background: "rgba(148,163,184,0.14)", color: "#d1d5db", marginBottom: "24px" }}
+              titleClassName="mb-2 text-base"
+              titleStyle={{ fontSize: "22px", fontWeight: 500, lineHeight: "24px", color: "#f5f5f5" }}
+              descriptionStyle={{ fontSize: "12px", color: "#8f96a3", lineHeight: "18px" }}
+            />
+          ))}
+        </div>
       </div>
     </main>
   );

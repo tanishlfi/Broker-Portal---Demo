@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 import EmployeeListTable from "@/components/ui/EmployeeListTable";
 import { BackButton, NextButton } from "@/components/ui/StepButtons";
 import DownloadQuoteModal from "@/components/ui/DownloadQuoteModal";
+import StepProgress from "@/components/ui/StepProgress";
 import {
   validateRequired,
   validatePositiveNumber,
@@ -550,34 +551,11 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
 
   return (
     <div style={{
-      width: "100%", minHeight: "calc(100vh - 65px)",
-      borderRadius: "16px", border: "1px solid rgba(29,51,68,0.4)",
-      background: "rgba(24,24,24,0.8)", padding: "32px",
+      width: "100%",
       boxSizing: "border-box", display: "flex", flexDirection: "column",
     }}>
-      <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#ffffff", marginBottom: "24px" }}>
-        Full Quote
-      </h2>
-
       {/* Stepper */}
-      <div style={{ marginBottom: "28px" }}>
-        {/* Progress bar */}
-        <div style={{ display: "flex", marginBottom: "8px" }}>
-          {STEPS.map((_, i) => (
-            <div key={i} style={{ flex: 1, height: "3px", background: i <= currentStep ? "#1FC3EB" : "#30363D", marginRight: i < STEPS.length - 1 ? "4px" : 0, borderRadius: "2px", transition: "background 0.2s" }} />
-          ))}
-        </div>
-        {/* Step labels */}
-        <div style={{ display: "flex" }}>
-          {STEPS.map((label, i) => (
-            <div key={i} style={{ flex: 1, paddingRight: i < STEPS.length - 1 ? "4px" : 0 }}>
-              <span style={{ fontSize: "0.75rem", color: i === currentStep ? "#1FC3EB" : "#6b7280", fontWeight: i === currentStep ? 500 : 400 }}>
-                {label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <StepProgress steps={STEPS} currentStep={currentStep} variant="continuous" />
 
       {/* Inner card — all steps */}
       {currentStep < STEPS.length && (
