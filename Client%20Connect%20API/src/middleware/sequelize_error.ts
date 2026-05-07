@@ -1,6 +1,6 @@
 import { Response, NextFunction } from "express";
 import { logger } from "../middleware/logger";
-export const sequelizeErrorHandler = (err: any) => {
+export const sequelizeErrorHandler = (err: Error) => {
   let error = { ...err };
   // error.message = err.message;
   // console.log(error);
@@ -38,6 +38,13 @@ export const sequelizeErrorHandler = (err: any) => {
       message: error.message || "Unknown error",
       data: data,
     };
+
+    // concat all errors
+    // error.message = sqlErr.errors
+    //   .map((err: any) => err.errors.errors[0].message)
+    //   .join(", ");
+    // error.message = `Invalid entry for ${sqlErr.errors[0].errors.errors[0].path}. ${sqlErr.errors[0].errors.errors[0].message}`;
+    // console.log(`${sqlErr.errors[0].message}`);
   }
 
   // console.log(error);
@@ -47,14 +54,12 @@ export const sequelizeErrorHandler = (err: any) => {
     return {
       success: false,
       message: error.message || "Unknown error",
-      data: undefined,
     };
   } else {
     return {
       success: false,
       message: error.message || "Unknown error",
       error: error,
-      data: undefined,
     };
   }
 };
