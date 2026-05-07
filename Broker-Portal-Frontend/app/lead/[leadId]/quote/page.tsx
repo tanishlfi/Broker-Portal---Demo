@@ -6,29 +6,31 @@ interface QuotePageProps {
   params: Promise<{ leadId: string }>;
   searchParams: Promise<{ 
     ref?: string; 
-    company?: string; 
+    company?: string;
+    type?: string;
   }>;
 }
 
 export default async function QuoteRoute({ params, searchParams }: QuotePageProps) {
   const { leadId } = await params;
-  const { ref, company } = await searchParams;
+  const { ref, company, type } = await searchParams;
 
   const leadReference = ref || leadId;
   const companyName = company ? decodeURIComponent(company) : "";
+  const quoteType = type as "quick" | "full" | undefined;
 
   return (
     <DashboardLayout>
       <DashboardHeader
-        title="Quote Journey"
-        subtitle={companyName ? `${companyName} – ${leadReference}` : leadReference}
+        title=""
+        showUser={true}
       />
 
-      <div className="flex-1 flex justify-center pt-10 px-6 pb-10">
-        {/* ✅ ONLY ONE ENTRY POINT */}
+      <div style={{ flex: 1, padding: "16px", overflow: "auto" }}>
         <QuoteJourneyPage 
           leadReference={leadReference} 
-          companyName={companyName} 
+          companyName={companyName}
+          initialType={quoteType}
         />
       </div>
     </DashboardLayout>

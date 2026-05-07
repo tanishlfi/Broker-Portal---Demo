@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { isTokenValid } from "@/lib/auth";
 
 export default function Home() {
   const router = useRouter();
@@ -20,12 +21,12 @@ export default function Home() {
 
     window.addEventListener("message", handleMessage);
 
-    // if already has token (e.g. refresh), go straight to dashboard
-    if (localStorage.getItem("bp_token")) {
+    // Only go to dashboard if token is still valid
+    if (isTokenValid()) {
       router.replace("/dashboard");
     } else {
-      // no token, redirect to dashboard anyway (will handle auth there if needed)
-      router.replace("/dashboard");
+      // No valid token — clear stale data and wait for postMessage from Client Connect
+      localStorage.removeItem("bp_token");
     }
 
     return () => window.removeEventListener("message", handleMessage);

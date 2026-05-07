@@ -5,6 +5,10 @@ import {
   validatePositiveNumber,
   validatePositiveDecimal,
 } from "@/utils/validators";
+import { BackButton, NextButton } from "@/components/ui/StepButtons";
+import StepProgress from "@/components/ui/StepProgress";
+
+const QUICK_STEPS = ["Quote Details", "Adjust Cover Amounts"];
 
 interface QuickQuoteData {
   coverageAmount: number;
@@ -27,7 +31,7 @@ interface QuickQuoteInputsProps {
   formData: FormData;
   onFormChange: (data: FormData) => void;
   onBack: () => void;
-  onGenerateQuote?: (data: QuickQuoteData) => void;
+  onGenerateQuote?: () => void;
 }
 
 const INDUSTRIES = [
@@ -40,37 +44,54 @@ const PROVINCES = [
   "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape",
 ];
 
+// ── shared styles ──────────────────────────────────────────────────────────────
+
 const labelStyle: React.CSSProperties = {
-  fontSize: "1rem",
-  fontWeight: 500,
-  color: "#ffffff",
+  fontSize: "0.8125rem",
+  fontWeight: 400,
+  color: "#9ca3af",
   display: "block",
+  marginBottom: "6px",
 };
 
 const inputBase: React.CSSProperties = {
   height: "40px",
   width: "100%",
-  padding: "8px 12px",
-  marginTop: "6px",
-  background: "#3a3a3a",
+  padding: "0 12px",
+  background: "#2a2a2a",
+  border: "1px solid #30363D",
   borderRadius: "6px",
-  fontSize: "1rem",
+  fontSize: "0.875rem",
   color: "#ffffff",
   outline: "none",
   boxSizing: "border-box",
   transition: "border-color 0.15s, box-shadow 0.15s",
 };
 
+const selectBase: React.CSSProperties = {
+  ...inputBase,
+  appearance: "none" as const,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 12px center",
+  paddingRight: "32px",
+  cursor: "pointer",
+};
+
 function getInputStyle(hasError: boolean): React.CSSProperties {
-  return { ...inputBase, border: `2px solid ${hasError ? "#ef4444" : "#4a4a4a"}` };
+  return { ...inputBase, borderColor: hasError ? "#ef4444" : "#30363D" };
+}
+
+function getSelectStyle(hasError: boolean): React.CSSProperties {
+  return { ...selectBase, borderColor: hasError ? "#ef4444" : "#30363D" };
 }
 
 function onFocus(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
   e.currentTarget.style.borderColor = "#1FC3EB";
-  e.currentTarget.style.boxShadow = "0 0 0 4px rgba(31,195,235,0.2)";
+  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(31,195,235,0.15)";
 }
 function onBlur(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>, hasError: boolean) {
-  e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#4a4a4a";
+  e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#30363D";
   e.currentTarget.style.boxShadow = "none";
 }
 function onMouseEnter(e: React.MouseEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -79,11 +100,13 @@ function onMouseEnter(e: React.MouseEvent<HTMLInputElement | HTMLSelectElement>)
 }
 function onMouseLeave(e: React.MouseEvent<HTMLInputElement | HTMLSelectElement>, hasError: boolean) {
   if (document.activeElement !== e.currentTarget)
-    e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#4a4a4a";
+    e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#30363D";
 }
 
 const errMsg = (msg?: string) =>
-  msg ? <p style={{ fontSize: "0.875rem", color: "#ef4444", marginTop: "4px" }}>{msg}</p> : null;
+  msg ? <p style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: "4px" }}>{msg}</p> : null;
+
+// ── component ──────────────────────────────────────────────────────────────────
 
 export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGenerateQuote }: QuickQuoteInputsProps) {
   const { employees, genderSplit, averageAge, averageIncome, province, industry, cellphone } = formData;
@@ -103,85 +126,95 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
       e.province = "Please select a province.";
     if (!validateRequired(industry))
       e.industry = "Please select an industry.";
-    if (!validateRequired(cellphone))
-      e.cellphone = "Cellphone number is required.";
-    else if (!validateSAMobileNumber(cellphone))
-      e.cellphone = "Mobile phone number must be 10 digits long and start with 06, 07 or 08.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleGenerate = () => {
     if (!validate()) return;
-    const count = parseInt(employees, 10);
-    const income = parseFloat(averageIncome);
-    const monthly = count * 150 + count * income * 0.05;
     if (onGenerateQuote) {
-      onGenerateQuote({
-        coverageAmount: monthly * 12 * 40,
-        monthlyPremium: monthly,
-        numberOfEmployees: count,
-        benefitsIncluded: "Basic medical coverage, Life Insurance",
-      });
+      onGenerateQuote();
     }
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "896px" }}>
-      <div style={{ background: "#2d2d2d", border: "1px solid #4a4a4a", borderRadius: "8px", padding: "24px" }}>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 500, color: "#ffffff", marginBottom: "16px" }}>
-          Quick Quote Inputs
-        </h2>
-        <p style={{ fontSize: "0.875rem", color: "#a0a0a0", marginBottom: "24px" }}>
-          Enter key workforce metrics to generate an indicative pricing summary.
-        </p>
+    /* Inner form card: #1E1E1E, border 1px #30363D, radius 12px */
+    <>
+      <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#ffffff", marginBottom: "16px" }}>
+        Quick Cost Estimate
+      </h2>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" }}>
+      <StepProgress steps={QUICK_STEPS} currentStep={0} />
 
-          {/* Employees */}
-          <div>
-            <label style={labelStyle}>How many employees do you plan to cover?</label>
-            <input
-              type="text" inputMode="numeric"
-              style={getInputStyle(!!errors.employees)}
-              value={employees}
-              placeholder="e.g. 150"
-              onChange={e => { onFormChange({ ...formData, employees: e.target.value.replace(/\D/g, "") }); setErrors({ ...errors, employees: "" }); }}
-              onFocus={onFocus}
-              onBlur={e => onBlur(e, !!errors.employees)}
-              onMouseEnter={onMouseEnter}
-              onMouseLeave={e => onMouseLeave(e, !!errors.employees)}
-            />
-            {errMsg(errors.employees)}
-          </div>
+      <div style={{
+        background: "#181818CC",
+        border: "1px solid #30363D",
+        borderRadius: "12px",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "20px",
+        flex: 1,
+      }}>
 
-          {/* Gender split */}
-          <div>
-            <label style={labelStyle}>Are they...</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px" }}>
-              {["Mostly male", "Mostly female", "Even split"].map(option => (
-                <label key={option} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1rem", color: "#ffffff", cursor: "pointer" }}>
-                  <input
-                    type="radio" name="genderSplit" value={option}
-                    checked={genderSplit === option}
-                    onChange={e => { onFormChange({ ...formData, genderSplit: e.target.value }); setErrors({ ...errors, genderSplit: "" }); }}
-                    style={{ accentColor: "#1FC3EB", cursor: "pointer" }}
-                  />
+        {/* Employees — full width */}
+        <div>
+          <label style={labelStyle}>How many employees do you plan to cover?</label>
+          <input
+            type="text" inputMode="numeric"
+            style={getInputStyle(!!errors.employees)}
+            value={employees}
+            placeholder="85"
+            onChange={e => { onFormChange({ ...formData, employees: e.target.value.replace(/\D/g, "") }); setErrors({ ...errors, employees: "" }); }}
+            onFocus={onFocus}
+            onBlur={e => onBlur(e, !!errors.employees)}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={e => onMouseLeave(e, !!errors.employees)}
+          />
+          {errMsg(errors.employees)}
+        </div>
+
+        {/* Gender split — horizontal pill toggles */}
+        <div>
+          <label style={labelStyle}>Are they...</label>
+          <div style={{ display: "flex", gap: "8px" }}>
+            {["Mostly male", "Mostly female", "Even split"].map(option => {
+              const active = genderSplit === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => { onFormChange({ ...formData, genderSplit: option }); setErrors({ ...errors, genderSplit: "" }); }}
+                  style={{
+                    height: "36px",
+                    padding: "0 20px",
+                    borderRadius: "6px",
+                    border: `1px solid ${active ? "#1FC3EB" : "#30363D"}`,
+                    background: active ? "rgba(31,195,235,0.15)" : "#2a2a2a",
+                    color: active ? "#1FC3EB" : "#9ca3af",
+                    fontSize: "0.875rem",
+                    fontWeight: active ? 500 : 400,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
                   {option}
-                </label>
-              ))}
-            </div>
-            {errMsg(errors.genderSplit)}
+                </button>
+              );
+            })}
           </div>
+          {errMsg(errors.genderSplit)}
+        </div>
 
-          {/* Average age */}
+        {/* Age + Income — side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={labelStyle}>What is their average age?</label>
             <input
               type="text" inputMode="numeric"
               style={getInputStyle(!!errors.averageAge)}
               value={averageAge}
-              placeholder="e.g. 35"
+              placeholder="Enter average age"
               onChange={e => { onFormChange({ ...formData, averageAge: e.target.value.replace(/\D/g, "") }); setErrors({ ...errors, averageAge: "" }); }}
               onFocus={onFocus}
               onBlur={e => onBlur(e, !!errors.averageAge)}
@@ -190,15 +223,13 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
             />
             {errMsg(errors.averageAge)}
           </div>
-
-          {/* Average income */}
           <div>
             <label style={labelStyle}>What is their average monthly income (before tax)?</label>
             <input
               type="text" inputMode="decimal"
               style={getInputStyle(!!errors.averageIncome)}
               value={averageIncome}
-              placeholder="e.g. 25000"
+              placeholder="R Enter average salary"
               onChange={e => {
                 let v = e.target.value.replace(/[^\d.]/g, "");
                 if ((v.match(/\./g) || []).length > 1) v = v.replace(/\.$/, "");
@@ -212,12 +243,14 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
             />
             {errMsg(errors.averageIncome)}
           </div>
+        </div>
 
-          {/* Province */}
+        {/* Province + Industry — side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={labelStyle}>In which province are most of the employees based?</label>
             <select
-              style={{ ...getInputStyle(!!errors.province), appearance: "auto" } as React.CSSProperties}
+              style={getSelectStyle(!!errors.province)}
               value={province}
               onChange={e => { onFormChange({ ...formData, province: e.target.value }); setErrors({ ...errors, province: "" }); }}
               onFocus={onFocus}
@@ -225,17 +258,15 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
               onMouseEnter={onMouseEnter}
               onMouseLeave={e => onMouseLeave(e, !!errors.province)}
             >
-              <option value="">Please select</option>
+              <option value="">Select province</option>
               {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             {errMsg(errors.province)}
           </div>
-
-          {/* Industry */}
           <div>
             <label style={labelStyle}>Which industry is your organisation primarily in?</label>
             <select
-              style={{ ...getInputStyle(!!errors.industry), appearance: "auto" } as React.CSSProperties}
+              style={getSelectStyle(!!errors.industry)}
               value={industry}
               onChange={e => { onFormChange({ ...formData, industry: e.target.value }); setErrors({ ...errors, industry: "" }); }}
               onFocus={onFocus}
@@ -243,52 +274,20 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
               onMouseEnter={onMouseEnter}
               onMouseLeave={e => onMouseLeave(e, !!errors.industry)}
             >
-              <option value="">Please select</option>
+              <option value="">Select industry</option>
               {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
             {errMsg(errors.industry)}
           </div>
-
-          {/* Cellphone */}
-          <div>
-            <label style={labelStyle}>What is your cellphone number?</label>
-            <input
-              type="tel"
-              style={getInputStyle(!!errors.cellphone)}
-              value={cellphone}
-              placeholder="0821234567"
-              onChange={e => { onFormChange({ ...formData, cellphone: e.target.value.replace(/\D/g, "").slice(0, 10) }); setErrors({ ...errors, cellphone: "" }); }}
-              onFocus={onFocus}
-              onBlur={e => onBlur(e, !!errors.cellphone)}
-              onMouseEnter={onMouseEnter}
-              onMouseLeave={e => onMouseLeave(e, !!errors.cellphone)}
-            />
-            {errMsg(errors.cellphone)}
-          </div>
-
         </div>
 
       </div>
 
-      {/* Buttons outside the card */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", marginTop: "16px" }}>
-        <button
-          onClick={onBack}
-          style={{ height: "40px", padding: "0 20px", fontSize: "1rem", fontWeight: 500, background: "transparent", border: "1px solid #4a4a4a", color: "#ffffff", borderRadius: "6px", cursor: "pointer", transition: "background 0.15s" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#4a4a4a"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-        >
-          Back
-        </button>
-        <button
-          onClick={handleGenerate}
-          style={{ height: "40px", padding: "0 20px", fontSize: "1rem", fontWeight: 500, background: "#1FC3EB", color: "#ffffff", border: "none", borderRadius: "6px", cursor: "pointer", transition: "opacity 0.15s" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.9"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
-        >
-          Generate Quick Quote
-        </button>
+      {/* Back + Generate Quote — outside the card, bottom of outer frame */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "24px" }}>
+        <BackButton onClick={onBack} />
+        <NextButton label="Next Step" onClick={handleGenerate} />
       </div>
-    </div>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import * as ReactDOM from "react-dom";
 import { useRouter } from "next/navigation";
 import { Plus, Filter, Search, Eye, Play, X, ChevronDown, Check } from "lucide-react";
 import { getLeads, cancelLead, Lead } from "@/lib/api/leads";
+import { getValidToken, redirectToAuth } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 import {
   Table, TableHeader, TableBody,
@@ -211,14 +212,18 @@ export default function ViewLeadsPage() {
     setLeads((prev) =>
       prev.map((l) => l.leadId === leadId ? { ...l, status: "Cancelled" } : l)
     );
-    const token = localStorage.getItem("bp_token") ?? "";
+    const token = getValidToken() ?? "";
     cancelLead(leadId, token);
   };
 
   useEffect(() => {
     (async () => {
       try {
-        const token = localStorage.getItem("bp_token") ?? "";
+        const token = getValidToken();
+        if (!token) {
+          redirectToAuth();
+          return;
+        }
         const representativeId = localStorage.getItem("bp_broker_id") ?? localStorage.getItem("bp_representative_id") ?? undefined;
         const data = await getLeads(token, representativeId);
         setLeads(data.length ? data : MOCK_LEADS);
