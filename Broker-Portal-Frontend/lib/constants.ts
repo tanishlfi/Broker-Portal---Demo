@@ -5,4 +5,5 @@ export const ROUTES = {
   newLead: "/lead/new",
   viewLeads: "/lead/view",
   quotes: "/quotes",
+  failedInvoices: "/failed-invoices",
 } as const;
