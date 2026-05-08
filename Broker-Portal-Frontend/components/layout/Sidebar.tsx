@@ -31,7 +31,7 @@ const leadsAndPolicies = [
 ];
 
 const toolsSupport = [
-  { label: "Failed Invoices", icon: AlertCircle, href: "#" },
+  { label: "Failed Invoices", icon: AlertCircle, href: ROUTES.failedInvoices },
   { label: "FAQ", icon: HelpCircle, href: "#" },
   { label: "Training", icon: GraduationCap, href: "#" },
   { label: "Chatbot", icon: MessageCircle, href: "#" },
