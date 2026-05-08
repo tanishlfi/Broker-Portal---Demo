@@ -170,6 +170,9 @@ export default function ViewLeadsPage() {
       }} />
 
       <div style={{ position: "relative", zIndex: 1 }}>
+
+        <h1 style={{ fontSize: "22px", fontWeight: 600, color: "var(--foreground)", marginBottom: "24px" }}>Leads</h1>
+
         {/* Stats Cards */}
         <div style={{ display: "flex", gap: "22px", marginBottom: "26px" }}>
           {[

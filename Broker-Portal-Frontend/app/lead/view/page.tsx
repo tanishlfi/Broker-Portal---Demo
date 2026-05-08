@@ -37,7 +37,7 @@ export default function LeadViewRoute() {
   );
 
   return (
-    <DashboardLayout title="Leads" subtitle="" headerAction={headerAction}>
+    <DashboardLayout headerAction={headerAction}>
       <ViewLeadsPage />
     </DashboardLayout>
   );

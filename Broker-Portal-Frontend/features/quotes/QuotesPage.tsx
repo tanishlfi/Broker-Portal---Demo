@@ -199,6 +199,7 @@ export default function QuotesPage() {
       <div className="flex items-center justify-between mb-6 px-6 pt-6">
         <h1 className="text-lg font-medium text-white">Quotes</h1>
         <button
+          suppressHydrationWarning
           onClick={() => setShowLeadModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-[#1FC3EB] text-[#0A0A0A] rounded-lg font-bold text-sm hover:bg-[#1AB3D9] transition-colors"
         >
@@ -218,6 +219,7 @@ export default function QuotesPage() {
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
             />
             <input
+              suppressHydrationWarning
               type="text"
               placeholder="Search by company name or quote ID..."
               value={searchQuery}
@@ -231,6 +233,7 @@ export default function QuotesPage() {
         <div className="flex gap-2">
           {tabs.map((tab) => (
             <button
+              suppressHydrationWarning
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`px-3 h-8 rounded-lg text-sm font-medium transition-all ${
@@ -300,6 +303,7 @@ export default function QuotesPage() {
                   {/* Actions Button */}
                   <div className="relative">
                     <button
+                      suppressHydrationWarning
                       onClick={() =>
                         setOpenActionsMenu(openActionsMenu === quote.id ? null : quote.id)
                       }

@@ -9,7 +9,6 @@ interface DashboardHeaderProps {
   title: string;
   subtitle?: string;
   showUser?: boolean;
-  headerAction?: React.ReactNode;
 }
 
 interface DecodedToken {
@@ -27,7 +26,7 @@ const C = {
   primary: "#1FC3EB",
 };
 
-export default function DashboardHeader({ title, subtitle, showUser = true, headerAction }: DashboardHeaderProps) {
+export default function DashboardHeader({ title, subtitle, showUser = true }: DashboardHeaderProps) {
   const [displayName, setDisplayName] = useState("");
   let user = null;
   try {
@@ -52,7 +51,7 @@ export default function DashboardHeader({ title, subtitle, showUser = true, head
 
     // Fallback to UserContext
     if (user?.email || user?.name) {
-      setDisplayName(user.email || user.name);
+      setDisplayName((user.email || user.name) ?? "");
       return;
     }
 
@@ -95,88 +94,62 @@ export default function DashboardHeader({ title, subtitle, showUser = true, head
 
   return (
     <header
+      className="flex items-center justify-between py-4 flex-shrink-0"
       style={{
         background: "#0B0D10",
-        borderBottom: "1px solid rgba(29, 51, 68, 0.4)",
-        paddingLeft: "24px",
+        borderBottom: "none",
+        paddingLeft: "0px",
         paddingRight: "24px",
-        paddingTop: "16px",
-        paddingBottom: "16px",
+        height: "56px",
         position: "sticky",
         top: 0,
         zIndex: 20,
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
       }}
     >
-      {/* Top row: Welcome message and notification bell */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <div style={{ width: "1px", height: "17px", background: "#797979" }} />
+      <div className="flex items-center h-full">
+        <div style={{ 
+          width: "1px", 
+          height: "20px", 
+          background: "#797979", 
+          alignSelf: "center",
+          flexShrink: 0,
+        }} />
+        <div style={{ 
+          marginLeft: "12px", 
+          display: "flex", 
+          flexDirection: "column", 
+          justifyContent: "center",
+          height: "100%",
+          transform: "translateY(-2px)"
+        }}>
           {showUser && (
-            <p style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "12px",
-              fontWeight: 500,
-              lineHeight: "15px",
-              color: "#A8A8A8",
-              margin: 0,
-            }}>
-              Welcome Back! {displayName && <span style={{ color: "#A8A8A8" }}>{displayName}</span>}
+            <p style={{ fontSize: "0.8125rem", fontWeight: 400, color: "var(--muted-foreground)", marginBottom: "0.125rem" }}>
+              Welcome Back{displayName && <>! <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{displayName}</span></>}
+            </p>
+          )}
+          {title ? (
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 500, color: "var(--foreground)", lineHeight: 1.5 }}>
+              {title}
+            </h1>
+          ) : null}
+          {subtitle && (
+            <p style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--muted-foreground)", marginTop: "0.25rem", lineHeight: 1.5 }}>
+              {subtitle}
             </p>
           )}
         </div>
-        <button
-          suppressHydrationWarning
-          style={{
-            position: "relative",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            padding: "4px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          aria-label="Notifications"
-        >
-          <Bell size={20} color="#E6E6E6" />
+      </div>
+      <div className="flex items-center gap-3">
+        <button suppressHydrationWarning className="header-bell" aria-label="Notifications" style={{ width: "20px", height: "20px", padding: 0 }}>
+          <div style={{ width: "20px", height: "20px", position: "relative" }}>
+            <Bell size={16} style={{ position: "absolute", top: "2px", left: "2px", pointerEvents: "none" }} />
+            <span
+              className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full"
+              style={{ background: "var(--primary)" }}
+            />
+          </div>
         </button>
       </div>
-
-      {/* Bottom row: Title and action button */}
-      {title && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: "17px" }}>
-          <div>
-            <h1 style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "24px",
-              fontWeight: 500,
-              lineHeight: "36px",
-              letterSpacing: "0.0703125px",
-              color: "#FFFFFF",
-              margin: 0,
-            }}>
-              {title}
-            </h1>
-            {subtitle && (
-              <p style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "14px",
-                fontWeight: 400,
-                lineHeight: "17px",
-                color: "#A8A8A8",
-                margin: 0,
-                marginTop: "4px",
-              }}>
-                {subtitle}
-              </p>
-            )}
-          </div>
-          {headerAction && <div>{headerAction}</div>}
-        </div>
-      )}
     </header>
   );
 }

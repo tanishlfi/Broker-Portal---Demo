@@ -7,7 +7,6 @@ import {
   AlertCircle, HelpCircle, GraduationCap, ArrowLeft, MessageCircle,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
-import { getLeads } from "@/lib/api/leads";
 import { useUser } from "@/lib/context/UserContext";
 
 const C = {
@@ -27,7 +26,7 @@ const quickActions = [
 const leadsAndPolicies = [
   { label: "Leads", icon: Eye, href: ROUTES.viewLeads },
   { label: "Quotes", icon: FileText, href: ROUTES.quotes },
-  { label: "Policies", icon: Shield, href: "#" },
+  { label: "Policies", icon: Shield, href: ROUTES.policies },
 ];
 
 const toolsSupport = [
@@ -79,15 +78,68 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
         borderRightWidth: "0px",
       }}
     >
-      {/* Logo */}
-      <div
-        className="px-4 py-3"
-        style={{ 
-          margin: "6px",
+      {/* Sidebar Toggle Button */}
+      <button
+        aria-label="Toggle sidebar"
+        style={{
+          background: "transparent",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+          padding: 0,
+          width: "32px",
+          height: "32px",
+          position: "absolute",
+          top: "12px",
+          left: "196px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: "8px"
+          justifyContent: "center",
+          transition: "all 0.15s",
+          zIndex: 20,
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = "transparent";
+        }}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            x="1.5"
+            y="1.5"
+            width="13"
+            height="13"
+            rx="1.5"
+            stroke="#E6E6E6"
+            strokeWidth="1.2"
+          />
+          <path
+            d="M5.5 1.5V14.5"
+            stroke="#E6E6E6"
+            strokeWidth="1.2"
+          />
+        </svg>
+      </button>
+
+      {/* Logo */}
+      <div
+        className="px-4"
+        style={{ 
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          gap: "8px",
+          height: "56px",
+          flexShrink: 0,
+          paddingLeft: "16px",
         }}
       >
         <img
@@ -95,11 +147,6 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
           alt="RMA Logo"
           className="h-6 w-auto"
         />
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-          <line x1="9" y1="9" x2="15" y2="9"/>
-          <line x1="9" y1="15" x2="15" y2="15"/>
-        </svg>
       </div>
 
       {/* Nav */}
@@ -120,24 +167,24 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "flex-start",
-                  width: "100%",
-                  height: "2rem",
-                  padding: "0 10px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: C.activeBg,
+                  width: "216px",
+                  height: "33px",
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #1E3339",
+                  background: "#0F1619",
                   color: C.primary,
                   fontSize: "12px",
                   fontWeight: 500,
-                  gap: "8px",
+                  gap: "10px",
                   cursor: "pointer",
                   transition: "background 0.15s, color 0.15s",
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.background = "rgba(31,195,235,0.18)";
+                  (e.currentTarget as HTMLElement).style.background = "#141C20";
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.background = C.activeBg;
+                  (e.currentTarget as HTMLElement).style.background = "#0F1619";
                 }}
               >
                 <Icon size={14} style={{ flexShrink: 0 }} />
@@ -169,21 +216,9 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
               </button>
             ))}
 
-            {/* Quotes — navigates to the quote journey for the first actionable lead */}
+            {/* Quotes */}
             <button
-              onClick={async () => {
-                try {
-                  const token = localStorage.getItem("bp_token") ?? "";
-                  const representativeId = localStorage.getItem("bp_broker_id") ?? undefined;
-                  const leads = await getLeads(token, representativeId);
-                  const actionable = leads.find((l) =>
-                    ["Draft", "In Progress", "Quote Expired"].includes(l.status)
-                  ) ?? leads[0];
-                  if (actionable) {
-                    router.push(`/lead/${actionable.leadId}/quote?ref=${actionable.leadReference}&company=${encodeURIComponent(actionable.employerName)}`);
-                  }
-                } catch { /* nothing to navigate to */ }
-              }}
+              onClick={() => router.push(ROUTES.quotes)}
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "flex-start",
                 width: "100%", height: "2rem", padding: "0 10px", borderRadius: "6px",

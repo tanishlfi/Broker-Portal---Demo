@@ -6,4 +6,5 @@ export const ROUTES = {
   viewLeads: "/lead/view",
   quotes: "/quotes",
   failedInvoices: "/failed-invoices",
+  policies: "/policies",
 } as const;
