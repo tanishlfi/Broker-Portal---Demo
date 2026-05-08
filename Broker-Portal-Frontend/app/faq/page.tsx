@@ -1,10 +1,10 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import FailedInvoicesPage from "@/features/invoices/FailedInvoicesPage";
+import FAQPage from "@/features/faq/FAQPage";
 
 export default function Page() {
   return (
     <DashboardLayout>
-      <FailedInvoicesPage />
+      <FAQPage />
     </DashboardLayout>
   );
 }

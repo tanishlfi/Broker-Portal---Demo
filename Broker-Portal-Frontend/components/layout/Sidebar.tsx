@@ -31,9 +31,9 @@ const leadsAndPolicies = [
 
 const toolsSupport = [
   { label: "Failed Invoices", icon: AlertCircle, href: ROUTES.failedInvoices },
-  { label: "FAQ", icon: HelpCircle, href: "#" },
-  { label: "Training", icon: GraduationCap, href: "#" },
-  { label: "Chatbot", icon: MessageCircle, href: "#" },
+  { label: "FAQ", icon: HelpCircle, href: ROUTES.faq },
+  { label: "Training", icon: GraduationCap, href: ROUTES.training },
+  { label: "Chatbot", icon: MessageCircle, href: ROUTES.chatbot },
 ];
 
 interface SidebarProps {
@@ -66,7 +66,6 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
 
   const isNewLead = mounted && pathname === ROUTES.newLead;
   const isQuoteJourney = mounted && /^\/lead\/[^/]+\/quote/.test(pathname ?? "");
-  const isViewLeads = mounted && pathname === ROUTES.viewLeads;
   const isQuoteTypeSelection = mounted && pathname === "/quotes/new";
 
   return (
@@ -192,92 +191,6 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
               </button>
             ))}
           </>
-        ) : isViewLeads ? (
-          /* View Leads nav: Back to Dashboard, Quotes, then Support section */
-          <>
-            {[
-              { label: "Back to Dashboard", icon: ArrowLeft, href: ROUTES.dashboard },
-            ].map(({ label, icon: Icon, href }) => (
-              <button
-                key={label}
-                onClick={() => router.push(href)}
-                style={{
-                  display: "inline-flex", alignItems: "center", justifyContent: "flex-start",
-                  width: "100%", height: "2rem", padding: "0 10px", borderRadius: "6px",
-                  border: "none", background: "transparent", color: C.fg,
-                  fontSize: "12px", fontWeight: 500, gap: "8px", cursor: "pointer",
-                  transition: "background 0.15s, color 0.15s",
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.hoverBg; (e.currentTarget as HTMLElement).style.color = C.primary; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = C.fg; }}
-              >
-                <Icon size={14} style={{ flexShrink: 0 }} />
-                <span>{label}</span>
-              </button>
-            ))}
-
-            {/* Quotes */}
-            <button
-              onClick={() => router.push(ROUTES.quotes)}
-              style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "flex-start",
-                width: "100%", height: "2rem", padding: "0 10px", borderRadius: "6px",
-                border: "none", background: "transparent", color: C.fg,
-                fontSize: "12px", fontWeight: 500, gap: "8px", cursor: "pointer",
-                transition: "background 0.15s, color 0.15s",
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.hoverBg; (e.currentTarget as HTMLElement).style.color = C.primary; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = C.fg; }}
-            >
-              <FileText size={14} style={{ flexShrink: 0 }} />
-              <span>Quotes</span>
-            </button>
-
-            <div className="my-3" style={{ borderTop: `1px solid ${C.border}` }} />
-
-            <p className="text-[10px] uppercase tracking-wide px-3 mb-1.5" style={{ color: C.fgMuted }}>
-              Support
-            </p>
-
-            {[
-              { label: "FAQ", icon: HelpCircle, href: "#" },
-              { label: "Training", icon: GraduationCap, href: "#" },
-              { label: "Chatbot Support", icon: MessageCircle, href: "#" },
-            ].map(({ label, icon: Icon, href }) => (
-              <button
-                key={label}
-                onClick={() => href !== "#" && router.push(href)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  width: "100%",
-                  height: "2rem",
-                  padding: "0 10px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: "transparent",
-                  color: C.fg,
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  gap: "8px",
-                  cursor: "pointer",
-                  transition: "background 0.15s, color 0.15s",
-                }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.background = C.hoverBg;
-                  (e.currentTarget as HTMLElement).style.color = C.primary;
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.background = "transparent";
-                  (e.currentTarget as HTMLElement).style.color = C.fg;
-                }}
-              >
-                <Icon size={14} style={{ flexShrink: 0 }} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </>
         ) : (
           /* Full nav for dashboard, quotes page, and all other pages */
           <>
@@ -373,38 +286,43 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
               Tools &amp; Support
             </p>
 
-            {toolsSupport.map(({ label, icon: Icon, href }) => (
-              <button
-                key={label}
-                onClick={() => {
-                  if (href !== "#") {
-                    router.push(href);
-                  }
-                }}
-                className="w-full flex items-center gap-2 px-3 rounded-md text-left"
-                style={{
-                  height: "2rem",
-                  color: C.fg,
-                  background: "transparent",
-                  transition: "background 0.15s, color 0.15s",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.background = C.hoverBg;
-                  el.style.color = C.primary;
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.background = "transparent";
-                  el.style.color = C.fg;
-                }}
-              >
-                <Icon size={14} className="flex-shrink-0" />
-                <span>{label}</span>
-              </button>
-            ))}
+            {toolsSupport.map(({ label, icon: Icon, href }) => {
+              const isActive = mounted && pathname === href;
+              return (
+                <button
+                  key={label}
+                  onClick={() => router.push(href)}
+                  className="w-full flex items-center gap-2 px-3 rounded-md text-left relative"
+                  style={{
+                    height: "2rem",
+                    color: isActive ? C.primary : C.fg,
+                    background: isActive ? C.activeBg : "transparent",
+                    transition: "background 0.15s, color 0.15s",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                  }}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = C.hoverBg;
+                    el.style.color = C.primary;
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = isActive ? C.activeBg : "transparent";
+                    el.style.color = isActive ? C.primary : C.fg;
+                  }}
+                >
+                  {isActive && (
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-4 rounded"
+                      style={{ width: "2px", background: C.primary }}
+                    />
+                  )}
+                  <Icon size={14} className="flex-shrink-0" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
           </>
         )}
       </nav>

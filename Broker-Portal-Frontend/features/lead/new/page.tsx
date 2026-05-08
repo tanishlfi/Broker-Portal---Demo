@@ -213,7 +213,7 @@ export default function StartNewLeadPage() {
         preferredCommunicationMethod: "Email",
         representativeId: brokerId || "00000000-0000-0000-0000-000000000000",
         brokerId: brokerId || "00000000-0000-0000-0000-000000000000",
-      }, validToken);
+      }, validToken as string);
       const { leadId, leadReference } = result.data;
       showToast("Lead created successfully");
       setTimeout(() => {

@@ -1,10 +1,10 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import FailedInvoicesPage from "@/features/invoices/FailedInvoicesPage";
+import TrainingPage from "@/features/training/TrainingPage";
 
 export default function Page() {
   return (
     <DashboardLayout>
-      <FailedInvoicesPage />
+      <TrainingPage />
     </DashboardLayout>
   );
 }

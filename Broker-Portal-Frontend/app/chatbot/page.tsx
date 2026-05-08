@@ -1,10 +1,10 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import FailedInvoicesPage from "@/features/invoices/FailedInvoicesPage";
+import ChatbotPage from "@/features/chatbot/ChatbotPage";
 
 export default function Page() {
   return (
     <DashboardLayout>
-      <FailedInvoicesPage />
+      <ChatbotPage />
     </DashboardLayout>
   );
 }
