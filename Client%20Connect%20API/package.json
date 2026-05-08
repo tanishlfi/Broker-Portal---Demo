@@ -41,7 +41,7 @@
     "cls-hooked": "^4.2.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "dayjs": "^1.11.19",
+    "dayjs": "^1.11.20",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "express-fileupload": "^1.5.2",
@@ -62,6 +62,7 @@
     "uuid": "^9.0.1",
     "winston": "^3.19.0",
     "winston-transport-sequelize": "^4.0.10",
+    "xlsx": "^0.18.5",
     "yup": "^1.7.1"
   },
   "devDependencies": {

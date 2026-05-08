@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
-const { BrokerQuote, BrokerLead, BrokerQuoteBenefit, BrokerQuickQuoteData, sequelize } = require("../models");
+const { BrokerQuote, BrokerLead, BrokerQuoteBenefit, BrokerQuickQuoteData, BrokerEmployee, sequelize } = require("../models");
 import { sequelizeErrorHandler } from "../middleware/sequelize_error";
 import { v4 as uuidv4 } from "uuid";
 import { PricingService } from "../services/pricingService";
 import { quickQuoteSchema, fullQuoteSchema } from "../utils/validation";
+import { UploadedFile } from "express-fileupload";
 
 export const generateQuickQuote = async (req: Request, res: Response) => {
-  const t = await sequelize.transaction();
+    const t = await sequelize.transaction();
   try {
     const validatedBody = await quickQuoteSchema.validate(req.body, { abortEarly: false });
     const { lead_id } = validatedBody;
@@ -73,6 +74,32 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
   }
 };
 
+const parseEmployeeCsv = (csvData: string): any[] => {
+  const lines = csvData.split(/\r?\n/);
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+  const employees = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const values = lines[i].split(",").map(v => v.trim());
+    const emp: any = {};
+    
+    headers.forEach((header, index) => {
+      if (header.includes("first") || header.includes("name")) emp.first_name = values[index];
+      if (header.includes("last") || header.includes("surname")) emp.last_name = values[index];
+      if (header.includes("dob") || header.includes("birth")) emp.date_of_birth = values[index];
+      if (header.includes("id")) emp.id_number = values[index];
+      if (header.includes("salary")) emp.salary = parseFloat(values[index]) || 0;
+      if (header.includes("gender")) emp.gender = values[index];
+    });
+    
+    employees.push(emp);
+  }
+  return employees;
+};
+
 export const generateFullQuote = async (req: Request, res: Response) => {
   const t = await sequelize.transaction();
   try {
@@ -83,6 +110,24 @@ export const generateFullQuote = async (req: Request, res: Response) => {
     if (!lead) {
       await t.rollback();
       return res.status(404).json({ success: false, message: "Lead not found" });
+    }
+
+    let employees_list = [];
+
+    // Check if file is uploaded
+    if (req.files && req.files.employeeFile) {
+      const file = req.files.employeeFile as UploadedFile;
+      const csvData = file.data.toString("utf8");
+      employees_list = parseEmployeeCsv(csvData);
+
+      // Save employees to DB
+      for (const emp of employees_list) {
+        await BrokerEmployee.create({
+          ...emp,
+          lead_id: lead.lead_id,
+          employee_id: uuidv4()
+        }, { transaction: t });
+      }
     }
 
     const quote_reference = `QT-F-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
@@ -103,6 +148,7 @@ export const generateFullQuote = async (req: Request, res: Response) => {
       quote_type: "Full",
       product_id,
       benefits,
+      employees_list: employees_list.length > 0 ? employees_list : undefined
     });
 
     await t.commit();
@@ -114,10 +160,12 @@ export const generateFullQuote = async (req: Request, res: Response) => {
         quoteId: quote.quote_id,
         quoteReference: quote.quote_reference,
         pricing: pricingResult,
+        employeeCount: employees_list.length
       },
     });
   } catch (err: any) {
     if (t) await t.rollback();
+    console.error("FULL QUOTE ERROR:", err);
     return res.status(err.name === "ValidationError" ? 400 : 500).json({
       success: false,
       message: err.message || "An error occurred while generating full quote",

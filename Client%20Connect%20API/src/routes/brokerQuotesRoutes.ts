@@ -1,4 +1,5 @@
 import { Router } from "express";
+import fileUpload from "express-fileupload";
 import {
   generateQuickQuote,
   generateFullQuote,
@@ -13,14 +14,11 @@ import {
 const router = Router();
 
 router.post("/quick", generateQuickQuote);
-router.post("/full", generateFullQuote);
+router.post("/full", fileUpload(), generateFullQuote);
 router.post("/:quoteReference/reprice", repriceQuote);
 router.get("/:quoteReference", getQuoteDetail);
 router.get("/:quoteReference/document", downloadQuoteDocument);
 
-// Note: Requirement says POST /api/leads/{leadReference}/quote
-// This is handled in brokerLeadsRoutes.ts or here depending on preference.
-// I'll add it here as well or just ensure it's in leads.
 router.post("/save-to-lead/:leadReference", saveQuoteToLead);
 
 router.get("/lead/:leadId", getQuotesByLeadController);

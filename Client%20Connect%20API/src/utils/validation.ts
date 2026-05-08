@@ -70,3 +70,13 @@ export const fullQuoteSchema = Yup.object().shape({
     })
   ).required(),
 });
+
+export const sendOtpSchema = Yup.object().shape({
+  referenceId: Yup.string().uuid("Invalid reference ID").required(),
+  referenceType: Yup.string().oneOf(["Lead", "Quote"]).required(),
+});
+
+export const verifyOtpSchema = Yup.object().shape({
+  referenceId: Yup.string().uuid("Invalid reference ID").required(),
+  otpCode: Yup.string().matches(/^\d{6}$/, "Must be exactly 6 digits").required(),
+});

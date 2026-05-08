@@ -5,6 +5,8 @@ import {
   updateLeadSchema,
   cancelLeadSchema,
 } from "../utils/validation";
+import { UploadedFile } from "express-fileupload";
+import { parseAndValidateEmployeesFile } from "../services/broker.employee.upload.service"; // Force re-parse
 
 const {
   BrokerLead,
@@ -12,13 +14,11 @@ const {
   BrokerContact,
   BrokerQuote,
   BrokerHistory,
+  BrokerQuoteEmployee,
   sequelize,
 } = require("../models");
 const { Op } = require("sequelize");
 
-/**
- * Helper to log changes to BrokerHistory
- */
 const logHistory = async (
   tableName: string,
   recordId: string | number,
@@ -441,6 +441,115 @@ export const getLeadHistory = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return res.status(500).json(sequelizeErrorHandler(error));
+  }
+};
+
+export const uploadEmployeesController = async (req: Request, res: Response) => {
+  const t = await sequelize.transaction();
+  try {
+    const { leadId } = req.params;
+
+    // 1. Verify Lead exists
+    const lead = await BrokerLead.findOne({
+      where: { [Op.or]: [{ lead_id: leadId }, { lead_reference: leadId }] },
+    });
+
+    if (!lead) {
+      await t.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    // 2. Extract file from request
+    if (!req.files || Object.keys(req.files).length === 0) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: "No file was uploaded.",
+      });
+    }
+
+    const fileKey = Object.keys(req.files)[0];
+    const uploadedFile = req.files[fileKey] as UploadedFile;
+
+    // 3. Check file size (limit to 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (uploadedFile.size > MAX_FILE_SIZE) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: "File is too large. Maximum size allowed is 10MB.",
+      });
+    }
+
+    // 4. Check allowed extensions (csv, xlsx)
+    const allowedMimeTypes = [
+      "text/csv",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    
+    const fileExtension = uploadedFile.name.split(".").pop()?.toLowerCase();
+    const allowedExtensions = ["csv", "xlsx"];
+
+    if (!allowedMimeTypes.includes(uploadedFile.mimetype) && !allowedExtensions.includes(fileExtension || "")) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: "Invalid file type. Only CSV and XLSX are allowed.",
+      });
+    }
+
+    // 4. Parse and validate file using the service
+    const validationResult = parseAndValidateEmployeesFile(uploadedFile.data);
+
+    if (validationResult.totalRows === 0) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: "The uploaded file is empty or missing expected headers.",
+      });
+    }
+
+    // 5. Bulk insert all parsed employees into the table with the lead_id.
+    const employeesToInsert = validationResult.employees.map((emp: any) => ({
+      ...emp,
+      lead_id: lead.lead_id,
+    }));
+
+    await BrokerQuoteEmployee.bulkCreate(employeesToInsert, { transaction: t });
+
+    await logHistory(
+      "BrokerLead",
+      lead.lead_id,
+      "UPDATE",
+      null,
+      { action: "Employees Uploaded", count: validationResult.totalRows },
+      "System",
+      t
+    );
+
+    await t.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: "Employees processed successfully.",
+      data: {
+        totalRows: validationResult.totalRows,
+        validCount: validationResult.validCount,
+        invalidCount: validationResult.invalidCount,
+        errors: validationResult.errors,
+      },
+    });
+  } catch (error: any) {
+    if (t) await t.rollback();
+    console.error("UPLOAD EMPLOYEES ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "An error occurred while uploading employees.",
+    });
   }
 };
 
