@@ -59,12 +59,13 @@ export class BrokerOnboardingService {
             surname: emp.last_name,
             idNumber: emp.id_number,
             dateOfBirth: emp.date_of_birth,
+            memberTypeId: 1, // Default to Main Member
             status: "New",
             client_type: "Broker Portal",
             isVopdVerified: false,
             dateVopdVerified: null,
             vopdResponse: null,
-            notes: "VOPD/AML Verification: In Progress"
+            notes: initialNotes || "VOPD/AML Verification: In Progress"
           };
         });
 
@@ -82,7 +83,13 @@ export class BrokerOnboardingService {
         memberCount: lead.employees ? lead.employees.length : 0
       };
     } catch (error: any) {
-      if (t) await t.rollback();
+      if (t) {
+        try {
+          await t.rollback();
+        } catch (rbErr) {
+          // Transaction already closed
+        }
+      }
       logger.error(`CRITICAL: Failed to create onboarding request for Lead ${leadId}:`, error);
       throw error; 
     }

@@ -3,7 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable(
-      "broker_history",
+      "bp_history",
       {
         history_id: {
           allowNull: false,
@@ -51,18 +51,18 @@ module.exports = {
     );
 
     await queryInterface.addIndex(
-      { tableName: "broker_history", schema: "broker" },
+      { tableName: "bp_history", schema: "broker" },
       ["record_id"]
     );
     await queryInterface.addIndex(
-      { tableName: "broker_history", schema: "broker" },
+      { tableName: "bp_history", schema: "broker" },
       ["table_name"]
     );
   },
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable({
-      tableName: "broker_history",
+      tableName: "bp_history",
       schema: "broker",
     });
   },

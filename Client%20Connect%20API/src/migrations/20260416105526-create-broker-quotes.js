@@ -3,7 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable(
-      "broker_quotes",
+      "bp_quotes",
       {
         quote_id: {
           allowNull: false,
@@ -16,7 +16,7 @@ module.exports = {
           allowNull: false,
           references: {
             model: {
-              tableName: "broker_leads",
+              tableName: "bp_leads",
               schema: "broker",
             },
             key: "lead_id",
@@ -103,18 +103,18 @@ module.exports = {
     );
 
     await queryInterface.addIndex(
-      { tableName: "broker_quotes", schema: "broker" },
+      { tableName: "bp_quotes", schema: "broker" },
       ["lead_id"],
     );
     await queryInterface.addIndex(
-      { tableName: "broker_quotes", schema: "broker" },
+      { tableName: "bp_quotes", schema: "broker" },
       ["quote_status"],
     );
   },
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable({
-      tableName: "broker_quotes",
+      tableName: "bp_quotes",
       schema: "broker",
     });
   },

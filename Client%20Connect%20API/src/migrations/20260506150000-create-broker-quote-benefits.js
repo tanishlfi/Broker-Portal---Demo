@@ -3,7 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable(
-      "broker_quote_benefits",
+      "bp_quote_benefits",
       {
         quote_benefit_id: {
           type: Sequelize.UUID,
@@ -16,7 +16,7 @@ module.exports = {
           allowNull: false,
           references: {
             model: {
-              tableName: "broker_quotes",
+              tableName: "bp_quotes",
               schema: "broker",
             },
             key: "quote_id",
@@ -71,14 +71,14 @@ module.exports = {
     );
 
     await queryInterface.addIndex(
-      { tableName: "broker_quote_benefits", schema: "broker" },
+      { tableName: "bp_quote_benefits", schema: "broker" },
       ["quote_id"],
     );
   },
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable({
-      tableName: "broker_quote_benefits",
+      tableName: "bp_quote_benefits",
       schema: "broker",
     });
   },

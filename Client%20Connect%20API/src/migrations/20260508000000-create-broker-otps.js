@@ -2,9 +2,9 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable(
-      "broker_otps",
+      { tableName: "bp_otps", schema: "broker" },
       {
         otp_id: {
           allowNull: false,
@@ -15,10 +15,9 @@ module.exports = {
         reference_id: {
           type: Sequelize.UUID,
           allowNull: false,
-          comment: "UUID of the Lead or Quote this OTP belongs to",
         },
         reference_type: {
-          type: Sequelize.ENUM("Lead", "Quote"),
+          type: Sequelize.STRING,
           allowNull: false,
         },
         otp_code: {
@@ -36,12 +35,10 @@ module.exports = {
         attempts: {
           type: Sequelize.INTEGER,
           defaultValue: 0,
-          comment: "Counter for failed verification attempts",
         },
         is_blocked: {
           type: Sequelize.BOOLEAN,
           defaultValue: false,
-          comment: "Flag set to true after 3 failed attempts",
         },
         last_attempt_at: {
           type: Sequelize.DATE,
@@ -50,34 +47,40 @@ module.exports = {
         sent_to: {
           type: Sequelize.STRING,
           allowNull: false,
-          comment: "Email address or Mobile number the OTP was sent to",
         },
         sent_method: {
-          type: Sequelize.ENUM("Email", "SMS"),
+          type: Sequelize.STRING,
           defaultValue: "Email",
         },
         created_at: {
-          allowNull: false,
           type: Sequelize.DATE,
           defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
         },
         updated_at: {
+          type: Sequelize.DATE,
+          defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+        },
+        createdAt: {
           allowNull: false,
           type: Sequelize.DATE,
           defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
         },
-      },
-      {
-        schema: "broker",
+        updatedAt: {
+          allowNull: false,
+          type: Sequelize.DATE,
+          defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+        },
       }
     );
 
-    // Add indexes for performance
-    await queryInterface.addIndex({ tableName: "broker_otps", schema: "broker" }, ["reference_id"]);
-    await queryInterface.addIndex({ tableName: "broker_otps", schema: "broker" }, ["otp_code"]);
+    // Add indexes
+    await queryInterface.addIndex(
+      { tableName: "bp_otps", schema: "broker" },
+      ["reference_id"]
+    );
   },
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable({ tableName: "broker_otps", schema: "broker" });
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable({ tableName: "bp_otps", schema: "broker" });
   },
 };

@@ -91,6 +91,38 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         allowNull: true,
       },
+      rma_member_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      is_permanent_employees: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+      },
+      is_actively_at_work: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+      },
+      is_replacing_policy: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+      },
+      replaced_policy_includes_disability: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+      },
+      is_policy_older_than_6_months: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+      },
+      replaced_policy_start_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      province: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -104,7 +136,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "BrokerQuote",
       schema: "broker",
-      tableName: "broker_quotes",
+      tableName: "bp_quotes",
       timestamps: true,
     },
   );

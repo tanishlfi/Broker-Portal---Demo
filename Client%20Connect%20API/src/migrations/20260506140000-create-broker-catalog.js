@@ -4,13 +4,13 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     // 0. Cleanup from previous failed attempts
     try {
-      await queryInterface.dropTable({ tableName: "broker_benefits", schema: "broker" });
-      await queryInterface.dropTable({ tableName: "broker_products", schema: "broker" });
+      await queryInterface.dropTable({ tableName: "bp_benefits", schema: "broker" });
+      await queryInterface.dropTable({ tableName: "bp_products", schema: "broker" });
     } catch (e) {}
 
     // 1. broker_products
     await queryInterface.createTable(
-      "broker_products",
+      "bp_products",
       {
         product_id: {
           type: Sequelize.UUID,
@@ -30,7 +30,7 @@ module.exports = {
 
     // 2. broker_benefits (The Catalog)
     await queryInterface.createTable(
-      "broker_benefits",
+      "bp_benefits",
       {
         benefit_id: {
           type: Sequelize.UUID,
@@ -40,7 +40,7 @@ module.exports = {
         product_id: {
           type: Sequelize.UUID,
           allowNull: false,
-          references: { model: { tableName: "broker_products", schema: "broker" }, key: "product_id" },
+          references: { model: { tableName: "bp_products", schema: "broker" }, key: "product_id" },
           onUpdate: "CASCADE",
           onDelete: "CASCADE",
         },
@@ -59,7 +59,7 @@ module.exports = {
 
     // Seed initial products as per BRS
     const now = new Date();
-    await queryInterface.bulkInsert({ tableName: "broker_products", schema: "broker" }, [
+    await queryInterface.bulkInsert({ tableName: "bp_products", schema: "broker" }, [
       {
         product_id: "550e8400-e29b-41d4-a716-446655440000",
         product_name: "Life Cover",
@@ -87,7 +87,7 @@ module.exports = {
     ]);
 
     // Seed initial benefits as per BRS/FRS (Core Benefits Only)
-    await queryInterface.bulkInsert({ tableName: "broker_benefits", schema: "broker" }, [
+    await queryInterface.bulkInsert({ tableName: "bp_benefits", schema: "broker" }, [
       // Life Cover Benefit
       {
         benefit_id: Sequelize.literal('NEWID()'),
@@ -128,7 +128,7 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable({ tableName: "broker_benefits", schema: "broker" });
-    await queryInterface.dropTable({ tableName: "broker_products", schema: "broker" });
+    await queryInterface.dropTable({ tableName: "bp_benefits", schema: "broker" });
+    await queryInterface.dropTable({ tableName: "bp_products", schema: "broker" });
   },
 };

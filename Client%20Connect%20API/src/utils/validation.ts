@@ -62,6 +62,14 @@ export const quickQuoteSchema = Yup.object().shape({
 export const fullQuoteSchema = Yup.object().shape({
   lead_id: Yup.string().uuid("Invalid lead ID").required("Lead ID is required"),
   product_id: Yup.string().uuid("Invalid product ID").optional(),
+  rma_member_number: Yup.string().nullable(),
+  is_permanent_employees: Yup.boolean().nullable(),
+  is_actively_at_work: Yup.boolean().nullable(),
+  is_replacing_policy: Yup.boolean().nullable(),
+  replaced_policy_includes_disability: Yup.boolean().nullable(),
+  is_policy_older_than_6_months: Yup.boolean().nullable(),
+  replaced_policy_start_date: Yup.date().nullable(),
+  province: Yup.string().nullable(),
   benefits: Yup.array().of(
     Yup.object().shape({
       benefit_type: Yup.string().required(),

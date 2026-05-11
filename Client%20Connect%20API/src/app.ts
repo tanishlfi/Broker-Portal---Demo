@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { auth } from "express-oauth2-jwt-bearer";
+import swaggerUi from "swagger-ui-express";
+import { specs } from "./utils/swagger";
 
 // load env variables before you start sequelize
 dotenv.config({ path: __dirname + "/config/config.env" });
@@ -28,6 +30,9 @@ app.use(express.urlencoded({ extended: false, limit: "10Mb" }));
 
 // health endpoint that does a database query to confirm db available
 app.get("/apirma/health", health);
+
+// Swagger Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // added middelware to confirm expiry auth0 not doing this for some reason
 // Lourens 2023/12/07

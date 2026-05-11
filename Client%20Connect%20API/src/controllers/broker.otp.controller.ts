@@ -1,15 +1,44 @@
 import { Request, Response } from "express";
 const { BrokerOTP, BrokerQuote, BrokerLead, BrokerContact, sequelize } = require("../models");
-import { sendEmail } from "../utils/sendEmail";
-import { emailNotificationTemplate } from "../utils/emailTemplates";
+import { sendBrokerEmail } from "../utils/brokerSendEmail";
 import { sendOtpSchema, verifyOtpSchema } from "../utils/validation";
 import { v4 as uuidv4 } from "uuid";
 import { BrokerOnboardingService } from "../services/broker.onboarding.service";
-import { performBulkVerification } from "../services/broker.verification.service";
 import { logger } from "../middleware/logger";
 import { Op } from "sequelize";
 
 
+/**
+ * @swagger
+ * /broker/otp/send:
+ *   post:
+ *     summary: Generate and send a 6-digit OTP to the Employer contact
+ *     tags: [OTP]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - referenceId
+ *               - referenceType
+ *             properties:
+ *               referenceId:
+ *                 type: string
+ *                 description: The UUID of the Lead or Quote
+ *               referenceType:
+ *                 type: string
+ *                 enum: [Lead, Quote]
+ *                 description: The type of reference
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       404:
+ *         description: Reference not found
+ *       500:
+ *         description: Internal server error
+ */
 export const sendOTP = async (req: Request, res: Response) => {
 
   const t = await sequelize.transaction();
@@ -69,17 +98,13 @@ export const sendOTP = async (req: Request, res: Response) => {
       is_blocked: false
     }, { transaction: t });
 
-    // 4. Send Email using existing infrastructure
-    await sendEmail({
+    // 4. Send Email using the "current way" (Graph API)
+    await sendBrokerEmail({
       email: targetEmail,
+      recipientName,
       subject: "Action Required: Your Secure OTP for Quote Acceptance",
-      message: emailNotificationTemplate({
-        title: "Quote Verification Code",
-        message: `Dear ${recipientName},<br><br>You have been requested to verify the acceptance of your group life insurance quote.<br><br>Your secure OTP is: <b style="font-size: 24px; color: #0070c0;">${otpCode}</b><br><br>This code is valid for <b>5 minutes</b> and will be blocked after 3 failed attempts.`,
-        type: "info",
-        link: "",
-        variant: "email"
-      })
+      title: "Quote Verification Code",
+      message: `Dear ${recipientName},<br><br>You have been requested to verify the acceptance of your group life insurance quote.<br><br>Your secure OTP is: <b style="font-size: 24px; color: #0070c0;">${otpCode}</b><br><br>This code is valid for <b>5 minutes</b> and will be blocked after 3 failed attempts.`
     });
 
     await t.commit();
@@ -101,6 +126,38 @@ export const sendOTP = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/otp/verify:
+ *   post:
+ *     summary: Verify OTP and trigger the onboarding/acceptance workflow
+ *     tags: [OTP]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - referenceId
+ *               - otpCode
+ *             properties:
+ *               referenceId:
+ *                 type: string
+ *                 description: The UUID of the Lead or Quote
+ *               otpCode:
+ *                 type: string
+ *                 description: The 6-digit code sent to the user
+ *     responses:
+ *       200:
+ *         description: OTP verified and workflow triggered
+ *       400:
+ *         description: Invalid or expired OTP
+ *       403:
+ *         description: OTP blocked due to many attempts
+ *       500:
+ *         description: Internal server error
+ */
 export const verifyOTP = async (req: Request, res: Response) => {
   const t = await sequelize.transaction();
   try {
@@ -191,27 +248,17 @@ export const verifyOTP = async (req: Request, res: Response) => {
       leadIdToOnboard = referenceId;
     }
 
-    if (triggerOnboarding && leadIdToOnboard) {
-      logger.info(`Triggering synchronous VOPD/AML verifications for Lead: ${leadIdToOnboard}`);
-      await performBulkVerification(leadIdToOnboard, t);
-    }
-
     await t.commit();
     logger.info(`OTP Verified for ${otpRecord.reference_type} ${referenceId}`);
 
     if (triggerOnboarding && leadIdToOnboard) {
       try {
-        const onboardingResult = await BrokerOnboardingService.createOnboardingRequestFromLead(
+        await BrokerOnboardingService.createOnboardingRequestFromLead(
           leadIdToOnboard,
-          "Verification_In_Progress",
-          "VOPD/AML Verification: Started"
+          "Processing",
+          "VOPD/AML Verification: Scheduled for Backend Processing"
         );
         logger.info(`Automatic Onboarding triggered for Lead: ${leadIdToOnboard}`);
-
-        performBulkVerification(leadIdToOnboard, onboardingResult.policyId).catch((err) => {
-          logger.error(`Background verification failed for Lead ${leadIdToOnboard}:`, err);
-        });
-
       } catch (onboardingError) {
         logger.error(`Automatic Onboarding failed for Lead ${leadIdToOnboard}:`, onboardingError);
       }
@@ -226,7 +273,13 @@ export const verifyOTP = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    if (t && !t.finished) await t.rollback();
+    if (t && !t.finished) {
+      try {
+        await t.rollback();
+      } catch (rbErr) {
+        // Already closed
+      }
+    }
     logger.error("VERIFY OTP ERROR:", error);
     return res.status(error.name === "ValidationError" ? 400 : 500).json({ 
       success: false, 

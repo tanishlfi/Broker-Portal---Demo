@@ -14,7 +14,7 @@ const {
   BrokerContact,
   BrokerQuote,
   BrokerHistory,
-  BrokerQuoteEmployee,
+  BrokerEmployee,
   sequelize,
 } = require("../models");
 const { Op } = require("sequelize");
@@ -45,6 +45,60 @@ const logHistory = async (
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads:
+ *   post:
+ *     summary: Create a new broker lead
+ *     tags: [Broker Leads]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - representativeId
+ *               - brokerId
+ *               - employerName
+ *               - industryType
+ *               - numberOfEmployees
+ *               - averageSalary
+ *               - province
+ *               - contactFirstName
+ *               - contactLastName
+ *               - contactEmail
+ *               - contactMobile
+ *             properties:
+ *               representativeId:
+ *                 type: string
+ *               brokerId:
+ *                 type: string
+ *               employerName:
+ *                 type: string
+ *               industryType:
+ *                 type: string
+ *               numberOfEmployees:
+ *                 type: integer
+ *               averageSalary:
+ *                 type: number
+ *               province:
+ *                 type: string
+ *               contactFirstName:
+ *                 type: string
+ *               contactLastName:
+ *                 type: string
+ *               contactEmail:
+ *                 type: string
+ *               contactMobile:
+ *                 type: string
+ *               preferredCommunicationMethod:
+ *                 type: string
+ *                 enum: [Email, SMS, Call]
+ *     responses:
+ *       201:
+ *         description: Lead created successfully
+ */
 export const createLead = async (req: Request, res: Response) => {
   const t = await sequelize.transaction();
   try {
@@ -110,7 +164,13 @@ export const createLead = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    if (t) await t.rollback();
+    if (t) {
+      try {
+        await t.rollback();
+      } catch (rbErr) {
+        // Already rolled back by DB
+      }
+    }
     console.error("CREATE LEAD ERROR:", error);
     return res.status(error.name === "ValidationError" ? 400 : 500).json({
       success: false,
@@ -121,6 +181,38 @@ export const createLead = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads:
+ *   get:
+ *     summary: List broker leads with filtering and pagination
+ *     tags: [Broker Leads]
+ *     parameters:
+ *       - in: query
+ *         name: representativeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: leadStatus
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: clientName
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of leads
+ */
 export const getLeads = async (req: Request, res: Response) => {
   try {
     const {
@@ -198,6 +290,24 @@ export const getLeads = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads/{leadId}:
+ *   get:
+ *     summary: Get details of a specific lead
+ *     tags: [Broker Leads]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lead details
+ *       404:
+ *         description: Lead not found
+ */
 export const getLeadById = async (req: Request, res: Response) => {
   try {
     const { leadId } = req.params;
@@ -228,6 +338,49 @@ export const getLeadById = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads/{leadId}:
+ *   put:
+ *     summary: Update lead details
+ *     tags: [Broker Leads]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               employerName:
+ *                 type: string
+ *               industryType:
+ *                 type: string
+ *               numberOfEmployees:
+ *                 type: integer
+ *               averageSalary:
+ *                 type: number
+ *               province:
+ *                 type: string
+ *               contactFirstName:
+ *                 type: string
+ *               contactLastName:
+ *                 type: string
+ *               contactEmail:
+ *                 type: string
+ *               contactMobile:
+ *                 type: string
+ *               preferredCommunicationMethod:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Lead updated successfully
+ */
 export const updateLead = async (req: Request, res: Response) => {
   const t = await sequelize.transaction();
   try {
@@ -305,7 +458,13 @@ export const updateLead = async (req: Request, res: Response) => {
       data: lead 
     });
   } catch (error: any) {
-    if (t) await t.rollback();
+    if (t) {
+      try {
+        await t.rollback();
+      } catch (rbErr) {
+        // Already rolled back by DB
+      }
+    }
     return res.status(error.name === "ValidationError" ? 400 : 500).json({
       success: false,
       message: error.message || "An error occurred while updating the lead",
@@ -314,6 +473,35 @@ export const updateLead = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads/{leadId}/cancel:
+ *   post:
+ *     summary: Cancel a lead
+ *     tags: [Broker Leads]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *             properties:
+ *               reason:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Lead cancelled successfully
+ */
 export const cancelLead = async (req: Request, res: Response) => {
   const t = await sequelize.transaction();
   try {
@@ -371,7 +559,13 @@ export const cancelLead = async (req: Request, res: Response) => {
       message: "Lead cancelled successfully" 
     });
   } catch (error: any) {
-    if (t) await t.rollback();
+    if (t) {
+      try {
+        await t.rollback();
+      } catch (rbErr) {
+        // Already rolled back by DB
+      }
+    }
     return res.status(error.name === "ValidationError" ? 400 : 500).json({
       success: false,
       message: error.message || "An error occurred while cancelling the lead",
@@ -379,6 +573,22 @@ export const cancelLead = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads/{leadId}/continue:
+ *   get:
+ *     summary: Continue a lead (transition from Draft to Qualified)
+ *     tags: [Broker Leads]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lead transitioned successfully
+ */
 export const continueLead = async (req: Request, res: Response) => {
   try {
     const { leadId } = req.params;
@@ -410,6 +620,22 @@ export const continueLead = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads/{leadId}/history:
+ *   get:
+ *     summary: Get audit history of a lead
+ *     tags: [Broker Leads]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lead history
+ */
 export const getLeadHistory = async (req: Request, res: Response) => {
   try {
     const { leadId } = req.params;
@@ -444,6 +670,62 @@ export const getLeadHistory = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /broker/leads/{leadId}/upload-employees:
+ *   post:
+ *     summary: Upload an Excel or CSV file containing employee data for a lead
+ *     tags: [Broker Leads]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the lead
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The Excel (.xlsx) or CSV file to upload
+ *     responses:
+ *       200:
+ *         description: File uploaded and processed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     totalRows:
+ *                       type: integer
+ *                     validCount:
+ *                       type: integer
+ *                     invalidCount:
+ *                       type: integer
+ *                     errors:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       400:
+ *         description: Invalid file format or missing file
+ *       404:
+ *         description: Lead not found
+ *       500:
+ *         description: Internal server error
+ */
 export const uploadEmployeesController = async (req: Request, res: Response) => {
   const t = await sequelize.transaction();
   try {
@@ -519,7 +801,7 @@ export const uploadEmployeesController = async (req: Request, res: Response) => 
       lead_id: lead.lead_id,
     }));
 
-    await BrokerQuoteEmployee.bulkCreate(employeesToInsert, { transaction: t });
+    await BrokerEmployee.bulkCreate(employeesToInsert, { transaction: t });
 
     await logHistory(
       "BrokerLead",
@@ -544,7 +826,13 @@ export const uploadEmployeesController = async (req: Request, res: Response) => 
       },
     });
   } catch (error: any) {
-    if (t) await t.rollback();
+    if (t) {
+      try {
+        await t.rollback();
+      } catch (rbErr) {
+        // Already rolled back by DB
+      }
+    }
     console.error("UPLOAD EMPLOYEES ERROR:", error);
     return res.status(500).json({
       success: false,

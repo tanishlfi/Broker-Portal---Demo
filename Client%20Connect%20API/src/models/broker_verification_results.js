@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "lead_id",
         as: "lead",
       });
-      this.belongsTo(models.BrokerQuoteEmployee, {
+      this.belongsTo(models.BrokerEmployee, {
         foreignKey: "employee_id",
         as: "employee",
       });
@@ -35,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       vopd_response: {
-        type: DataTypes.JSONB,
+        type: DataTypes.JSON,
         allowNull: true,
       },
       aml_status: {
@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       aml_response: {
-        type: DataTypes.JSONB,
+        type: DataTypes.JSON,
         allowNull: true,
       },
     },
@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "BrokerVerificationResult",
       schema: "broker",
-      tableName: "broker_verification_results",
+      tableName: "bp_verification_results",
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",

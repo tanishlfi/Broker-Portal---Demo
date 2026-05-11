@@ -1,5 +1,10 @@
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(customParseFormat);
+
+const DATE_FORMATS = ["YYYY-MM-DD", "DD/MM/YYYY", "YYYY/MM/DD", "D/M/YYYY", "MM/DD/YYYY"];
 
 export interface EmployeeUploadResult {
   totalRows: number;
@@ -71,9 +76,10 @@ export const parseAndValidateEmployeesFile = (
     }
 
     if (employeeData.date_of_birth) {
-      const dob = dayjs(employeeData.date_of_birth);
+      // Try parsing with known formats, or fallback to default dayjs parsing for Date objects
+      const dob = dayjs(employeeData.date_of_birth, DATE_FORMATS);
       if (!dob.isValid()) {
-        rowErrors.push("Date of birth is invalid.");
+        rowErrors.push("Date of birth is invalid. Use DD/MM/YYYY or YYYY-MM-DD.");
       } else {
         employeeData.date_of_birth = dob.format("YYYY-MM-DD");
       }
@@ -82,7 +88,7 @@ export const parseAndValidateEmployeesFile = (
     }
 
     if (employeeData.employment_start_date) {
-      const empDate = dayjs(employeeData.employment_start_date);
+      const empDate = dayjs(employeeData.employment_start_date, DATE_FORMATS);
       if (!empDate.isValid()) {
         rowErrors.push("Employment start date is invalid.");
       } else {
@@ -91,7 +97,7 @@ export const parseAndValidateEmployeesFile = (
     }
 
     if (employeeData.passport_expiry) {
-      const expiryDate = dayjs(employeeData.passport_expiry);
+      const expiryDate = dayjs(employeeData.passport_expiry, DATE_FORMATS);
       if (!expiryDate.isValid()) {
         rowErrors.push("Passport expiry date is invalid.");
       } else {

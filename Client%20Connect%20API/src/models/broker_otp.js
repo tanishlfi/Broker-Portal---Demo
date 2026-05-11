@@ -60,7 +60,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "BrokerOTP",
       schema: "broker",
-      tableName: "broker_otps",
+      tableName: "bp_otps",
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",

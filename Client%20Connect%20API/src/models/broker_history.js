@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "BrokerHistory",
       schema: "broker",
-      tableName: "broker_history",
+      tableName: "bp_history",
       timestamps: false, // We only need created_at
     },
   );

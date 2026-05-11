@@ -3,6 +3,16 @@ const { BrokerProduct, BrokerBenefit } = require("../models");
 import { PricingService } from "../services/pricingService";
 import { sequelizeErrorHandler } from "../middleware/sequelize_error";
 
+/**
+ * @swagger
+ * /product/list:
+ *   get:
+ *     summary: Retrieve a list of all active broker products and their benefits
+ *     tags: [Broker Products]
+ *     responses:
+ *       200:
+ *         description: List of products
+ */
 export const getProductListController = async (req: Request, res: Response) => {
   try {
     const productList = await BrokerProduct.findAll({
@@ -39,6 +49,31 @@ export const getProductListController = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /product/pricing:
+ *   post:
+ *     summary: Calculate pricing for a specific quote or product configuration
+ *     tags: [Broker Pricing]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               product_id:
+ *                 type: string
+ *               benefits:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               workforce_count:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Pricing calculated successfully
+ */
 export const calculatePricingController = async (req: Request, res: Response) => {
   try {
     const pricingResult = await PricingService.calculateQuotePricing(req.body);

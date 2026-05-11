@@ -2,7 +2,7 @@ import { RMAQuickTransact, rmaVOPDErrorCount } from "../utils/rmaVOPD";
 import { logger } from "../middleware/logger";
 import { v4 as uuidv4 } from "uuid";
 
-const { BrokerQuoteEmployee, BrokerVerificationResult, onboardingData, onboardingPolicy } = require("../models");
+const { BrokerEmployee, BrokerVerificationResult, onboardingData, onboardingPolicy } = require("../models");
 
 const performAMLCheck = async (employeeData: any) => {
   try {
@@ -19,7 +19,7 @@ const performAMLCheck = async (employeeData: any) => {
 
 export const performBulkVerification = async (leadId: string, policyId?: number) => {
   try {
-    const employees = await BrokerQuoteEmployee.findAll({
+    const employees = await BrokerEmployee.findAll({
       where: { lead_id: leadId },
     });
 
@@ -67,7 +67,7 @@ export const performBulkVerification = async (leadId: string, policyId?: number)
           await BrokerVerificationResult.create({
             id: uuidv4(),
             lead_id: leadId,
-            employee_id: employee.id,
+            employee_id: employee.employee_id,
             vopd_status: vopdStatus,
             vopd_response: vopdResult.result ? vopdResult.data : { error: vopdResult.error },
             aml_status: amlStatus,
@@ -88,8 +88,15 @@ export const performBulkVerification = async (leadId: string, policyId?: number)
           }
 
           processedCount++;
-        } catch (empError) {
+        } catch (empError: any) {
           logger.error(`Critical error verifying employee ${employee.id_number}:`, empError);
+          
+          // If it's a database error that indicates a missing table or column, re-throw it
+          if (empError.name === "SequelizeDatabaseError" && 
+              (empError.message.includes("Invalid object name") || empError.message.includes("Invalid column name"))) {
+            throw empError;
+          }
+          
           processedCount++;
         }
       }
