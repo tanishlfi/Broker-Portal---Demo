@@ -2,8 +2,6 @@ import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { auth } from "express-oauth2-jwt-bearer";
-import swaggerUi from "swagger-ui-express";
-import { specs } from "./utils/swagger";
 
 // load env variables before you start sequelize
 dotenv.config({ path: __dirname + "/config/config.env" });
@@ -14,13 +12,14 @@ let PORT: number = Number(process.env.PORT) || 8000;
 let NODE_ENV: string = process.env.NODE_ENV || "development"; // NODE_ENV should be set to test or production in config.env
 
 import { logger } from "./middleware/logger";
+import { sequelize } from "./models";
 import { errorHandler } from "./middleware/error";
 import router from "./routes";
 import { confirmToken } from "./middleware/auth";
 import { getRmaAccessToken } from "./middleware/getRmaToken";
 import { health } from "./controllers/healthController";
 
-// Start server immediately without waiting for database connection
+//console.log(APP_GLOBAL_URL)
 const app = express();
 
 app.use(cors());
@@ -29,9 +28,6 @@ app.use(express.urlencoded({ extended: false, limit: "10Mb" }));
 
 // health endpoint that does a database query to confirm db available
 app.get("/apirma/health", health);
-
-// Swagger Documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // added middelware to confirm expiry auth0 not doing this for some reason
 // Lourens 2023/12/07
@@ -70,20 +66,6 @@ const server = app.listen(PORT, async () => {
 
   logger.debug("Server Authenticated");
   logger.debug("Client Connect Server Up");
-
-  // Attempt database connection asynchronously (non-blocking)
-  try {
-    const { sequelize } = require("./models");
-    await Promise.race([
-      sequelize.authenticate(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Database connection timeout")), 5000)
-      ),
-    ]);
-    logger.debug("Database connection established");
-  } catch (err: any) {
-    logger.warn(`Database connection warning: ${err.message}. Server will continue running.`);
-  }
 });
 
 process.on("unhandledRejection", (err: Error, promise) => {
