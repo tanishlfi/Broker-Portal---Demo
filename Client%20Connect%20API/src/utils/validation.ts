@@ -70,6 +70,8 @@ export const fullQuoteSchema = Yup.object().shape({
   is_policy_older_than_6_months: Yup.boolean().nullable(),
   replaced_policy_start_date: Yup.date().nullable(),
   province: Yup.string().nullable(),
+  industry: Yup.string().nullable(),
+  generate_options: Yup.boolean().optional(),
   benefits: Yup.array().of(
     Yup.object().shape({
       benefit_type: Yup.string().required(),
