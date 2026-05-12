@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Search, Eye, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getLeads, cancelLead, Lead } from "@/lib/api/leads";
-import { getValidToken } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
 const PAGE_SIZE = 10;
@@ -108,15 +107,8 @@ export default function ViewLeadsPage() {
       try {
         const representativeId = localStorage.getItem("bp_broker_id") ?? undefined;
         const data = await getLeads(representativeId);
-        if (data && data.length > 0) {
-          setLeads(data);
-        } else {
-          // Use mock data if API returns empty
-          setLeads(MOCK_LEADS);
-        }
-      } catch (error) {
-        console.error("Error fetching leads:", error);
-        // Fall back to mock data on error
+        setLeads(data.length ? data : MOCK_LEADS);
+      } catch {
         setLeads(MOCK_LEADS);
       } finally {
         setLoading(false);

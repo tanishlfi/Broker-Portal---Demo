@@ -14,6 +14,7 @@ interface DashboardHeaderProps {
 interface DecodedToken {
   name?: string;
   email?: string;
+  user?: string;
   preferred_username?: string;
   upn?: string;
   unique_name?: string;
@@ -61,13 +62,14 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
       if (token) {
         const decoded = jwtDecode<DecodedToken>(token);
         const identity =
-          decoded.email ||
-          decoded.preferred_username ||
-          decoded.upn ||
-          decoded.unique_name ||
           decoded.name ||
           (decoded.given_name && decoded.family_name ? `${decoded.given_name} ${decoded.family_name}` : "") ||
           decoded.given_name ||
+          decoded.email ||
+          decoded.user ||
+          decoded.preferred_username ||
+          decoded.upn ||
+          decoded.unique_name ||
           "";
 
         if (identity) {

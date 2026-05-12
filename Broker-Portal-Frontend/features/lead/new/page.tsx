@@ -1,9 +1,9 @@
 "use client";
-
+ 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createLead } from "@/lib/api/leads";
-import { getValidToken, redirectToAuth } from "@/lib/auth";
+import { redirectToAuth } from "@/lib/auth";
 import {
   validateSAMobileNumber,
   validateEmail,
@@ -16,19 +16,19 @@ import {
   validateRegistrationNumber,
   validateContactPersonName,
 } from "@/utils/validators";
-
+ 
 const STEPS = ["1. Employer Details", "2. Contact Details", "3. Review & Submit"];
-
+ 
 const INDUSTRIES = [
   "Agriculture", "Construction", "Education", "Finance", "Healthcare",
   "Hospitality", "Manufacturing", "Mining", "Retail", "Technology", "Transport", "Other",
 ];
-
+ 
 const PROVINCES = [
   "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
   "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape",
 ];
-
+ 
 type EmployerForm = {
   companyName: string; registrationNumber: string; industry: string;
   numberOfEmployees: string; companyAddress: string; city: string;
@@ -37,101 +37,101 @@ type EmployerForm = {
 type ContactForm = { contactName: string; position: string; email: string; phone: string; };
 type EmployerErrors = Partial<Record<keyof EmployerForm, string>>;
 type ContactErrors = Partial<Record<keyof ContactForm, string>>;
-
+ 
 const emptyEmployer: EmployerForm = {
   companyName: "", registrationNumber: "", industry: "",
   numberOfEmployees: "", companyAddress: "", city: "", province: "", postalCode: "",
 };
 const emptyContact: ContactForm = { contactName: "", position: "", email: "", phone: "" };
-
+ 
 function validateEmployer(f: EmployerForm): EmployerErrors {
   const e: EmployerErrors = {};
-  
+ 
   // Company Name validation
   if (!validateRequired(f.companyName)) {
     e.companyName = "Company name is required";
   } else if (!validateCompanyName(f.companyName)) {
     e.companyName = "Company name must be between 1 and 100 characters";
   }
-  
+ 
   // Registration Number validation (optional field, matches Client Connect API)
   if (!validateRegistrationNumber(f.registrationNumber)) {
     e.registrationNumber = "Registration number must be between 1 and 50 characters if provided";
   }
-  
+ 
   // Industry validation
   if (!f.industry) {
     e.industry = "Please select an industry";
   }
-  
+ 
   // Number of Employees validation
   if (!validateRequired(f.numberOfEmployees)) {
     e.numberOfEmployees = "Number of employees is required";
   } else if (!validatePositiveNumber(f.numberOfEmployees)) {
     e.numberOfEmployees = "Must be a valid positive number";
   }
-  
+ 
   // Company Address validation
   if (!validateRequired(f.companyAddress)) {
     e.companyAddress = "Company address is required";
   } else if (!validateAddressLine(f.companyAddress)) {
     e.companyAddress = "Address must be between 1 and 100 characters";
   }
-  
+ 
   // City validation
   if (!validateRequired(f.city)) {
     e.city = "City is required";
   } else if (!validateCity(f.city)) {
     e.city = "City must be between 1 and 50 characters";
   }
-  
+ 
   // Province validation
   if (!f.province) {
     e.province = "Please select a province";
   }
-  
+ 
   // Postal Code validation
   if (!validateRequired(f.postalCode)) {
     e.postalCode = "Postal code is required";
   } else if (!validatePostalCode(f.postalCode)) {
     e.postalCode = "Postal code must be exactly 4 digits";
   }
-  
+ 
   return e;
 }
-
+ 
 function validateContact(f: ContactForm): ContactErrors {
   const e: ContactErrors = {};
-  
+ 
   // Contact Name validation
   if (!validateRequired(f.contactName)) {
     e.contactName = "Contact name is required";
   } else if (!validateContactPersonName(f.contactName)) {
     e.contactName = "Contact name cannot start with a number";
   }
-  
+ 
   // Position validation
   if (!validateRequired(f.position)) {
     e.position = "Position is required";
   }
-  
+ 
   // Email validation
   if (!validateRequired(f.email)) {
     e.email = "Email is required";
   } else if (!validateEmail(f.email)) {
     e.email = "Enter a valid email address";
   }
-  
+ 
   // Phone Number validation
   if (!validateRequired(f.phone)) {
     e.phone = "Phone number is required";
   } else if (!validateSAMobileNumber(f.phone)) {
     e.phone = "Mobile phone number must be 10 digits long and start with 06, 07 or 08";
   }
-  
+ 
   return e;
 }
-
+ 
 export default function StartNewLeadPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -141,64 +141,39 @@ export default function StartNewLeadPage() {
   const [contactErrors, setContactErrors] = useState<ContactErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [token, setToken] = useState<string>("");
   const [brokerId, setBrokerId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-
+ 
   useEffect(() => {
     setMounted(true);
-
-    // Skip auth check in local development
-    if (process.env.NODE_ENV === "development") {
-      setBrokerId(localStorage.getItem("bp_broker_id") ?? "");
-      return;
-    }
-
-    const validToken = getValidToken();
-    if (!validToken) {
-      window.location.href = process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200";
-      return;
-    }
-    setToken(validToken);
     setBrokerId(localStorage.getItem("bp_broker_id") ?? "");
   }, []);
-
+ 
   // Don't render until mounted to avoid hydration issues
   if (!mounted) return null;
-
+ 
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   }
-
+ 
   const inp = (hasError: boolean) => `bp-input${hasError ? " error" : ""}`;
   const lbl = "block font-medium text-white text-sm";
   const errMsg = (msg?: string) => msg ? (
     <p style={{ fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.5, color: "var(--destructive)", marginTop: "0.25rem" }}>{msg}</p>
   ) : null;
-
+ 
   function handleNext() {
     if (step === 0) { const e = validateEmployer(employer); setEmployerErrors(e); if (Object.keys(e).length) return; }
     if (step === 1) { const e = validateContact(contact); setContactErrors(e); if (Object.keys(e).length) return; }
     setStep(s => s + 1);
   }
-
+ 
   async function handleSubmit() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      // Validate token before submission (skip in dev)
-      const validToken = process.env.NODE_ENV === "development"
-        ? (localStorage.getItem("bp_token") ?? "dev-token")
-        : getValidToken();
-
-      if (!validToken && process.env.NODE_ENV !== "development") {
-        setSubmitError("Your session has expired. Redirecting to login...");
-        setTimeout(() => redirectToAuth(), 2000);
-        return;
-      }
-
       const [firstName, ...rest] = contact.contactName.trim().split(" ");
       const result = await createLead({
         employerName: employer.companyName,
@@ -213,7 +188,7 @@ export default function StartNewLeadPage() {
         preferredCommunicationMethod: "Email",
         representativeId: brokerId || "00000000-0000-0000-0000-000000000000",
         brokerId: brokerId || "00000000-0000-0000-0000-000000000000",
-      }, validToken as string);
+      });
       const { leadId, leadReference } = result.data;
       showToast("Lead created successfully");
       setTimeout(() => {
@@ -221,18 +196,12 @@ export default function StartNewLeadPage() {
       }, 1200);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Submission failed";
-      // Check if it's an auth error
-      if (errorMessage.includes("not authorized") || errorMessage.includes("EXPIRED")) {
-        setSubmitError("Your session has expired. Redirecting to login...");
-        setTimeout(() => redirectToAuth(), 2000);
-      } else {
-        setSubmitError(errorMessage);
-      }
+      setSubmitError(errorMessage);
     } finally {
       setSubmitting(false);
     }
   }
-
+ 
   return (
     <>
       {/* Progress bar */}
@@ -276,7 +245,7 @@ export default function StartNewLeadPage() {
           />
         </div>
       </div>
-
+ 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center px-6 py-6" style={{ background: "var(--background)" }}>
         <div className="w-full max-w-4xl flex flex-col gap-4">
@@ -288,7 +257,7 @@ export default function StartNewLeadPage() {
             borderRadius: "8px",
           }}
         >
-
+ 
           {step === 0 && (
             <>
               <h2 className="font-medium mb-6" style={{ fontSize: "1.25rem", color: "var(--foreground)" }}>Employer Information</h2>
@@ -298,7 +267,7 @@ export default function StartNewLeadPage() {
                   <input
                     className={inp(!!employerErrors.companyName)}
                     value={employer.companyName}
-                    onChange={e => { setEmployer({ ...employer, companyName: e.target.value }); setEmployerErrors({ ...employerErrors, companyName: undefined }); }} 
+                    onChange={e => { setEmployer({ ...employer, companyName: e.target.value }); setEmployerErrors({ ...employerErrors, companyName: undefined }); }}
                     placeholder="e.g., Acme Corporation" />
                   {errMsg(employerErrors.companyName)}
                 </div>
@@ -308,11 +277,11 @@ export default function StartNewLeadPage() {
                     <input
                       className={inp(!!employerErrors.registrationNumber)}
                       value={employer.registrationNumber}
-                      onChange={e => { 
+                      onChange={e => {
                         const value = e.target.value.replace(/[^\d/]/g, "");
-                        setEmployer({ ...employer, registrationNumber: value }); 
-                        setEmployerErrors({ ...employerErrors, registrationNumber: undefined }); 
-                      }} 
+                        setEmployer({ ...employer, registrationNumber: value });
+                        setEmployerErrors({ ...employerErrors, registrationNumber: undefined });
+                      }}
                       placeholder="e.g., 2016/4924343/07"
                       inputMode="numeric" />
                     {errMsg(employerErrors.registrationNumber)}
@@ -334,11 +303,11 @@ export default function StartNewLeadPage() {
                   <input
                     className={inp(!!employerErrors.numberOfEmployees)}
                     type="number" min="1" value={employer.numberOfEmployees}
-                    onChange={e => { 
+                    onChange={e => {
                       const value = e.target.value.replace(/\D/g, "");
-                      setEmployer({ ...employer, numberOfEmployees: value }); 
-                      setEmployerErrors({ ...employerErrors, numberOfEmployees: undefined }); 
-                    }} 
+                      setEmployer({ ...employer, numberOfEmployees: value });
+                      setEmployerErrors({ ...employerErrors, numberOfEmployees: undefined });
+                    }}
                     inputMode="numeric"
                     placeholder="e.g., 150" />
                   {errMsg(employerErrors.numberOfEmployees)}
@@ -348,7 +317,7 @@ export default function StartNewLeadPage() {
                   <input
                     className={inp(!!employerErrors.companyAddress)}
                     value={employer.companyAddress}
-                    onChange={e => { setEmployer({ ...employer, companyAddress: e.target.value }); setEmployerErrors({ ...employerErrors, companyAddress: undefined }); }} 
+                    onChange={e => { setEmployer({ ...employer, companyAddress: e.target.value }); setEmployerErrors({ ...employerErrors, companyAddress: undefined }); }}
                     placeholder="e.g., 123 Main Street" />
                   {errMsg(employerErrors.companyAddress)}
                 </div>
@@ -358,7 +327,7 @@ export default function StartNewLeadPage() {
                     <input
                       className={inp(!!employerErrors.city)}
                       value={employer.city}
-                      onChange={e => { setEmployer({ ...employer, city: e.target.value }); setEmployerErrors({ ...employerErrors, city: undefined }); }} 
+                      onChange={e => { setEmployer({ ...employer, city: e.target.value }); setEmployerErrors({ ...employerErrors, city: undefined }); }}
                       placeholder="e.g., Johannesburg" />
                     {errMsg(employerErrors.city)}
                   </div>
@@ -379,11 +348,11 @@ export default function StartNewLeadPage() {
                   <input
                     className={inp(!!employerErrors.postalCode)}
                     value={employer.postalCode}
-                    onChange={e => { 
+                    onChange={e => {
                       const value = e.target.value.replace(/\D/g, "").slice(0, 4);
-                      setEmployer({ ...employer, postalCode: value }); 
-                      setEmployerErrors({ ...employerErrors, postalCode: undefined }); 
-                    }} 
+                      setEmployer({ ...employer, postalCode: value });
+                      setEmployerErrors({ ...employerErrors, postalCode: undefined });
+                    }}
                     inputMode="numeric"
                     maxLength={4}
                     placeholder="0000" />
@@ -392,7 +361,7 @@ export default function StartNewLeadPage() {
               </div>
             </>
           )}
-
+ 
           {step === 1 && (
             <>
               <h2 className="font-medium mb-6" style={{ fontSize: "1.25rem", color: "var(--foreground)" }}>Primary Contact Information</h2>
@@ -403,7 +372,7 @@ export default function StartNewLeadPage() {
                     <input
                       className={inp(!!contactErrors.contactName)}
                       value={contact.contactName}
-                      onChange={e => { setContact({ ...contact, contactName: e.target.value }); setContactErrors({ ...contactErrors, contactName: undefined }); }} 
+                      onChange={e => { setContact({ ...contact, contactName: e.target.value }); setContactErrors({ ...contactErrors, contactName: undefined }); }}
                       placeholder="e.g., John Smith" />
                     {errMsg(contactErrors.contactName)}
                   </div>
@@ -412,7 +381,7 @@ export default function StartNewLeadPage() {
                     <input
                       className={inp(!!contactErrors.position)}
                       value={contact.position}
-                      onChange={e => { setContact({ ...contact, position: e.target.value }); setContactErrors({ ...contactErrors, position: undefined }); }} 
+                      onChange={e => { setContact({ ...contact, position: e.target.value }); setContactErrors({ ...contactErrors, position: undefined }); }}
                       placeholder="e.g., HR Manager" />
                     {errMsg(contactErrors.position)}
                   </div>
@@ -423,7 +392,7 @@ export default function StartNewLeadPage() {
                     <input
                       className={inp(!!contactErrors.email)}
                       type="email" value={contact.email}
-                      onChange={e => { setContact({ ...contact, email: e.target.value }); setContactErrors({ ...contactErrors, email: undefined }); }} 
+                      onChange={e => { setContact({ ...contact, email: e.target.value }); setContactErrors({ ...contactErrors, email: undefined }); }}
                       placeholder="e.g., john@company.com" />
                     {errMsg(contactErrors.email)}
                   </div>
@@ -431,13 +400,13 @@ export default function StartNewLeadPage() {
                     <label className={lbl}>Phone Number *</label>
                     <input
                       className={inp(!!contactErrors.phone)}
-                      type="tel" placeholder="0821234567" 
+                      type="tel" placeholder="0821234567"
                       value={contact.phone}
-                      onChange={e => { 
+                      onChange={e => {
                         const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                        setContact({ ...contact, phone: value }); 
-                        setContactErrors({ ...contactErrors, phone: undefined }); 
-                      }} 
+                        setContact({ ...contact, phone: value });
+                        setContactErrors({ ...contactErrors, phone: undefined });
+                      }}
                       inputMode="numeric"
                       maxLength={10} />
                     {errMsg(contactErrors.phone)}
@@ -446,7 +415,7 @@ export default function StartNewLeadPage() {
               </div>
             </>
           )}
-
+ 
           {step === 2 && (
             <>
               <h2 style={{ fontSize: "1.25rem", fontWeight: 500, color: "var(--foreground)", marginBottom: "24px" }}>Review Lead Information</h2>
@@ -496,10 +465,10 @@ export default function StartNewLeadPage() {
               </div>
             </>
           )}
-
-
+ 
+ 
         </div>
-
+ 
         <div className="flex justify-between items-center w-full">
         <div>
           {step > 0 && (
@@ -532,7 +501,7 @@ export default function StartNewLeadPage() {
         </div>
         </div>
       </div>
-
+ 
       {/* Toast */}
       {toast && (
         <div style={{

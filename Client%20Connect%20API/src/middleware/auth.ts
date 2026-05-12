@@ -28,7 +28,7 @@ export const confirmToken = async (
     const token: any = jwtDecode(split[1]);
 
     const tokenExpiry: number =
-      token.exp - Math.round(new Date().getTime() / 1000) - 120;
+      token.exp - Math.round(new Date().getTime() / 1000) - 30;
 
     // check token expiry
     if (tokenExpiry <= 0) {

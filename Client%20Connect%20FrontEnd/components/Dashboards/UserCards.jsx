@@ -3,7 +3,7 @@ import { Card, Grid, LinearProgress, Typography } from "@mui/material";
 import FeatureCard from "components/Containers/FeatureCard";
 import React from "react";
 import useToken from "hooks/useToken";
-
+ 
 // Icons imports
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import HandshakeTwoToneIcon from "@mui/icons-material/HandshakeTwoTone";
@@ -31,20 +31,20 @@ import ApprovalIcon from "@mui/icons-material/Approval";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import RuleFolderIcon from "@mui/icons-material/RuleFolder";
-
+ 
 const UserCards = () => {
   const { user, isLoading } = useUser();
   const accessToken = useToken();
-
+ 
   const role = user?.rmaAppRoles[0];
   const BrokerId =
     user?.rmaAppUserMetadata?.BrokerageIds?.length > 0 &&
     user?.rmaAppUserMetadata?.BrokerageIds[0];
-
+ 
   if (isLoading) {
     return <LinearProgress />;
   }
-
+ 
   return (
     <div>
       {BrokerId && role && (
@@ -58,9 +58,9 @@ const UserCards = () => {
     </div>
   );
 };
-
+ 
 export default UserCards;
-
+ 
 const FeatureCardGrid = ({ cards, accessToken, brokerId }) => (
   <Grid container>
     {cards.map(({ title, link, Icon, external }, index) => (
@@ -76,10 +76,10 @@ const FeatureCardGrid = ({ cards, accessToken, brokerId }) => (
     ))}
   </Grid>
 );
-
+ 
 const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
   if (role !== "CDA-RMA-Policy Admin") return null;
-
+ 
   const adminCardsLine1 = [
     { title: "Brokers", link: "/Brokers", Icon: HandshakeTwoToneIcon },
     {
@@ -93,7 +93,7 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
       Icon: EditNoteTwoToneIcon,
     },
   ];
-
+ 
   const adminCardsLine2 = [
     {
       title: "My Edits",
@@ -111,7 +111,7 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
       Icon: GradingTwoToneIcon,
     },
   ];
-
+ 
   const onboardingCards = [
     {
       title: "Create new Policy",
@@ -134,7 +134,7 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
       Icon: RuleFolderIcon,
     },
   ];
-
+ 
   const fileCards = [
     {
       title: "File Upload",
@@ -149,7 +149,7 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
     },
     { title: "All Files", link: "/Onboarding/AllFiles", Icon: FileCopyIcon },
   ];
-
+ 
   const policyCards = [
     {
       title: "All Policies",
@@ -158,12 +158,12 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
     },
     { title: "Reports", link: "/Onboarding/Reports", Icon: QueryStatsIcon },
   ];
-
+ 
   const toolsCards = [
     { title: "VOPD", link: "/VOPD", Icon: FactCheckIcon },
-    { title: "Broker Portal", link: process.env.NEXT_PUBLIC_BROKER_PORTAL_URL || "http://localhost:3000", Icon: DomainAddIcon, external: true },
+    { title: "Broker Portal", link: "/brokerPortal/dashboard", Icon: DomainAddIcon, external: true },
   ];
-
+ 
   return (
     <Grid item xs={12}>
       <Grid sx={{ my: 2 }}>
@@ -181,7 +181,7 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
       <FeatureCardGrid cards={onboardingCards} accessToken={accessToken} brokerId={BrokerId} />
       <FeatureCardGrid cards={fileCards} accessToken={accessToken} brokerId={BrokerId} />
       <FeatureCardGrid cards={policyCards} accessToken={accessToken} brokerId={BrokerId} />
-
+ 
       <Grid sx={{ my: 2 }}>
         <Typography variant="h6" align="left">
           Tools and Settings
@@ -191,10 +191,10 @@ const RmaPolicyAdministrator = ({ BrokerId, role, accessToken }) => {
     </Grid>
   );
 };
-
+ 
 const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
   if (role !== "CDA-RMA-User Admin") return null;
-
+ 
   const adminCardsLine1 = [
     { title: "Brokers", link: "/Brokers", Icon: HandshakeTwoToneIcon },
     {
@@ -208,7 +208,7 @@ const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
       Icon: EditNoteTwoToneIcon,
     },
   ];
-
+ 
   const adminCardsLine2 = [
     {
       title: "My Edits",
@@ -226,7 +226,7 @@ const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
       Icon: GradingTwoToneIcon,
     },
   ];
-
+ 
   const onboardingCards = [
     {
       title: "Create new Policy",
@@ -249,7 +249,7 @@ const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
       Icon: RuleFolderIcon,
     },
   ];
-
+ 
   const fileCards = [
     {
       title: "File Upload",
@@ -264,7 +264,7 @@ const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
     },
     { title: "All Files", link: "/Onboarding/AllFiles", Icon: FileCopyIcon },
   ];
-
+ 
   const policyCards = [
     {
       title: "All Policies",
@@ -273,14 +273,14 @@ const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
     },
     { title: "Reports", link: "/Onboarding/Reports", Icon: QueryStatsIcon },
   ];
-
+ 
   const toolsCards = [
     { title: "Tasks Manager", link: "/TasksManager", Icon: AddTaskIcon },
     { title: "VOPD", link: "/VOPD", Icon: FactCheckIcon },
     { title: "Manage All Users", link: "/Users", Icon: ManageAccountsIcon },
-    { title: "Broker Portal", link: process.env.NEXT_PUBLIC_BROKER_PORTAL_URL || "http://localhost:3000", Icon: DomainAddIcon, external: true },
+    { title: "Broker Portal", link: "/brokerPortal/dashboard", Icon: DomainAddIcon, external: true },
   ];
-
+ 
   return (
     <Grid item xs={12}>
       <Grid sx={{ my: 2 }}>
@@ -307,7 +307,7 @@ const RMAUserAdministrator = ({ BrokerId, role, accessToken }) => {
     </Grid>
   );
 };
-
+ 
 const BrokerManager = ({ BrokerId, role, accessToken }) => {
   if (
     role !== "CDA-SCHEME-Scheme Representative" &&
@@ -315,7 +315,7 @@ const BrokerManager = ({ BrokerId, role, accessToken }) => {
     role !== "CDA-BROKERAGE-Broker Manager"
   )
     return null;
-
+ 
   const schemeCards = [
     {
       title: "Create new Policy",
@@ -329,7 +329,7 @@ const BrokerManager = ({ BrokerId, role, accessToken }) => {
       Icon: PersonAddAltIcon,
     },
   ];
-
+ 
   const onboardingCards = [
     {
       title: "Create new Policy",
@@ -352,16 +352,16 @@ const BrokerManager = ({ BrokerId, role, accessToken }) => {
       Icon: PeopleOutlineIcon,
     },
   ];
-
+ 
   const toolsCards = [
     {
       title: "Manage Users",
       link: `/BrokerManager/UserManagement/${BrokerId}`,
       Icon: PeopleIcon,
     },
-    { title: "Broker Portal", link: process.env.NEXT_PUBLIC_BROKER_PORTAL_URL || "http://localhost:3000", Icon: DomainAddIcon, external: true },
+    { title: "Broker Portal", link: "/brokerPortal/dashboard", Icon: DomainAddIcon, external: true },
   ];
-
+ 
   return (
     <Grid item xs={12}>
       {role === "CDA-SCHEME-Scheme Representative" && (
@@ -394,10 +394,10 @@ const BrokerManager = ({ BrokerId, role, accessToken }) => {
     </Grid>
   );
 };
-
+ 
 const BrokerNormalUser = ({ BrokerId, role }) => {
   if (role !== "CDA-BROKERAGE-Broker Representative") return null;
-
+ 
   const adminCards = [
     {
       title: "Schemes",
@@ -415,7 +415,7 @@ const BrokerNormalUser = ({ BrokerId, role }) => {
       Icon: DriveFileRenameOutlineTwoToneIcon,
     },
   ];
-
+ 
   const onboardingCards = [
     {
       title: "Create new Policy",
@@ -435,7 +435,7 @@ const BrokerNormalUser = ({ BrokerId, role }) => {
     { title: "My Files", link: `/Onboarding/MyFiles`, Icon: InventoryIcon },
     { title: "All Files", link: `/Onboarding/AllFiles`, Icon: FileCopyIcon },
   ];
-
+ 
   const policyCards = [
     {
       title: "All Policies",
@@ -443,7 +443,7 @@ const BrokerNormalUser = ({ BrokerId, role }) => {
       Icon: PeopleOutlineIcon,
     },
   ];
-
+ 
   return (
     <Grid item xs={12}>
       <Grid sx={{ my: 2 }}>

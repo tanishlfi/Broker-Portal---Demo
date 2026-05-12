@@ -22,18 +22,15 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    const brokerPortalUrl = process.env.BROKER_PORTAL_URL || "http://localhost:3000";
     return [
       {
         source: "/brokerPortal",
-        destination: "https://broker-portal-demo-two.vercel.app/dashboard",
+        destination: `${brokerPortalUrl}/brokerPortal`,
       },
       {
         source: "/brokerPortal/:path+",
-        destination: "https://broker-portal-demo-two.vercel.app/:path+",
-      },
-     {
-        source: "/brokerPortal-static/_next/:path+",
-        destination: "https://broker-portal-demo-two.vercel.app/brokerPortal-static/_next/:path+",
+        destination: `${brokerPortalUrl}/brokerPortal/:path+`,
       },
     ];
   },

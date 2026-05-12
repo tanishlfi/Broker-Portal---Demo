@@ -25,6 +25,34 @@ export function isTokenValid(bufferSeconds: number = 120): boolean {
 }
 
 /**
+ * Fetch a fresh token from Client Connect's Auth0 session (same origin).
+ * Stores it in localStorage and returns it, or returns null on failure.
+ */
+export async function refreshToken(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/accessToken", { credentials: "include" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const token = data?.accessToken;
+    if (!token) return null;
+    localStorage.setItem("bp_token", token);
+    return token;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get a valid token — returns stored token if still valid, otherwise fetches a fresh one.
+ */
+export async function getFreshToken(): Promise<string | null> {
+  if (isTokenValid(60)) {
+    return localStorage.getItem("bp_token");
+  }
+  return refreshToken();
+}
+
+/**
  * Get the stored token if it's valid, otherwise return null
  */
 export function getValidToken(): string | null {

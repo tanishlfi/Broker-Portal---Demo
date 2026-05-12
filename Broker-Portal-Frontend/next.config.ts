@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  basePath: "/brokerPortal",
   turbopack: {
     root: __dirname,
   },

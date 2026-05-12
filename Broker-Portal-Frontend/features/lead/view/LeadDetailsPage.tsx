@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, Plus } from "lucide-react";
 import { getLeads, Lead } from "@/lib/api/leads";
-import { getValidToken } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
 interface LeadDetailsPageProps {
@@ -146,7 +145,6 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
     (async () => {
       try {
         const representativeId = localStorage.getItem("bp_broker_id") ?? undefined;
-        
         const data = await getLeads(representativeId);
         const foundLead = data.find((l: Lead) => l.leadId === leadId);
         

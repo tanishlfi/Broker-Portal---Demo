@@ -1,11 +1,11 @@
 import { useTheme } from "@emotion/react";
 import { Card, CardActionArea, Typography } from "@mui/material";
-
+ 
 import React from "react";
-
+ 
 import PropTypes from "prop-types";
 import { useRouter } from "next/router";
-
+ 
 const FeatureCard = ({ title, link, Icon, disabled, accessToken, brokerId }) => {
   const router = useRouter();
   return (
@@ -23,22 +23,10 @@ const FeatureCard = ({ title, link, Icon, disabled, accessToken, brokerId }) => 
           }}
           onClick={() => {
             if (accessToken !== undefined || brokerId !== undefined) {
-              const win = window.open(link, "_blank");
-              if (win) {
-                // wait for the new window to load then send the token
-                const interval = setInterval(() => {
-                  try {
-                    win.postMessage(
-                      { type: "BP_AUTH", token: accessToken, brokerId: String(brokerId || "") },
-                      link
-                    );
-                  } catch (e) {
-                    // ignore cross-origin errors during load
-                  }
-                }, 500);
-                // stop after 5 seconds
-                setTimeout(() => clearInterval(interval), 5000);
-              }
+              // Set cookies so Broker Portal can read auth on the same domain
+              document.cookie = `bp_token=${accessToken}; path=/; SameSite=Lax`;
+              document.cookie = `bp_broker_id=${brokerId || ""}; path=/; SameSite=Lax`;
+              router.push(link);
             } else {
               router.push(`${link}`);
             }
@@ -52,9 +40,9 @@ const FeatureCard = ({ title, link, Icon, disabled, accessToken, brokerId }) => 
     </>
   );
 };
-
+ 
 export default FeatureCard;
-
+ 
 FeatureCard.propTypes = {
   title: PropTypes.string.isRequired,
   link: PropTypes.string.isRequired,
