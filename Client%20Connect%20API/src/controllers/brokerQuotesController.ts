@@ -159,10 +159,6 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
  *                 format: date
  *               province:
  *                 type: string
- *               industry:
- *                 type: string
- *               generate_options:
- *                 type: boolean
  *               benefits:
  *                 type: string
  *                 description: JSON string of benefits
@@ -194,11 +190,6 @@ export const generateFullQuote = async (req: Request, res: Response) => {
     if (!lead) {
       await t.rollback();
       return res.status(404).json({ success: false, message: "Lead not found" });
-    }
-
-    // Update industry if provided
-    if (validatedBody.industry && lead.employer) {
-      await lead.employer.update({ industry_type: validatedBody.industry }, { transaction: t });
     }
 
     let employees_list = [];
@@ -255,8 +246,7 @@ export const generateFullQuote = async (req: Request, res: Response) => {
       quote_type: "Full",
       product_id,
       benefits,
-      employees_list: employees_list.length > 0 ? employees_list : undefined,
-      generate_options: req.body.generate_options === "true" || req.body.generate_options === true
+      employees_list: employees_list.length > 0 ? employees_list : undefined
     }, t);
 
     await t.commit();

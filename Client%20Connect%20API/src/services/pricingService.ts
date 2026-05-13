@@ -26,16 +26,7 @@ export class PricingService {
     return employeeCount >= 50 ? 1000000 : 500000;
   }
   static async calculateQuotePricing(quoteData: any, transaction?: any) {
-    const { quote_id, quote_type = "Full", generate_options = false } = quoteData;
-
-    if (generate_options && quote_type === "Full") {
-        const options = await this.generateThreeQuoteOptions(quoteData, transaction);
-        return {
-            options,
-            currency: "ZAR",
-            pricing_source: "Pricing Service",
-        };
-    }
+    const { quote_id, quote_type = "Full" } = quoteData;
 
     let result;
     if (quote_type === "Quick") {
@@ -53,30 +44,6 @@ export class PricingService {
       currency: "ZAR",
       pricing_source: "Pricing Service",
     };
-  }
-
-  private static async generateThreeQuoteOptions(data: any, transaction?: any) {
-    const options = [
-      { name: "Basic", life_multiple: 1, disability_multiple: 1, funeral_amount: 10000 },
-      { name: "Standard", life_multiple: 2, disability_multiple: 2, funeral_amount: 20000 },
-      { name: "Comprehensive", life_multiple: 3, disability_multiple: 3, funeral_amount: 50000 }
-    ];
-
-    const results = [];
-    for (const opt of options) {
-      const optBenefits = [
-        { benefit_type: "LIFE", multiple: opt.life_multiple },
-        { benefit_type: "OCCUPATIONAL DISABILITY", multiple: opt.disability_multiple },
-        { benefit_type: "FUNERAL", cover_amount: opt.funeral_amount }
-      ];
-      
-      const result = await this.calculateFullQuotePricing({ ...data, benefits: optBenefits }, transaction);
-      results.push({
-        option_name: opt.name,
-        ...result
-      });
-    }
-    return results;
   }
 
   private static async calculateQuickQuotePricing(data: any) {
@@ -175,16 +142,11 @@ export class PricingService {
     }
 
     const fcl = this.getFreeCoverLimit(employees_to_process.length);
-    const industry = employer?.industry_type || "";
     const province = employer?.province || "";
-    const isHighRisk = this.HIGH_RISK_INDUSTRIES.some(i => industry.includes(i));
 
     let riskFactor = 1.0;
     if (["Limpopo", "Eastern Cape", "Mpumalanga"].includes(province)) {
       riskFactor = 1.12;
-    }
-    if (isHighRisk) {
-      riskFactor *= 1.18;
     }
 
     let total_monthly = 0;
@@ -198,9 +160,6 @@ export class PricingService {
       for (const b of benefits) {
         const code = b.benefit_type?.toUpperCase() || "LIFE";
         
-        // Block Disability for high-risk
-        if (isHighRisk && (code === "DISABILITY" || code === "OCCUPATIONAL DISABILITY")) continue;
-
         let cover = b.cover_amount || 0;
         if (b.multiple && annualSalary > 0) {
           cover = annualSalary * b.multiple;
