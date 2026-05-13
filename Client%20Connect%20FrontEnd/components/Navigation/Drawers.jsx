@@ -78,6 +78,119 @@ const Drawers = (props) => {
   };
 
   const UserView = ({ role }) => {
+    const adminView = (
+      <>
+        <DrawerItem Icon={HomeSharpIcon} title="Home" link="/" />
+        <DrawerItem
+          Icon={HandshakeTwoToneIcon}
+          title="Brokers"
+          link="/Brokers"
+        />
+        <DrawerItem
+          title="Search For Policy"
+          link={`/Administration/SearchPolicy`}
+          Icon={ManageSearchIcon}
+        />
+        <DrawerItem
+          title="Edit Existing Policy"
+          link={`/Administration/EditPolicy`}
+          Icon={EditNoteTwoToneIcon}
+        />
+        <DrawerItem
+          title="My Edits"
+          link={`/Administration/MyEdits`}
+          Icon={DriveFileRenameOutlineTwoToneIcon}
+        />
+        <DrawerItem
+          title="My Approvals - Edits"
+          link={`/Administration/MyApprovals`}
+          Icon={RuleTwoToneIcon}
+        />
+
+        <DrawerItem
+          title="All Edits"
+          link={`/Administration/Policies`}
+          Icon={GradingTwoToneIcon}
+        />
+        {/* <DrawerItem
+            Icon={HandshakeIcon}
+            title="Create New Brokerage"
+            link="/NewBrokerOnboarding"
+          /> */}
+        <Divider />
+        <DrawerItem
+          title="Create new Policy"
+          link={`/Onboarding/CreatePolicy`}
+          Icon={AddBoxIcon}
+        />
+        <DrawerItem
+          Icon={PersonAddAltIcon}
+          title="My Policies"
+          link={`/Onboarding/MyPolicies`}
+        />
+
+        <DrawerItem
+          title="My Approvals"
+          link={`/Onboarding/AllocatedPolicies`}
+          Icon={AssignmentIndIcon}
+        />
+        <DrawerItem
+          Icon={ContentPasteSearchIcon}
+          title="File Upload"
+          link={`/Onboarding/FileUpload`}
+        />
+        <DrawerItem
+          title="My Files"
+          link={`/Onboarding/MyFiles`}
+          Icon={InventoryIcon}
+        />
+        <DrawerItem
+          title="Broker Files"
+          link={`/Onboarding/BrokerFiles`}
+          Icon={RuleFolderIcon}
+        />
+        <DrawerItem
+          title="File Approvals"
+          link={`/Onboarding/FileApprovals`}
+          Icon={ApprovalIcon}
+        />
+        <DrawerItem
+          title="All Files"
+          link={`/Onboarding/AllFiles`}
+          Icon={FileCopyIcon}
+        />
+
+        <DrawerItem
+          title="All Policies"
+          link={`/Onboarding/Policies`}
+          Icon={PeopleOutlineIcon}
+        />
+        <Divider />
+        <DrawerItem
+          title="New Schemes"
+          link={`/SchemeOnboarding/NewSchemeList`}
+          Icon={SchemaTwoToneIcon}
+        />
+        <DrawerItem
+          title="Broker Onboarding"
+          link={`/NewBrokerOnboarding`}
+          Icon={DomainAddIcon}
+        />
+        <Divider />
+        <DrawerItem
+          Icon={AddTaskIcon}
+          title="Tasks Manager"
+          link="/TasksManager"
+        />
+
+        <DrawerItem Icon={FactCheckIcon} title="VOPD" link="/VOPD" />
+        <DrawerItem
+          Icon={ManageAccountsIcon}
+          title="Manage Users"
+          link={`/Users`}
+        />
+      </>
+    )
     const CurrentView = {
       "CDA-RMA-Policy Admin": (
         <>
@@ -195,119 +308,8 @@ const Drawers = (props) => {
           <DrawerItem Icon={FactCheckIcon} title="VOPD" link="/VOPD" />
         </>
       ),
-      "CDA-RMA-User Admin": (
-        <>
-          <DrawerItem Icon={HomeSharpIcon} title="Home" link="/" />
-          <DrawerItem
-            Icon={HandshakeTwoToneIcon}
-            title="Brokers"
-            link="/Brokers"
-          />
-          <DrawerItem
-            title="Search For Policy"
-            link={`/Administration/SearchPolicy`}
-            Icon={ManageSearchIcon}
-          />
-          <DrawerItem
-            title="Edit Existing Policy"
-            link={`/Administration/EditPolicy`}
-            Icon={EditNoteTwoToneIcon}
-          />
-          <DrawerItem
-            title="My Edits"
-            link={`/Administration/MyEdits`}
-            Icon={DriveFileRenameOutlineTwoToneIcon}
-          />
-          <DrawerItem
-            title="My Approvals - Edits"
-            link={`/Administration/MyApprovals`}
-            Icon={RuleTwoToneIcon}
-          />
-
-          <DrawerItem
-            title="All Edits"
-            link={`/Administration/Policies`}
-            Icon={GradingTwoToneIcon}
-          />
-          {/* <DrawerItem
-            Icon={HandshakeIcon}
-            title="Create New Brokerage"
-            link="/NewBrokerOnboarding"
-          /> */}
-          <Divider />
-          <DrawerItem
-            title="Create new Policy"
-            link={`/Onboarding/CreatePolicy`}
-            Icon={AddBoxIcon}
-          />
-          <DrawerItem
-            Icon={PersonAddAltIcon}
-            title="My Policies"
-            link={`/Onboarding/MyPolicies`}
-          />
-
-          <DrawerItem
-            title="My Approvals"
-            link={`/Onboarding/AllocatedPolicies`}
-            Icon={AssignmentIndIcon}
-          />
-          <DrawerItem
-            Icon={ContentPasteSearchIcon}
-            title="File Upload"
-            link={`/Onboarding/FileUpload`}
-          />
-          <DrawerItem
-            title="My Files"
-            link={`/Onboarding/MyFiles`}
-            Icon={InventoryIcon}
-          />
-          <DrawerItem
-            title="Broker Files"
-            link={`/Onboarding/BrokerFiles`}
-            Icon={RuleFolderIcon}
-          />
-          <DrawerItem
-            title="File Approvals"
-            link={`/Onboarding/FileApprovals`}
-            Icon={ApprovalIcon}
-          />
-          <DrawerItem
-            title="All Files"
-            link={`/Onboarding/AllFiles`}
-            Icon={FileCopyIcon}
-          />
-
-          <DrawerItem
-            title="All Policies"
-            link={`/Onboarding/Policies`}
-            Icon={PeopleOutlineIcon}
-          />
-          <Divider />
-          <DrawerItem
-            title="New Schemes"
-            link={`/SchemeOnboarding/NewSchemeList`}
-            Icon={SchemaTwoToneIcon}
-          />
-          <DrawerItem
-            title="Broker Onboarding"
-            link={`/NewBrokerOnboarding`}
-            Icon={DomainAddIcon}
-          />
-          <Divider />
-          <DrawerItem
-            Icon={AddTaskIcon}
-            title="Tasks Manager"
-            link="/TasksManager"
-          />
-
-          <DrawerItem Icon={FactCheckIcon} title="VOPD" link="/VOPD" />
-          <DrawerItem
-            Icon={ManageAccountsIcon}
-            title="Manage Users"
-            link={`/Users`}
-          />
-        </>
-      ),
+      "Administrator": adminView,
+      "CDA-RMA-User Admin": adminView,
 
       "CDA-BROKERAGE-Broker Manager": (
         <>

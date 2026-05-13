@@ -17,10 +17,12 @@ export async function apiClient<T>(path: string, options: FetchOptions = {}): Pr
   const token = await getFreshToken();
   if (!token) throw new Error("Session expired. Please log in again.");
 
+  const isFormData = options.body instanceof FormData;
+  
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(!isFormData && { "Content-Type": "application/json" }),
       ...options.headers,
       Authorization: `Bearer ${token}`,
     },

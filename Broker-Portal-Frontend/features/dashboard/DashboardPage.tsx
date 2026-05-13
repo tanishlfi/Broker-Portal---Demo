@@ -127,7 +127,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div>
+      <div>ī
         <h3 className="mb-6 text-lg font-medium" style={{ color: "#ededed" }}>
           Quick Actions
         </h3>

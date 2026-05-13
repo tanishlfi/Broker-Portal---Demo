@@ -14,7 +14,6 @@ interface DashboardHeaderProps {
 interface DecodedToken {
   name?: string;
   email?: string;
-  user?: string;
   preferred_username?: string;
   upn?: string;
   unique_name?: string;
@@ -62,14 +61,13 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
       if (token) {
         const decoded = jwtDecode<DecodedToken>(token);
         const identity =
-          decoded.name ||
-          (decoded.given_name && decoded.family_name ? `${decoded.given_name} ${decoded.family_name}` : "") ||
-          decoded.given_name ||
           decoded.email ||
-          decoded.user ||
           decoded.preferred_username ||
           decoded.upn ||
           decoded.unique_name ||
+          decoded.name ||
+          (decoded.given_name && decoded.family_name ? `${decoded.given_name} ${decoded.family_name}` : "") ||
+          decoded.given_name ||
           "";
 
         if (identity) {
@@ -109,17 +107,17 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
       }}
     >
       <div className="flex items-center h-full">
-        <div style={{ 
-          width: "1px", 
-          height: "20px", 
-          background: "#797979", 
+        <div style={{
+          width: "1px",
+          height: "20px",
+          background: "#797979",
           alignSelf: "center",
           flexShrink: 0,
         }} />
-        <div style={{ 
-          marginLeft: "12px", 
-          display: "flex", 
-          flexDirection: "column", 
+        <div style={{
+          marginLeft: "12px",
+          display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           height: "100%",
           transform: "translateY(-2px)"
@@ -155,3 +153,4 @@ export default function DashboardHeader({ title, subtitle, showUser = true }: Da
     </header>
   );
 }
+  

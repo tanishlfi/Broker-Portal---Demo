@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { jwtDecode } from "jwt-decode";
 
 interface User {
   email: string;
@@ -25,7 +24,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    
+
     // Initialize user from localStorage or URL params
     const initializeUser = () => {
       try {
@@ -41,24 +40,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const storedBrokerId = localStorage.getItem("bp_broker_id");
         const storedRepresentativeId = localStorage.getItem("bp_representative_id");
         const storedName = localStorage.getItem("userName");
-        const token = localStorage.getItem("bp_token");
 
-        let tokenEmail = "";
-        let tokenName = "";
-
-        if (token) {
-          try {
-            const decoded: any = jwtDecode(token);
-            tokenEmail = decoded.email || decoded.user || decoded.preferred_username || "";
-            tokenName = decoded.name || (decoded.given_name && decoded.family_name ? `${decoded.given_name} ${decoded.family_name}` : "") || decoded.given_name || "";
-          } catch {}
-        }
-
-        // Prioritize URL params, then localStorage, then token decoding
-        const email = emailParam || storedEmail || tokenEmail;
+        // Prioritize URL params, then localStorage
+        const email = emailParam || storedEmail;
         const brokerId = brokerIdParam || storedBrokerId;
         const representativeId = representativeIdParam || storedRepresentativeId;
-        const name = nameParam || storedName || tokenName;
+        const name = nameParam || storedName;
 
         if (email) {
           const userData: User = {
@@ -90,6 +77,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     initializeUser();
   }, []);
+
+  // Don't render children until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <UserContext.Provider value={{ user, loading, setUser }}>

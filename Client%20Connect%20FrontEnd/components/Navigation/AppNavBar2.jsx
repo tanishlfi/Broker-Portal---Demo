@@ -75,6 +75,8 @@ export default function AppNavBar2({ children, setThemeState, themeState }) {
     setThemeState(!themeState);
   };
 
+  const hideNavBar = ["/"];
+  const shouldHideNavBar = hideNavBar.includes(router.pathname);
   const [open, setOpen] = React.useState(false);
 
   const handleDrawerOpen = () => {
@@ -90,7 +92,7 @@ export default function AppNavBar2({ children, setThemeState, themeState }) {
       <CssBaseline />
       <AppBar color="default" position="fixed" open={open}>
         <Toolbar>
-          {!isLoading && user && (
+          {!isLoading && user && !shouldHideNavBar && (
             <IconButton
               color="inherit"
               aria-label="open drawer"
@@ -128,21 +130,21 @@ export default function AppNavBar2({ children, setThemeState, themeState }) {
             {["test", "uat", "development"].includes(
               process.env.NEXT_PUBLIC_NODE_ENV,
             ) && (
-              <Box sx={{ width: "100%" }}>
-                <Alert severity="warning">
-                  Please note this is NOT the live environment. For live
-                  environment, please visit{" "}
-                  <Link
-                    href="https://clientconnect.randmutual.co.za"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{ color: "inherit", textDecoration: "underline" }}
-                  >
-                    ClientConnect
-                  </Link>
-                </Alert>
-              </Box>
-            )}
+                <Box sx={{ width: "100%" }}>
+                  <Alert severity="warning">
+                    Please note this is NOT the live environment. For live
+                    environment, please visit{" "}
+                    <Link
+                      href="https://clientconnect.randmutual.co.za"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ color: "inherit", textDecoration: "underline" }}
+                    >
+                      ClientConnect
+                    </Link>
+                  </Alert>
+                </Box>
+              )}
           </Box>
 
           <Stack direction="row" spacing={1}>

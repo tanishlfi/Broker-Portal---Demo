@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Download, X } from "lucide-react";
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
+import { getQuote, updateQuoteStatus, formatRand, normaliseQuote, type Quote as ApiQuote } from "@/lib/api/quotes";
 
 export default function QuoteDetailsPage() {
   const router = useRouter();
@@ -11,72 +12,50 @@ export default function QuoteDetailsPage() {
   const params = useParams();
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [convertedToFull, setConvertedToFull] = useState(false);
+  const [apiQuote, setApiQuote] = useState<ApiQuote | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Get data from URL params
-  const companyName = searchParams.get("companyName") || "Unknown Company";
-  const quoteType = searchParams.get("quoteType") || "Quick Quote";
-  const quoteId = searchParams.get("quoteId") || "N/A";
-  const monthlyPremium = searchParams.get("monthlyPremium") || "R 0";
-  const coverageAmount = searchParams.get("coverageAmount") || "R 0";
-  const createdDate = searchParams.get("createdDate") || "N/A";
+  // Fallback values from URL params (used while loading or if fetch fails)
+  const companyNameParam = searchParams.get("companyName") || "Unknown Company";
+  const quoteTypeParam = searchParams.get("quoteType") || "Quick Quote";
+  const quoteIdParam = searchParams.get("quoteId") || "N/A";
+  const monthlyPremiumParam = searchParams.get("monthlyPremium") || "R 0";
+  const coverageAmountParam = searchParams.get("coverageAmount") || "R 0";
+  const createdDateParam = searchParams.get("createdDate") || "N/A";
+
+  // The route param is the quoteId; we use it as the quoteReference for the GET call
+  const quoteReference = (params.quoteId as string) || quoteIdParam;
+
+  useEffect(() => {
+    async function fetchQuote() {
+      if (!quoteReference || quoteReference === "N/A") {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await getQuote(quoteReference);
+        setApiQuote(normaliseQuote(res.data));
+      } catch {
+        // fall back to URL params
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchQuote();
+  }, [quoteReference]);
+
+  // Resolved display values — prefer API data, fall back to URL params
+  const companyName    = apiQuote?.companyName    ?? companyNameParam;
+  const quoteType      = apiQuote?.quoteType      ?? (quoteTypeParam as "Quick Quote" | "Full Quote");
+  const quoteId        = apiQuote?.quoteReference ?? quoteIdParam;
+  const monthlyPremium = apiQuote ? formatRand(apiQuote.monthlyPremium) : monthlyPremiumParam;
+  const coverageAmount = apiQuote ? formatRand(apiQuote.coverageAmount) : coverageAmountParam;
+  const createdDate    = apiQuote?.createdAt
+    ? new Date(apiQuote.createdAt).toLocaleDateString("en-ZA")
+    : createdDateParam;
 
   const isFullQuote = quoteType === "Full Quote" || convertedToFull;
-  
-  // Mock additional data based on company (in real app, fetch from API using params.quoteId)
-  const getCompanyDetails = (company: string) => {
-    // This would be replaced with actual API call
-    const details: Record<string, any> = {
-      "Tech Innovations Pty Ltd": {
-        registrationNumber: "2019/123456/07",
-        employeesCovered: "85",
-        averageAge: "32",
-        averageIncome: "R 450,000",
-        genderSplit: "Mostly Male",
-        province: "gauteng",
-        industry: "technology",
-      },
-      "Green Energy Solutions": {
-        registrationNumber: "2018/654321/07",
-        employeesCovered: "142",
-        averageAge: "35",
-        averageIncome: "R 380,000",
-        genderSplit: "Balanced",
-        province: "western cape",
-        industry: "energy",
-      },
-      "Medical Care Group": {
-        registrationNumber: "2020/789012/07",
-        employeesCovered: "67",
-        averageAge: "38",
-        averageIncome: "R 520,000",
-        genderSplit: "Mostly Female",
-        province: "gauteng",
-        industry: "healthcare",
-      },
-      "Retail Excellence Ltd": {
-        registrationNumber: "2017/345678/07",
-        employeesCovered: "178",
-        averageAge: "29",
-        averageIncome: "R 280,000",
-        genderSplit: "Mostly Female",
-        province: "kwazulu-natal",
-        industry: "retail",
-      },
-    };
-    
-    return details[company] || {
-      registrationNumber: "2737182",
-      employeesCovered: "22",
-      averageAge: "33",
-      averageIncome: "R 400,000",
-      genderSplit: "Mostly Female",
-      province: "gauteng",
-      industry: "manufacturing",
-    };
-  };
 
-  const companyDetails = getCompanyDetails(companyName);
-  
   const quoteData = {
     companyName,
     quoteType,
@@ -84,18 +63,31 @@ export default function QuoteDetailsPage() {
     monthlyPremium,
     coverageAmount,
     createdDate,
-    ...companyDetails,
-    scheme: "Group Life",
-    benefits: ["Group Life Cover", "Accidental Cover (GPA)", "Funeral Cover"],
-    valueAddedServices: ["Repatriation", "Funeral Assistance", "Groceries Benefit", "Airtime Benefit"],
-    deductible: "R 40,000",
+    registrationNumber: apiQuote?.registrationNumber ?? "—",
+    employeesCovered:   String(apiQuote?.numberOfEmployees ?? "—"),
+    averageAge:         apiQuote?.averageAge ? String(apiQuote.averageAge) : "—",
+    averageIncome:      apiQuote?.averageMonthlyIncome ? formatRand(apiQuote.averageMonthlyIncome) : "—",
+    genderSplit:        apiQuote?.genderSplit ?? "—",
+    province:           apiQuote?.province   ?? "—",
+    industry:           apiQuote?.industry   ?? "—",
+    scheme:             apiQuote?.scheme     ?? "Group Life",
+    benefits:           apiQuote?.benefits   ?? ["Group Life Cover", "Accidental Cover (GPA)", "Funeral Cover"],
+    valueAddedServices: apiQuote?.valueAddedServices ?? ["Repatriation", "Funeral Assistance", "Groceries Benefit", "Airtime Benefit"],
+    deductible:         apiQuote?.deductible ? formatRand(apiQuote.deductible) : "R 40,000",
+    // Contact details for the approve modal
+    contactFirstName:   apiQuote?.contactFirstName ?? "—",
+    contactLastName:    apiQuote?.contactLastName  ?? "",
+    contactEmail:       apiQuote?.contactEmail     ?? "—",
+    contactMobile:      apiQuote?.contactMobile    ?? "—",
   };
 
-  const handleSendOTP = () => {
-    // In real app, this would call API to send OTP
-    console.log("Sending OTP for quote:", quoteId);
+  const handleApproveSuccess = async () => {
+    try {
+      await updateQuoteStatus(quoteId, "approved");
+    } catch {
+      // best-effort
+    }
     setShowApproveModal(false);
-    // Navigate back to quotes page with approved tab
     router.push("/quotes?tab=approved");
   };
 
@@ -121,6 +113,12 @@ export default function QuoteDetailsPage() {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <p style={{ color: "#A0A0A0", fontSize: "14px" }}>Loading quote details...</p>
+          </div>
+        ) : (
+          <>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -464,6 +462,8 @@ export default function QuoteDetailsPage() {
             </button>
           )}
         </div>
+        </>
+        )}
       </div>
 
       {/* Approve Quote Modal */}
@@ -473,7 +473,11 @@ export default function QuoteDetailsPage() {
           onClose={() => setShowApproveModal(false)}
           quoteId={quoteId}
           companyName={companyName}
-          onSendOTP={handleSendOTP}
+          contactFirstName={quoteData.contactFirstName}
+          contactLastName={quoteData.contactLastName}
+          contactEmail={quoteData.contactEmail}
+          contactMobile={quoteData.contactMobile}
+          onSendOTP={handleApproveSuccess}
         />
       )}
     </div>

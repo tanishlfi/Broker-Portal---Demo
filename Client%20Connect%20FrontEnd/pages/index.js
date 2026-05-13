@@ -1,52 +1,127 @@
-import React from "react";
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
+import React, { useEffect } from "react";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import UserCards from "components/Dashboards/UserCards";
-import { useQuery } from "react-query";
-import axios from "axios";
 import useToken from "hooks/useToken";
-import { rmaAPI } from "src/AxiosParams";
-import Alert from "@mui/material/Alert";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import DomainAddIcon from "@mui/icons-material/DomainAdd";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import { LinearProgress, Grid, Typography } from "@mui/material";
+import { useRouter } from 'next/router';
+import FeatureCardGrid from '../components/Containers/FeatureCardGrid'
 
 const Home = () => {
-  // Check if RMA is Online
-  const accessToken = useToken();
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+  const tokenData = useToken();
+  const accessToken = tokenData?.accessToken;
+  const decodedToken = tokenData?.decoded;
 
-  const checkRMA = useQuery(
-    "checkRMA",
-    () => {
-      return axios(`${rmaAPI}/mdm/api/IdType`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-    },
-    {
-      enabled: !!accessToken,
-      refetchInterval: 50000,
-    }
-  );
+  // Use roles from either the session user OR the decoded access token
+  const roles = user?.rmaAppRoles || decodedToken?.rmaAppRoles || [];
 
-  return (
-    <div>
-      {checkRMA.isLoading && <Alert severity="warning">Checking RMA...</Alert>}
-      {checkRMA.isError && <Alert severity="error">RMA is Offline</Alert>}
-      {checkRMA.isSuccess && <Alert severity="info">RMA is Online</Alert>}
-      {
-        // show env NEXT_PUBLIC_NODE_ENV
-        ["test", "uat", "development"].includes(
-          process.env.NEXT_PUBLIC_NODE_ENV
-        ) && (
-          <Alert severity="warning">
-            Please note this is not the live environment. Actions will NOT
-            impact live policies nor will new policies be created.
-          </Alert>
-        )
+  // Helper to normalize role strings for comparison (case-insensitive, removes spaces and dashes)
+  const normalizeRole = (role) => role ? role.toLowerCase().replace(/[\s-]/g, "") : "";
+
+  const BrokerId =
+    user?.rmaAppUserMetadata?.BrokerageIds?.length > 0 &&
+    user?.rmaAppUserMetadata?.BrokerageIds[0];
+
+  // ClientConnect roles that bypass the portal selection screen
+  const clientConnectRoles = [
+    "CDA-RMA-Policy Admin",
+    "CDA-RMA-User Admin",
+    "CDA-BROKERAGE-Broker Manager",
+    "CDA-SCHEME-Scheme Representative",
+    "new-Broker-onboarding-user"
+  ];
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      const normalizedRoles = roles.map(normalizeRole);
+      const isAdm = normalizedRoles.includes("administrator");
+
+      // If user is an Administrator, they should always see the tiles, so we don't redirect them.
+      if (isAdm) return;
+
+      // Redirecting to Broker Portal if he has BP_Broker_Rep role
+      const isBrokerRep = normalizedRoles.includes(normalizeRole("BP_BROKER_REP")) || 
+                          normalizedRoles.includes(normalizeRole("BP_REP"));
+      
+      if (isBrokerRep) {
+        console.log("Redirecting Broker Rep to /brokerPortal/dashboard");
+        router.push('/brokerPortal/dashboard');
+        return;
       }
-      <UserCards />
-    </div>
-  );
-};
+
+      // Redirecting to Client Connect roles if has CC Roles
+      const normalizedCCRoles = clientConnectRoles.map(normalizeRole);
+      if (normalizedRoles.some(r => normalizedCCRoles.includes(r))) {
+        console.log("Redirecting Client Connect user to /Dashboard");
+        router.push('/Dashboard');
+        return;
+      }
+    }
+  }, [user, isLoading, roles, router, clientConnectRoles]);
+
+  if (isLoading) {
+    return <LinearProgress />;
+  }
+
+  const normalizedRoles = roles.map(normalizeRole);
+  const isAdministrator = normalizedRoles.includes("administrator");
+  
+  console.log("Diagnostic - Roles in Token:", roles);
+  console.log("Diagnostic - Normalized Roles:", normalizedRoles);
+  console.log("Diagnostic - isAdministrator:", isAdministrator);
+
+  const normalizedCCRoles = clientConnectRoles.map(normalizeRole);
+  const hasCCRole = normalizedRoles.some(r => normalizedCCRoles.includes(r));
+  const isBrokerRep = normalizedRoles.includes(normalizeRole("BP_BROKER_REP"));
+
+  //Not Rendering Portal Selection Cards
+  // if (isBrokerRep || hasCCRole) {
+  //     return <LinearProgress />;
+  // }
+
+  /**  Show Portal Selection only for users with Administrator Role Without
+  Client Connect or Broker Portal Roles */
+
+  if (isAdministrator) {
+    const portalCards = [
+      {
+        title: "Client Connect",
+        link: "/Dashboard",
+        Icon: PeopleOutlineIcon,
+      },
+      {
+        title: "Broker Portal",
+        // link: process.env.NEXT_PUBLIC_BROKER_PORTAL_URL || "http://localhost:3000",
+        link: "/brokerPortal/dashboard",
+        Icon: DomainAddIcon,
+        external: true,
+      },
+      {
+        title: "Admin Portal",
+        link: "www.google.com",
+        Icon: ManageAccountsIcon,
+      },
+    ];
+
+    //Existing Flow
+    return (
+      <div>
+        <Grid sx={{ my: 2 }}>
+          <Typography variant="h6" align="left">
+            Select Portal
+          </Typography>
+        </Grid>
+        <FeatureCardGrid cards={portalCards} accessToken={accessToken} brokerId={BrokerId} />
+      </div>
+    );
+  }
+  return (
+    <LinearProgress />
+  )
+}
 
 export default Home;
-
-export const getServerSideProps = withPageAuthRequired();

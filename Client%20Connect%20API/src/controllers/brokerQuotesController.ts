@@ -71,17 +71,9 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
       quote_type: "Quick",
       quote_status: "Draft",
       quote_version: 1,
+      province: validatedBody.province,
     }, { transaction: t });
 
-    // Save quick quote specific data
-    await BrokerQuickQuoteData.create({
-      quote_id: quote.quote_id,
-      workforce_count: validatedBody.workforce_count,
-      average_age: validatedBody.average_age,
-      average_salary: validatedBody.average_salary,
-      province: validatedBody.province,
-      industry_type: validatedBody.industry,
-    }, { transaction: t });
 
     // Calculate pricing
     const pricingResult = await PricingService.calculateQuotePricing({
@@ -93,6 +85,7 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
         average_salary: validatedBody.average_salary,
         province: validatedBody.province,
         industry: validatedBody.industry,
+        gender_split: validatedBody.gender_split,
       },
       benefits: validatedBody.benefits,
     }, t);
@@ -176,9 +169,12 @@ export const generateFullQuote = async (req: Request, res: Response) => {
     if (typeof req.body.benefits === "string") {
       try {
         req.body.benefits = JSON.parse(req.body.benefits);
-      } catch (e) {
-        // Ignore parse error, validation will catch it
-      }
+      } catch (e) {}
+    }
+    if (typeof req.body.employees === "string") {
+      try {
+        req.body.employees = JSON.parse(req.body.employees);
+      } catch (e) {}
     }
 
     const validatedBody = await fullQuoteSchema.validate(req.body, { abortEarly: false });
@@ -209,8 +205,10 @@ export const generateFullQuote = async (req: Request, res: Response) => {
       }
 
       employees_list = validationResult.employees;
+    }
 
-      // Save employees to DB
+    // Save employees to DB (if any)
+    if (employees_list.length > 0) {
       for (const emp of employees_list) {
         await BrokerEmployee.create({
           ...emp,

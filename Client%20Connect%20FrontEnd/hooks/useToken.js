@@ -41,7 +41,7 @@ const useToken = () => {
     },
   });
 
-  return data?.accessToken;
+  return data;
 };
 
 export default useToken;

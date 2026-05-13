@@ -1,14 +1,23 @@
 "use client";
 
+import React from "react";
+
+interface BenefitBreakdownItem {
+  benefit_id?: string;
+  benefit_name: string;
+  premium_amount: number;
+}
+
 interface CoverSummaryProps {
   lifeCover: number;
   funeralCover: number;
   occupationalDisability: number;
   totalCover: number;
   totalMonthlyPremium: number;
+  benefitBreakdown?: BenefitBreakdownItem[];
 }
 
-const formatCurrency = (value: number) => `R ${value.toLocaleString("en-ZA")}`;
+const formatCurrency = (value: number) => `R ${(value || 0).toLocaleString("en-ZA")}`;
 
 export default function CoverSummary({
   lifeCover,
@@ -16,6 +25,7 @@ export default function CoverSummary({
   occupationalDisability,
   totalCover,
   totalMonthlyPremium,
+  benefitBreakdown
 }: CoverSummaryProps) {
   return (
     <div style={{
@@ -32,19 +42,33 @@ export default function CoverSummary({
       }}>
         Cover summary
       </h4>
+      
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-          <span style={{ color: "#9ca3af" }}>Life</span>
-          <span style={{ color: "#ffffff", fontWeight: 500 }}>{formatCurrency(lifeCover)}</span>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-          <span style={{ color: "#9ca3af" }}>Funeral</span>
-          <span style={{ color: "#ffffff", fontWeight: 500 }}>{formatCurrency(funeralCover)}</span>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-          <span style={{ color: "#9ca3af" }}>Occupational Disability</span>
-          <span style={{ color: "#ffffff", fontWeight: 500 }}>{formatCurrency(occupationalDisability)}</span>
-        </div>
+        {/* Dynamic breakdown from API if available, else static cover amounts */}
+        {benefitBreakdown && benefitBreakdown.length > 0 ? (
+          benefitBreakdown.map((b, i) => (
+            <div key={b.benefit_id || i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
+              <span style={{ color: "#9ca3af" }}>{b.benefit_name}</span>
+              <span style={{ color: "#ffffff", fontWeight: 500 }}>{formatCurrency(b.premium_amount)} pm</span>
+            </div>
+          ))
+        ) : (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
+              <span style={{ color: "#9ca3af" }}>Life</span>
+              <span style={{ color: "#ffffff", fontWeight: 500 }}>{formatCurrency(lifeCover)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
+              <span style={{ color: "#9ca3af" }}>Funeral</span>
+              <span style={{ color: "#ffffff", fontWeight: 500 }}>{formatCurrency(funeralCover)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
+              <span style={{ color: "#9ca3af" }}>Occupational Disability</span>
+              <span style={{ color: "#ffffff", fontWeight: 500 }}>{formatCurrency(occupationalDisability)}</span>
+            </div>
+          </>
+        )}
+
         <div style={{ borderTop: "1px solid #30363D", marginTop: "4px", paddingTop: "12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginBottom: "12px" }}>
             <span style={{ color: "#9ca3af", fontWeight: 600 }}>Total cover</span>
@@ -53,7 +77,7 @@ export default function CoverSummary({
           <div style={{ borderTop: "1px solid #30363D", paddingTop: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
               <span style={{ color: "#9ca3af", fontWeight: 600 }}>Total monthly premium</span>
-              <span style={{ color: "#1FC3EB", fontWeight: 600, fontSize: "1rem" }}>{formatCurrency(totalMonthlyPremium)}</span>
+              <span style={{ color: "#1FC3EB", fontWeight: 600, fontSize: "1rem" }}>{formatCurrency(totalMonthlyPremium)} pm</span>
             </div>
           </div>
         </div>

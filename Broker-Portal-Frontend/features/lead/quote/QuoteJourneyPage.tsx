@@ -6,10 +6,15 @@ import { LayoutDashboard, FileText } from "lucide-react";
 import QuickQuoteInputs from "./QuickQuoteInputs";
 import AdjustCoverageStep from "./AdjustCoverageStep";
 import FullQuoteCapture from "./FullQuoteCapture";
-import FullGeneratedQuote from "./FullGeneratedQuote";
-import QuoteDocumentPage from "./QuoteDocumentPage";
+import {
+  createQuickQuote,
+  createFullQuote,
+  normaliseQuote,
+  type Quote,
+} from "@/lib/api/quotes";
 
 interface QuoteJourneyPageProps {
+  leadId: string;
   leadReference: string;
   companyName: string;
   initialType?: "quick" | "full";
@@ -19,17 +24,8 @@ type Step =
   | "SELECT_TYPE"
   | "QUICK_QUOTE"
   | "ADJUST_COVERAGE"
-  | "FULL_QUOTE"
-  | "FULL_QUOTE_GENERATED"
-  | "QUOTE_DOCUMENT";
+  | "FULL_QUOTE";
 
-interface FullQuoteData {
-  coverageAmount: number;
-  monthlyPremium: number;
-  employeesCovered: number;
-  avgSalary: number;
-  benefitsIncluded: string;
-}
 
 interface FormData {
   employees: string;
@@ -41,7 +37,17 @@ interface FormData {
   cellphone: string;
 }
 
+interface QuickQuotePassData {
+  employees: string;
+  genderSplit: string;
+  averageAge: string;
+  averageIncome: string;
+  province: string;
+  industry: string;
+}
+
 export default function QuoteJourneyPage({
+  leadId,
   leadReference,
   companyName,
   initialType,
@@ -54,7 +60,9 @@ export default function QuoteJourneyPage({
 
   const router = useRouter();
   const [step, setStep] = useState<Step>(getInitialStep());
-  const [fullQuoteData, setFullQuoteData] = useState<FullQuoteData | null>(null);
+  const [generatedQuote, setGeneratedQuote] = useState<Quote | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quickQuoteData, setQuickQuoteData] = useState<QuickQuotePassData | null>(null);
   const [formData, setFormData] = useState<FormData>({
     employees: "",
     genderSplit: "",
@@ -90,10 +98,66 @@ export default function QuoteJourneyPage({
           <h1 style={{ fontSize: "31px", fontWeight: 500, lineHeight: "32px", color: "#ffffff", marginBottom: "24px" }}>Quick Cost Estimate</h1>
         </div>
         <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingBottom: "24px" }}>
+          {quoteError && (
+            <p style={{ color: "#ef4444", fontSize: "0.875rem", marginBottom: "12px" }}>{quoteError}</p>
+          )}
           <AdjustCoverageStep
             onBack={() => setStep("QUICK_QUOTE")}
-            onGenerateQuote={() => { /* modal handles download, no navigation */ }}
-            onContinueToFull={() => setStep("FULL_QUOTE")}
+            employeeCount={parseInt(formData.employees, 10) || 0}
+            averageAge={parseInt(formData.averageAge, 10) || 35}
+            averageIncome={parseFloat(formData.averageIncome) || 0}
+            province={formData.province}
+            industry={formData.industry}
+            quoteReference={generatedQuote?.quoteReference || ""}
+            onGenerateQuote={async (coverageData) => {
+              setQuoteError(null);
+              try {
+                const res = await createQuickQuote({
+                  lead_id: leadId,
+                  workforce_count: parseInt(formData.employees, 10),
+                  average_age: parseInt(formData.averageAge, 10),
+                  average_salary: parseFloat(formData.averageIncome),
+                  province: formData.province,
+                  industry: formData.industry,
+                  gender_split: formData.genderSplit,
+                  benefits: [
+                    { benefit_type: "Life Cover", cover_amount: coverageData.lifeCover },
+                    { benefit_type: "Funeral Cover", cover_amount: coverageData.funeralCover },
+                    { benefit_type: "Occupational Disability", cover_amount: coverageData.occupationalDisability },
+                  ],
+                });
+                setGeneratedQuote(normaliseQuote(res.data));
+                // Store quick quote data to pass to full quote
+                setQuickQuoteData({
+                  employees: formData.employees,
+                  genderSplit: formData.genderSplit,
+                  averageAge: formData.averageAge,
+                  averageIncome: formData.averageIncome,
+                  province: formData.province,
+                  industry: formData.industry,
+                });
+              } catch (err: any) {
+                setQuoteError(err.message ?? "Failed to generate quote. Please try again.");
+              }
+            }}
+            onContinueToFull={() => {
+              // Store quick quote data before moving to full quote
+              setQuickQuoteData({
+                employees: formData.employees,
+                genderSplit: formData.genderSplit,
+                averageAge: formData.averageAge,
+                averageIncome: formData.averageIncome,
+                province: formData.province,
+                industry: formData.industry,
+              });
+              
+              // Update URL to reflect Full Quote
+              const params = new URLSearchParams(window.location.search);
+              params.set("type", "full");
+              window.history.pushState({}, "", `?${params.toString()}`);
+              
+              setStep("FULL_QUOTE");
+            }}
           />
         </div>
       </>
@@ -107,20 +171,42 @@ export default function QuoteJourneyPage({
           <h1 style={{ fontSize: "31px", fontWeight: 500, lineHeight: "32px", color: "#ffffff", marginBottom: "24px" }}>Full Quote</h1>
         </div>
         <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingBottom: "24px" }}>
+          {quoteError && (
+            <p style={{ color: "#ef4444", fontSize: "0.875rem", marginBottom: "12px" }}>{quoteError}</p>
+          )}
           <FullQuoteCapture
             companyName={companyName}
             leadReference={leadReference}
+            quickQuoteData={quickQuoteData}
+            quoteReference={generatedQuote?.quoteReference || ""}
             onBack={() => initialType === "full" ? router.back() : setStep("SELECT_TYPE")}
-            onGenerate={(employees) => {
-              const count = employees.length;
-              setFullQuoteData({
-                coverageAmount: 48600000,
-                monthlyPremium: 81000,
-                employeesCovered: count || 324,
-                avgSalary: 25442,
-                benefitsIncluded: "Comprehensive medical coverage, Life insurance, Disability coverage, Family assistance",
-              });
-              setStep("FULL_QUOTE_GENERATED");
+            onGenerate={async (data) => {
+              setQuoteError(null);
+              try {
+                const res = await createFullQuote({
+                  lead_id: leadId,
+                  product_id: data.product_id,
+                  rma_member_number: data.rma_member_number,
+                  is_permanent_employees: data.is_permanent_employees,
+                  is_actively_at_work: data.is_actively_at_work,
+                  is_replacing_policy: data.is_replacing_policy,
+                  replaced_policy_includes_disability: data.replaced_policy_includes_disability,
+                  is_policy_older_than_6_months: data.is_policy_older_than_6_months,
+                  replaced_policy_start_date: data.replaced_policy_start_date,
+                  province: data.province,
+                  industry: data.industry,
+                  generate_options: data.generate_options,
+                  benefits: data.benefits,
+                  employees: data.employees,
+                  employeeFile: data.employeeFile,
+                });
+                const quote = normaliseQuote(res.data);
+                setGeneratedQuote(quote);
+                return quote;
+              } catch (err: any) {
+                setQuoteError(err.message ?? "Failed to generate quote.");
+                throw err;
+              }
             }}
           />
         </div>
@@ -128,35 +214,6 @@ export default function QuoteJourneyPage({
     );
   }
 
-  if (step === "FULL_QUOTE_GENERATED" && fullQuoteData) {
-    return (
-      <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingTop: "24px", paddingBottom: "24px" }}>
-        <FullGeneratedQuote
-          coverageAmount={fullQuoteData.coverageAmount}
-          monthlyPremium={fullQuoteData.monthlyPremium}
-          employeesCovered={fullQuoteData.employeesCovered}
-          avgSalary={fullQuoteData.avgSalary}
-          benefitsIncluded={fullQuoteData.benefitsIncluded}
-          onBack={() => setStep("FULL_QUOTE")}
-          onCustomize={() => setStep("FULL_QUOTE")}
-          onGenerateDocument={() => setStep("QUOTE_DOCUMENT")}
-        />
-      </div>
-    );
-  }
-
-  if (step === "QUOTE_DOCUMENT") {
-    return (
-      <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingTop: "24px", paddingBottom: "24px" }}>
-        <QuoteDocumentPage
-          leadReference={leadReference}
-          companyName={companyName}
-          onBack={() => setStep("FULL_QUOTE_GENERATED")}
-          onEmployerAccepted={() => console.log("Employer accepted quote")}
-        />
-      </div>
-    );
-  }
 
   // SELECT_TYPE - Quote Type Selection UI
   return (
@@ -181,7 +238,12 @@ export default function QuoteJourneyPage({
       <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexShrink: 0 }}>
         {/* Quick Cost Estimate Card */}
         <button
-          onClick={() => setStep("QUICK_QUOTE")}
+          onClick={() => {
+            const params = new URLSearchParams(window.location.search);
+            params.set("type", "quick");
+            window.history.pushState({}, "", `?${params.toString()}`);
+            setStep("QUICK_QUOTE");
+          }}
           style={{
             width: "271px",
             height: "180px",
@@ -224,7 +286,12 @@ export default function QuoteJourneyPage({
 
         {/* Full Quote Card */}
         <button
-          onClick={() => setStep("FULL_QUOTE")}
+          onClick={() => {
+            const params = new URLSearchParams(window.location.search);
+            params.set("type", "full");
+            window.history.pushState({}, "", `?${params.toString()}`);
+            setStep("FULL_QUOTE");
+          }}
           style={{
             width: "271px",
             height: "180px",

@@ -51,6 +51,7 @@ export const quickQuoteSchema = Yup.object().shape({
   average_salary: Yup.number().min(0).required(),
   province: Yup.string().required(),
   industry: Yup.string().required(),
+  gender_split: Yup.string().required(),
   benefits: Yup.array().of(
     Yup.object().shape({
       benefit_type: Yup.string().required(),
@@ -77,6 +78,15 @@ export const fullQuoteSchema = Yup.object().shape({
       cover_amount: Yup.number().min(0).optional(),
     })
   ).required(),
+  employees: Yup.array().of(Yup.object().shape({
+    firstName: Yup.string().optional(),
+    surname: Yup.string().optional(),
+    gender: Yup.string().optional(),
+    salary: Yup.number().optional(),
+    income: Yup.number().optional(),
+    dob: Yup.string().optional(),
+    identification: Yup.string().optional(),
+  })).optional(),
 });
 
 export const sendOtpSchema = Yup.object().shape({

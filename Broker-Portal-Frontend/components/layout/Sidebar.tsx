@@ -350,7 +350,17 @@ export default function Sidebar({ userEmail: propEmail }: SidebarProps) {
             (e.currentTarget as HTMLElement).style.color = "#8D98A5";
           }}
           onClick={() => {
-            window.location.href = process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200";
+            // Clear all local storage items
+            localStorage.removeItem("bp_token");
+            localStorage.removeItem("bp_broker_id");
+            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("bp_broker_email");
+            localStorage.removeItem("bp_broker_name");
+            
+            // Redirect to main app's logout endpoint
+            const logoutUrl = `${process.env.NEXT_PUBLIC_CLIENT_CONNECT_URL || "http://localhost:4200"}/api/auth/logout`;
+            window.location.href = logoutUrl;
           }}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
