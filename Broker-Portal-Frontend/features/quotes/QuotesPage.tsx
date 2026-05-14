@@ -97,8 +97,8 @@ export default function QuotesPage() {
               daysRemaining: q.validUntilDays ?? 30,
               quoteId: q.quoteReference || q.quoteId,
               quoteReference: q.quoteReference || q.quoteId,
-              monthlyPremium: q.monthlyPremium !== undefined && q.monthlyPremium !== null && q.monthlyPremium !== "" ? formatRand(Number(q.monthlyPremium)) : "—",
-              coverageAmount: q.coverageAmount !== undefined && q.coverageAmount !== null && q.coverageAmount !== "" ? formatRand(Number(q.coverageAmount)) : "—",
+              monthlyPremium: q.monthlyPremium !== undefined && q.monthlyPremium !== null ? formatRand(Number(q.monthlyPremium)) : "—",
+              coverageAmount: q.coverageAmount !== undefined && q.coverageAmount !== null ? formatRand(Number(q.coverageAmount)) : "—",
               createdDate: q.createdAt
                 ? new Date(q.createdAt).toLocaleDateString("en-ZA")
                 : new Date().toLocaleDateString("en-ZA"),

@@ -12,7 +12,7 @@ import notifications from "./notifications";
 import brokers from "./brokers";
 import brokerLeadsRoutes from "./brokerLeadsRoutes";
 import brokerQuotesRoutes from "./brokerQuotesRoutes";
-import brokerOtpRoutes from "./broker.otp.routes";
+import brokerOtpRoutes from "./brokerOtpRoutes";
 import productCatalog from "./productCatalogRoutes";
 import tasks from "./tasksRoutes";
 import rules from "./rules";

@@ -98,3 +98,56 @@ export const verifyOtpSchema = Yup.object().shape({
   referenceId: Yup.string().required("Reference ID is required"),
   otpCode: Yup.string().matches(/^\d{6}$/, "Must be exactly 6 digits").required(),
 });
+
+export const employerOnboardingSchema = Yup.object().shape({
+  // Authorisation & Your Details
+  is_authorised: Yup.boolean().required("Authorisation status is required"),
+  is_director: Yup.boolean().required("Director status is required"),
+  first_name: Yup.string().required("First name is required"),
+  surname: Yup.string().required("Surname is required"),
+  date_of_birth: Yup.date().required("Date of birth is required"),
+  cellphone: Yup.string().required("Cellphone is required"),
+  landline: Yup.string().nullable(),
+  has_sa_id: Yup.boolean().required(),
+  id_or_passport_number: Yup.string().required("ID or Passport number is required"),
+  passport_expiry: Yup.date().nullable().when("has_sa_id", {
+    is: false,
+    then: (schema) => schema.required("Passport expiry is required for non-SA citizens"),
+  }),
+  nationality: Yup.string().required("Nationality is required"),
+  home_address: Yup.string().required("Home address is required"),
+  email_for_policy_documents: Yup.string().email("Invalid email").required("Email for policy documents is required"),
+  email_for_monthly_invoice: Yup.string().email("Invalid email").required("Email for monthly invoice is required"),
+
+  // Boss Details
+  boss_first_name: Yup.string().required("Boss first name is required"),
+  boss_surname: Yup.string().required("Boss surname is required"),
+  boss_date_of_birth: Yup.date().required("Boss date of birth is required"),
+  boss_has_sa_id: Yup.boolean().required(),
+  boss_id_or_passport: Yup.string().required("Boss ID or Passport is required"),
+  boss_passport_expiry: Yup.date().nullable().when("boss_has_sa_id", {
+    is: false,
+    then: (schema) => schema.required("Boss passport expiry is required for non-SA citizens"),
+  }),
+  boss_nationality: Yup.string().required("Boss nationality is required"),
+
+  // Organisation Details
+  business_type: Yup.string().required("Business type is required"),
+  country_of_incorporation: Yup.string().required("Country of incorporation is required"),
+  registered_name: Yup.string().required("Registered name is required"),
+  trading_name: Yup.string().required("Trading name is required"),
+  registration_number: Yup.string().required("Registration number is required"),
+  stock_exchange_listing_name: Yup.string().nullable(),
+  registered_address: Yup.string().required("Registered address is required"),
+  physical_address: Yup.string().required("Physical address is required"),
+
+  // Payment Details
+  bank_name: Yup.string().required("Bank name is required"),
+  bank_account_number: Yup.string().required("Bank account number is required"),
+  bank_account_type: Yup.string().oneOf(["Cheque", "Current", "Savings", "Transmission"], "Invalid account type").required(),
+  debit_day_of_month: Yup.number().integer().min(1).max(31).required("Debit day is required"),
+  source_of_funds: Yup.string().required("Source of funds is required"),
+  company_tax_number: Yup.string().required("Company tax number is required"),
+  company_vat_number: Yup.string().nullable(),
+  debit_order_authorised: Yup.boolean().oneOf([true], "Debit order must be authorised").required(),
+});

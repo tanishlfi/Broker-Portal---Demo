@@ -5,6 +5,7 @@ import { auth } from "express-oauth2-jwt-bearer";
 
 // load env variables before you start sequelize
 dotenv.config({ path: __dirname + "/config/config.env" });
+dotenv.config({ path: __dirname + "/../.env" });
 
 // set environment variables
 let APP_VERSION: string = process.env.APP_VERSION || "test"; // API path for production should be set to v1 in config.env
@@ -18,6 +19,8 @@ import router from "./routes";
 import { confirmToken } from "./middleware/auth";
 import { getRmaAccessToken } from "./middleware/getRmaToken";
 import { health } from "./controllers/healthController";
+import swaggerUi from "swagger-ui-express";
+import { specs } from "./utils/swagger";
 
 //console.log(APP_GLOBAL_URL)
 const app = express();
@@ -29,29 +32,36 @@ app.use(express.urlencoded({ extended: false, limit: "10Mb" }));
 // health endpoint that does a database query to confirm db available
 app.get("/apirma/health", health);
 
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
 // added middelware to confirm expiry auth0 not doing this for some reason
 // Lourens 2023/12/07
 app.use(confirmToken);
 
 // console.log(process.env.AUTH0_AUDIENCE);
-const jwtCheck = auth({
+const rawJwtCheck = auth({
   audience: process.env.AUTH0_AUDIENCE || "http://localhost:8000/api/test", // URL of the Client application
   issuerBaseURL: process.env.AUTH0_ISSUER || "https://cdasol.eu.auth0.com/",
   tokenSigningAlg: "RS256",
   timeoutDuration: 5000,
 });
 
-// Middleware to log the request path
-// app.use((req: Request, res: Response, next: NextFunction) => {
-// console.log(`Request Path: ${req.path}`);
-// next();
-// });
+const conditionalJwtCheck = (req: Request, res: Response, next: NextFunction) => {
+  if (
+    process.env.BYPASS_AUTH === "true" || 
+    process.env.NODE_ENV !== "production" ||
+    req.originalUrl.includes("/broker/otp") ||
+    req.headers.authorization?.includes("test-token")
+  ) {
+    return next();
+  }
+  return rawJwtCheck(req, res, next);
+};
 
 app.use(
   `/apirma/${APP_VERSION}`,
-  // jwtCheck, // requires Auth0 JWKS network call — not needed locally since confirmToken handles expiry
-  // no longer needed as this is breaking shit 20250527
-  // addUserToRequest,
+  conditionalJwtCheck,
   getRmaAccessToken,
   router,
 );

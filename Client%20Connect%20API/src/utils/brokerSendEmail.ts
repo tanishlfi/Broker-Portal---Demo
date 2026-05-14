@@ -13,15 +13,26 @@ interface BrokerEmailOptions {
 /**
  * Sends an email using the Microsoft Graph API (the "current way")
  * This avoids the mock fallback in the standard sendEmail utility.
+ * In development/bypass mode, logs to console instead of calling Graph API.
  */
 export const sendBrokerEmail = async (options: BrokerEmailOptions) => {
-  try {
-    // If local development/testing, simulate successful email delivery to prevent third-party 401 Graph API errors
-    if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test" || !process.env.RMA_MSAL_SECRET) {
-      logger.info(`[MOCK EMAIL DELIVERY] To: ${options.email} | Subject: ${options.subject}`);
-      return { result: true, data: "Mock email sent successfully" };
-    }
+  // In non-production or bypass mode, skip the live Microsoft Graph API call
+  // and just log the email content to the console so OTP can be read during development.
+  if (
+    process.env.BYPASS_AUTH === "true" ||
+    (process.env.NODE_ENV as string) !== "production"
+  ) {
+    logger.info(`[DEV EMAIL BYPASS] To: ${options.email} | Subject: ${options.subject}`);
+    logger.info(`[DEV EMAIL BYPASS] ${options.message}`);
+    console.log("\n==============================");
+    console.log(`📧 DEV EMAIL (not sent): To: ${options.email}`);
+    console.log(`📧 Subject: ${options.subject}`);
+    console.log(`📧 Message: ${options.message}`);
+    console.log("==============================\n");
+    return { result: true, data: "Email bypassed in development mode" };
+  }
 
+  try {
     const htmlMessage = emailNotificationTemplate({
       title: options.title,
       message: options.message,

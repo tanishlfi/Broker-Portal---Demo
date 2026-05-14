@@ -18,10 +18,17 @@ export const errorHandler = (
     });
   }
 
-  // if (err instanceof InvalidTokenError) {
-  //   return res.status(401).json({
-  //     success: false,
-  //     message: "User not authorized please login again",
-  //   });
-  // }
+  // If it's an unauthorized or auth error
+  if (err.name === "UnauthorizedError" || err.message.includes("audiences") || err.message.includes("authorized")) {
+    return res.status(401).json({
+      success: false,
+      message: err.message || "User not authorized, please login again",
+    });
+  }
+
+  const status = (err as any).status || (err as any).statusCode || 500;
+  return res.status(status).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
 };
