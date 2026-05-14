@@ -1,6 +1,4 @@
-import { getValidToken } from "@/lib/auth";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/apirma/v1";
+import { apiClient } from "./apiClient";
 
 export interface SendOTPRequest {
   referenceId: string;
@@ -33,68 +31,22 @@ export interface VerifyOTPResponse {
  * Send OTP to employer email
  */
 export const sendOTP = async (
-  request: SendOTPRequest,
-  token?: string
+  request: SendOTPRequest
 ): Promise<SendOTPResponse> => {
-  const authToken = token || getValidToken() || localStorage.getItem("bp_token");
-
-  // For development/testing: if no token, use a test token
-  const finalToken = authToken || "test-token-for-development";
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/broker/otp/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${finalToken}`,
-      },
-      body: JSON.stringify(request),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to send OTP");
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Error sending OTP:", error);
-    throw error;
-  }
+  return apiClient<SendOTPResponse>("/broker/otp/send", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
 };
 
 /**
  * Verify OTP and trigger onboarding
  */
 export const verifyOTP = async (
-  request: VerifyOTPRequest,
-  token?: string
+  request: VerifyOTPRequest
 ): Promise<VerifyOTPResponse> => {
-  const authToken = token || getValidToken() || localStorage.getItem("bp_token");
-
-  // For development/testing: if no token, use a test token
-  const finalToken = authToken || "test-token-for-development";
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/broker/otp/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${finalToken}`,
-      },
-      body: JSON.stringify(request),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to verify OTP");
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Error verifying OTP:", error);
-    throw error;
-  }
+  return apiClient<VerifyOTPResponse>("/broker/otp/verify", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
 };
