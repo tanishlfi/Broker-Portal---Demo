@@ -25,6 +25,7 @@ export interface Lead {
   contactLastName: string;
   contactEmail: string;
   status: string;
+  quoteType?: string;
   quoteStatus?: string;
   createdAt: string;
 }
@@ -57,6 +58,7 @@ export async function getLeads(representativeId?: string): Promise<Lead[]> {
     contactLastName:    l.contact?.contact_last_name ?? "",
     contactEmail:       l.contact?.contact_email ?? "",
     status:             l.lead_status,
+    quoteType:          l.quotes?.[0]?.quote_type ? `${l.quotes[0].quote_type} Quote` : undefined,
     quoteStatus:        l.quotes?.[0]?.quote_status ?? undefined,
     createdAt:          l.lead_created_at ?? l.createdAt,
   }));

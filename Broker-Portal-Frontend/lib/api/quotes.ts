@@ -87,7 +87,7 @@ export interface Quote {
 export async function createQuickQuote(
   payload: QuickQuotePayload
 ): Promise<{ success: boolean; data: Quote }> {
-  return apiClient("/broker/quotes/quick", {
+  return apiClient<{ success: boolean; data: Quote }>("/broker/quotes/quick", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -110,13 +110,13 @@ export async function createFullQuote(
       }
     });
 
-    return apiClient("/broker/quotes/full", {
+    return apiClient<{ success: boolean; data: Quote }>("/broker/quotes/full", {
       method: "POST",
       body: formData,
     });
   }
 
-  return apiClient("/broker/quotes/full", {
+  return apiClient<{ success: boolean; data: Quote }>("/broker/quotes/full", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -127,7 +127,7 @@ export async function repriceQuote(
   quoteReference: string,
   payload: RepricePayload
 ): Promise<{ success: boolean; data: Quote }> {
-  return apiClient(`/broker/quotes/${quoteReference}/reprice`, {
+  return apiClient<{ success: boolean; data: Quote }>(`/broker/quotes/${quoteReference}/reprice`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -137,7 +137,19 @@ export async function repriceQuote(
 export async function getQuote(
   quoteReference: string
 ): Promise<{ success: boolean; data: Quote }> {
-  return apiClient(`/broker/quotes/${quoteReference}`, { cache: "no-store" });
+  return apiClient<{ success: boolean; data: Quote }>(`/broker/quotes/${quoteReference}`, { cache: "no-store" });
+}
+
+/** GET /broker/quotes — get all quotes */
+export async function getQuotes(): Promise<{ success: boolean; data: Quote[] }> {
+  const res = await apiClient<{ success: boolean; data: any[] }>(`/broker/quotes`, { cache: "no-store" });
+  if (res?.success && Array.isArray(res?.data)) {
+    return {
+      success: true,
+      data: res.data.map(normaliseQuote),
+    };
+  }
+  return { success: false, data: [] };
 }
 
 /** PATCH /broker/quotes/{quoteId}/status — update the status of a quote */
@@ -145,7 +157,7 @@ export async function updateQuoteStatus(
   quoteId: string,
   status: QuoteStatus
 ): Promise<{ success: boolean; data: Quote }> {
-  return apiClient(`/broker/quotes/${quoteId}/status`, {
+  return apiClient<{ success: boolean; data: Quote }>(`/broker/quotes/${quoteId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status } satisfies QuoteStatusPayload),
   });
@@ -155,22 +167,34 @@ export async function updateQuoteStatus(
 
 /** Map raw API response to a normalised Quote object */
 export function normaliseQuote(raw: any): Quote {
+  // Calculate total coverage amount from associated benefits if available
+  let computedCoverage = raw.coverage_amount ?? raw.coverageAmount ?? 0;
+  if (!computedCoverage && Array.isArray(raw.benefits)) {
+    computedCoverage = raw.benefits.reduce((sum: number, b: any) => sum + (Number(b.cover_amount) || 0), 0);
+  }
+
+  // Extract monthly premium from total_premium or benefits sum if available
+  let computedPremium = raw.monthly_premium ?? raw.monthlyPremium ?? raw.total_premium ?? raw.totalPremium ?? 0;
+  if (!computedPremium && Array.isArray(raw.benefits)) {
+    computedPremium = raw.benefits.reduce((sum: number, b: any) => sum + (Number(b.premium_amount) || 0), 0);
+  }
+
   return {
     quoteId:            raw.quote_id        ?? raw.quoteId        ?? "",
     quoteReference:     raw.quote_reference ?? raw.quoteReference ?? "",
-    leadReference:      raw.lead_reference  ?? raw.leadReference  ?? "",
+    leadReference:      raw.lead_reference  ?? raw.leadReference  ?? raw.lead_id ?? "",
     quoteType:          raw.quote_type?.toLowerCase() === "full" ? "Full Quote" : "Quick Quote",
-    status:             raw.quote_status    ?? raw.status         ?? "new",
-    companyName:        raw.employer?.employer_name ?? raw.companyName ?? "",
-    registrationNumber: raw.employer?.registration_number ?? raw.registrationNumber,
-    numberOfEmployees:  raw.number_of_employees ?? raw.numberOfEmployees ?? 0,
+    status:             raw.quote_status?.toLowerCase() ?? raw.status?.toLowerCase() ?? "new",
+    companyName:        raw.lead?.employer?.employer_name ?? raw.employer?.employer_name ?? raw.companyName ?? "Unknown Company",
+    registrationNumber: raw.lead?.employer?.registration_number ?? raw.employer?.registration_number ?? raw.registrationNumber,
+    numberOfEmployees:  raw.lead?.employer?.number_of_employees ?? raw.number_of_employees ?? raw.numberOfEmployees ?? 0,
     averageAge:         raw.average_age         ?? raw.averageAge,
     averageMonthlyIncome: raw.average_monthly_income ?? raw.averageMonthlyIncome,
     genderSplit:        raw.gender_split    ?? raw.genderSplit,
-    province:           raw.province,
-    industry:           raw.industry,
-    monthlyPremium:     raw.monthly_premium ?? raw.monthlyPremium ?? 0,
-    coverageAmount:     raw.coverage_amount ?? raw.coverageAmount ?? 0,
+    province:           raw.province ?? raw.lead?.employer?.province,
+    industry:           raw.industry ?? raw.lead?.employer?.industry_type,
+    monthlyPremium:     computedPremium,
+    coverageAmount:     computedCoverage,
     lifeCover:          raw.life_cover      ?? raw.lifeCover,
     funeralCover:       raw.funeral_cover   ?? raw.funeralCover,
     occupationalDisability: raw.occupational_disability ?? raw.occupationalDisability,
@@ -178,12 +202,12 @@ export function normaliseQuote(raw: any): Quote {
     benefits:           raw.benefits,
     valueAddedServices: raw.value_added_services ?? raw.valueAddedServices,
     deductible:         raw.deductible,
-    contactFirstName:   raw.contact?.contact_first_name ?? raw.contactFirstName,
-    contactLastName:    raw.contact?.contact_last_name  ?? raw.contactLastName,
-    contactEmail:       raw.contact?.contact_email      ?? raw.contactEmail,
-    contactMobile:      raw.contact?.contact_mobile     ?? raw.contactMobile,
+    contactFirstName:   raw.lead?.contact?.contact_first_name ?? raw.contact?.contact_first_name ?? raw.contactFirstName,
+    contactLastName:    raw.lead?.contact?.contact_last_name  ?? raw.contact?.contact_last_name  ?? raw.contactLastName,
+    contactEmail:       raw.lead?.contact?.contact_email      ?? raw.contact?.contact_email      ?? raw.contactEmail,
+    contactMobile:      raw.lead?.contact?.contact_mobile     ?? raw.contact?.contact_mobile     ?? raw.contactMobile,
     validUntilDays:     raw.valid_until_days ?? raw.validUntilDays ?? 30,
-    createdAt:          raw.quote_created_at ?? raw.createdAt ?? "",
+    createdAt:          raw.createdAt ?? raw.quote_created_at ?? "",
   };
 }
 
