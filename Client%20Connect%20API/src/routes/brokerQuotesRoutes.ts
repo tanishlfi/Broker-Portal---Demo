@@ -4,26 +4,28 @@ import {
   generateQuickQuote,
   generateFullQuote,
   repriceQuote,
-  getQuoteDetail,
   downloadQuoteDocument,
   saveQuoteToLead,
   getQuotesByLeadController,
+  getQuotesByRepresentativeController,
+  getQuoteByIdController,
   updateQuoteStatusController,
-  getAllQuotesController,
+  saveEmployerOnboardingDetails,
 } from "../controllers/brokerQuotesController";
 
 const router = Router();
 
-router.get("/", getAllQuotesController);
 router.post("/quick", generateQuickQuote);
 router.post("/full", fileUpload(), generateFullQuote);
-router.post("/:quoteReference/reprice", repriceQuote);
-router.get("/:quoteReference", getQuoteDetail);
-router.get("/:quoteReference/document", downloadQuoteDocument);
+router.post("/:quoteId/reprice", repriceQuote);
+router.get("/:quoteId/document", downloadQuoteDocument);
 
 router.post("/save-to-lead/:leadReference", saveQuoteToLead);
 
 router.get("/lead/:leadId", getQuotesByLeadController);
+router.get("/representative/:representativeId", getQuotesByRepresentativeController);
+router.get("/:quoteId", getQuoteByIdController);
 router.patch("/:quoteId/status", updateQuoteStatusController);
+router.post("/:quoteId/employer-details", saveEmployerOnboardingDetails);
 
 export default router;

@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-const { BrokerQuote, BrokerLead, BrokerQuoteBenefit, BrokerQuickQuoteData, BrokerEmployee, BrokerEmployer, BrokerContact, sequelize } = require("../models");
+const { BrokerQuote, BrokerLead, BrokerQuoteBenefit, BrokerQuickQuoteData, BrokerEmployee, BrokerQuoteOnboardingDetail, sequelize } = require("../models");
 import { sequelizeErrorHandler } from "../middleware/sequelize_error";
 import { v4 as uuidv4 } from "uuid";
 import { PricingService } from "../services/pricingService";
-import { quickQuoteSchema, fullQuoteSchema } from "../utils/validation";
+import { quickQuoteSchema, fullQuoteSchema, employerOnboardingSchema } from "../utils/validation";
 import { UploadedFile } from "express-fileupload";
 import { parseAndValidateEmployeesFile } from "../services/broker.employee.upload.service";
 
@@ -56,9 +56,7 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
     const validatedBody = await quickQuoteSchema.validate(req.body, { abortEarly: false });
     const { lead_id } = validatedBody;
 
-    const lead = await BrokerLead.findByPk(lead_id, {
-      attributes: ["lead_id"]
-    });
+    const lead = await BrokerLead.findByPk(lead_id);
     if (!lead) {
       await t.rollback();
       return res.status(404).json({ success: false, message: "Lead not found" });
@@ -74,18 +72,7 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
       quote_status: "Draft",
       quote_version: 1,
       province: validatedBody.province,
-    }, {
-      fields: [
-        "quote_id",
-        "lead_id",
-        "quote_reference",
-        "quote_type",
-        "quote_status",
-        "quote_version",
-        "province",
-      ],
-      transaction: t
-    });
+    }, { transaction: t });
 
 
     // Calculate pricing
@@ -102,8 +89,6 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
       },
       benefits: validatedBody.benefits,
     }, t);
-
-
 
     await t.commit();
 
@@ -196,7 +181,7 @@ export const generateFullQuote = async (req: Request, res: Response) => {
     const { lead_id, product_id, benefits } = validatedBody;
 
     const lead = await BrokerLead.findByPk(lead_id, {
-      attributes: ["lead_id"]
+      include: [{ model: require("../models").BrokerEmployer, as: "employer" }]
     });
     if (!lead) {
       await t.rollback();
@@ -251,26 +236,7 @@ export const generateFullQuote = async (req: Request, res: Response) => {
       is_policy_older_than_6_months: validatedBody.is_policy_older_than_6_months,
       replaced_policy_start_date: validatedBody.replaced_policy_start_date,
       province: validatedBody.province,
-    }, {
-      fields: [
-        "quote_id",
-        "lead_id",
-        "product_id",
-        "quote_reference",
-        "quote_type",
-        "quote_status",
-        "quote_version",
-        "rma_member_number",
-        "is_permanent_employees",
-        "is_actively_at_work",
-        "is_replacing_policy",
-        "replaced_policy_includes_disability",
-        "is_policy_older_than_6_months",
-        "replaced_policy_start_date",
-        "province",
-      ],
-      transaction: t
-    });
+    }, { transaction: t });
 
     // Calculate pricing
     const pricingResult = await PricingService.calculateQuotePricing({
@@ -280,8 +246,6 @@ export const generateFullQuote = async (req: Request, res: Response) => {
       benefits,
       employees_list: employees_list.length > 0 ? employees_list : undefined
     }, t);
-
-
 
     await t.commit();
 
@@ -307,13 +271,13 @@ export const generateFullQuote = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /broker/quotes/{quoteReference}/reprice:
+ * /broker/quotes/{quoteId}/reprice:
  *   post:
  *     summary: Reprice an existing quote with new benefits
  *     tags: [Broker Quotes]
  *     parameters:
  *       - in: path
- *         name: quoteReference
+ *         name: quoteId
  *         required: true
  *         schema:
  *           type: string
@@ -334,9 +298,9 @@ export const generateFullQuote = async (req: Request, res: Response) => {
  */
 export const repriceQuote = async (req: Request, res: Response) => {
   try {
-    const { quoteReference } = req.params;
+    const { quoteId } = req.params;
     const quote = await BrokerQuote.findOne({
-      where: { [sequelize.Op.or]: [{ quote_id: quoteReference }, { quote_reference: quoteReference }] },
+      where: { quote_id: quoteId },
       include: [
         { model: BrokerQuoteBenefit, as: "benefits" },
         { model: BrokerQuickQuoteData, as: "quick_quote_data" }
@@ -364,97 +328,11 @@ export const repriceQuote = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * @swagger
- * /broker/quotes/{quoteReference}:
- *   get:
- *     summary: Get details of a specific quote
- *     tags: [Broker Quotes]
- *     parameters:
- *       - in: path
- *         name: quoteReference
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Quote details
- */
-export const getQuoteDetail = async (req: Request, res: Response) => {
-  try {
-    const { quoteReference } = req.params;
-    const quote = await BrokerQuote.findOne({
-      where: { [sequelize.Op.or]: [{ quote_id: quoteReference }, { quote_reference: quoteReference }] },
-      attributes: [
-        "quote_id",
-        "lead_id",
-        "quote_reference",
-        "quote_type",
-        "quote_status",
-        "total_premium",
-        "province",
-        "created_at",
-      ],
-      include: [
-        { 
-          model: BrokerQuoteBenefit, 
-          as: "benefits",
-          attributes: [
-            "benefit_type",
-            "benefit_name",
-            "cover_amount",
-            "premium_amount",
-          ]
-        },
-        { 
-          model: BrokerLead, 
-          as: "lead",
-          attributes: ["lead_id"],
-          include: [
-            { 
-              model: BrokerEmployer, 
-              as: "employer",
-              attributes: [
-                "employer_name",
-                "registration_number",
-                "number_of_employees",
-                "industry_type",
-                "province",
-              ]
-            },
-            { 
-              model: BrokerContact, 
-              as: "contact",
-              attributes: [
-                "contact_first_name",
-                "contact_last_name",
-                "contact_email",
-                "contact_mobile",
-              ]
-            }
-          ]
-        }
-      ]
-    });
-
-    if (!quote) {
-      return res.status(404).json({ success: false, message: "Quote not found" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: quote,
-    });
-  } catch (err: any) {
-    return res.status(500).json(sequelizeErrorHandler(err));
-  }
-};
-
 export const downloadQuoteDocument = async (req: Request, res: Response) => {
   try {
-    const { quoteReference } = req.params;
+    const { quoteId } = req.params;
     // In a real system, this would generate a PDF or return a signed URL from S3/Azure Blob
-    const downloadUrl = `https://api.rma.co.za/documents/quotes/${quoteReference}.pdf`;
+    const downloadUrl = `https://api.rma.co.za/documents/quotes/${quoteId}.pdf`;
 
     return res.status(200).json({
       success: true,
@@ -475,8 +353,7 @@ export const saveQuoteToLead = async (req: Request, res: Response) => {
     const { quoteId } = req.body;
 
     const lead = await BrokerLead.findOne({
-      where: { [sequelize.Op.or]: [{ lead_id: leadReference }, { lead_reference: leadReference }] },
-      attributes: ["lead_id", "lead_status"]
+      where: { [sequelize.Op.or]: [{ lead_id: leadReference }, { lead_reference: leadReference }] }
     });
 
     if (!lead) {
@@ -484,9 +361,7 @@ export const saveQuoteToLead = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Lead not found" });
     }
 
-    const quote = await BrokerQuote.findByPk(quoteId, {
-      attributes: ["quote_id", "quote_status"]
-    });
+    const quote = await BrokerQuote.findByPk(quoteId);
     if (!quote) {
       await t.rollback();
       return res.status(404).json({ success: false, message: "Quote not found" });
@@ -512,42 +387,131 @@ export const saveQuoteToLead = async (req: Request, res: Response) => {
   }
 };
 
+export const createQuoteController = async (req: Request, res: Response) => {
+  // Legacy or generic create quote
+  return generateQuickQuote(req, res);
+};
+
+/**
+ * @swagger
+ * /broker/quotes/lead/{leadId}:
+ *   get:
+ *     summary: Get all quotes for a specific lead
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of quotes
+ */
 export const getQuotesByLeadController = async (req: Request, res: Response) => {
   try {
     const { leadId } = req.params;
     const quotes = await BrokerQuote.findAll({
       where: { lead_id: leadId },
-      attributes: [
-        "quote_id",
-        "lead_id",
-        "quote_reference",
-        "quote_type",
-        "quote_status",
-        "total_premium",
-        "province",
-        "created_at",
-      ],
       order: [["createdAt", "DESC"]],
       include: [
-        { 
-          model: BrokerQuoteBenefit, 
-          as: "benefits",
-          attributes: [
-            "benefit_type",
-            "benefit_name",
-            "cover_amount",
-            "premium_amount",
-          ]
-        }
+        { model: BrokerQuoteBenefit, as: "benefits" },
+        { model: BrokerQuickQuoteData, as: "quick_quote_data" }
       ]
     });
 
     return res.status(200).json({
       success: true,
+      message: "Quotes fetched successfully for lead",
       data: quotes,
     });
   } catch (err: any) {
-    return res.status(400).json(sequelizeErrorHandler(err));
+    return res.status(500).json(sequelizeErrorHandler(err));
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/representative/{representativeId}:
+ *   get:
+ *     summary: Get all quotes for a specific broker representative
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: representativeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of quotes
+ */
+export const getQuotesByRepresentativeController = async (req: Request, res: Response) => {
+  try {
+    const { representativeId } = req.params;
+    const quotes = await BrokerQuote.findAll({
+      include: [
+        {
+          model: BrokerLead,
+          as: "lead",
+          where: { representative_id: representativeId },
+          attributes: ["lead_id", "lead_reference", "representative_id"]
+        },
+        { model: BrokerQuoteBenefit, as: "benefits" },
+        { model: BrokerQuickQuoteData, as: "quick_quote_data" }
+      ],
+      order: [["createdAt", "DESC"]]
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Quotes fetched successfully for representative",
+      data: quotes,
+    });
+  } catch (err: any) {
+    return res.status(500).json(sequelizeErrorHandler(err));
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/{quoteId}:
+ *   get:
+ *     summary: Get a specific quote by its UUID (quote_id)
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: quoteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Quote details
+ */
+export const getQuoteByIdController = async (req: Request, res: Response) => {
+  try {
+    const { quoteId } = req.params;
+    const quote = await BrokerQuote.findOne({
+      where: { quote_id: quoteId },
+      include: [
+        { model: BrokerQuoteBenefit, as: "benefits" },
+        { model: BrokerQuickQuoteData, as: "quick_quote_data" },
+        { model: BrokerLead, as: "lead" }
+      ]
+    });
+
+    if (!quote) {
+      return res.status(404).json({ success: false, message: "Quote not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Quote fetched successfully",
+      data: quote,
+    });
+  } catch (err: any) {
+    return res.status(500).json(sequelizeErrorHandler(err));
   }
 };
 
@@ -583,18 +547,7 @@ export const updateQuoteStatusController = async (req: Request, res: Response) =
     const { quoteId } = req.params;
     const { status } = req.body;
 
-    const quote = await BrokerQuote.findByPk(quoteId, {
-      attributes: [
-        "quote_id",
-        "quote_reference",
-        "lead_id",
-        "quote_type",
-        "quote_status",
-        "total_premium",
-        "province",
-        "created_at",
-      ]
-    });
+    const quote = await BrokerQuote.findByPk(quoteId);
     if (!quote) {
       return res.status(404).json({ success: false, message: "Quote not found" });
     }
@@ -611,68 +564,184 @@ export const updateQuoteStatusController = async (req: Request, res: Response) =
   }
 };
 
-export const getAllQuotesController = async (req: Request, res: Response) => {
+/**
+ * @swagger
+ * /broker/quotes/{quoteId}/employer-details:
+ *   post:
+ *     summary: Capture and save employer and payment details for onboarding
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: quoteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - is_authorised
+ *               - is_director
+ *               - first_name
+ *               - surname
+ *               - date_of_birth
+ *               - cellphone
+ *               - has_sa_id
+ *               - id_or_passport_number
+ *               - nationality
+ *               - home_address
+ *               - email_for_policy_documents
+ *               - email_for_monthly_invoice
+ *               - boss_first_name
+ *               - boss_surname
+ *               - boss_date_of_birth
+ *               - boss_has_sa_id
+ *               - boss_id_or_passport
+ *               - boss_nationality
+ *               - business_type
+ *               - country_of_incorporation
+ *               - registered_name
+ *               - trading_name
+ *               - registration_number
+ *               - registered_address
+ *               - physical_address
+ *               - bank_name
+ *               - bank_account_number
+ *               - bank_account_type
+ *               - debit_day_of_month
+ *               - source_of_funds
+ *               - company_tax_number
+ *               - debit_order_authorised
+ *             properties:
+ *               is_authorised:
+ *                 type: boolean
+ *               is_director:
+ *                 type: boolean
+ *               first_name:
+ *                 type: string
+ *               surname:
+ *                 type: string
+ *               date_of_birth:
+ *                 type: string
+ *                 format: date
+ *               cellphone:
+ *                 type: string
+ *               landline:
+ *                 type: string
+ *               has_sa_id:
+ *                 type: boolean
+ *               id_or_passport_number:
+ *                 type: string
+ *               passport_expiry:
+ *                 type: string
+ *                 format: date
+ *               nationality:
+ *                 type: string
+ *               home_address:
+ *                 type: string
+ *               email_for_policy_documents:
+ *                 type: string
+ *               email_for_monthly_invoice:
+ *                 type: string
+ *               boss_first_name:
+ *                 type: string
+ *               boss_surname:
+ *                 type: string
+ *               boss_date_of_birth:
+ *                 type: string
+ *                 format: date
+ *               boss_has_sa_id:
+ *                 type: boolean
+ *               boss_id_or_passport:
+ *                 type: string
+ *               boss_passport_expiry:
+ *                 type: string
+ *                 format: date
+ *               boss_nationality:
+ *                 type: string
+ *               business_type:
+ *                 type: string
+ *               country_of_incorporation:
+ *                 type: string
+ *               registered_name:
+ *                 type: string
+ *               trading_name:
+ *                 type: string
+ *               registration_number:
+ *                 type: string
+ *               stock_exchange_listing_name:
+ *                 type: string
+ *               registered_address:
+ *                 type: string
+ *               physical_address:
+ *                 type: string
+ *               bank_name:
+ *                 type: string
+ *               bank_account_number:
+ *                 type: string
+ *               bank_account_type:
+ *                 type: string
+ *                 enum: [Cheque, Current, Savings, Transmission]
+ *               debit_day_of_month:
+ *                 type: integer
+ *               source_of_funds:
+ *                 type: string
+ *               company_tax_number:
+ *                 type: string
+ *               company_vat_number:
+ *                 type: string
+ *               debit_order_authorised:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Onboarding details saved successfully
+ */
+export const saveEmployerOnboardingDetails = async (req: Request, res: Response) => {
+  const t = await sequelize.transaction();
   try {
-    const quotes = await BrokerQuote.findAll({
-      attributes: [
-        "quote_id",
-        "lead_id",
-        "quote_reference",
-        "quote_type",
-        "quote_status",
-        "total_premium",
-        "province",
-        "created_at",
-      ],
-      order: [["createdAt", "DESC"]],
-      include: [
-        { 
-          model: BrokerQuoteBenefit, 
-          as: "benefits",
-          attributes: [
-            "benefit_type",
-            "benefit_name",
-            "cover_amount",
-            "premium_amount",
-          ]
-        },
-        { 
-          model: BrokerLead, 
-          as: "lead",
-          attributes: ["lead_id"],
-          include: [
-            { 
-              model: BrokerEmployer, 
-              as: "employer",
-              attributes: [
-                "employer_name",
-                "registration_number",
-                "number_of_employees",
-                "industry_type",
-                "province",
-              ]
-            },
-            { 
-              model: BrokerContact, 
-              as: "contact",
-              attributes: [
-                "contact_first_name",
-                "contact_last_name",
-                "contact_email",
-                "contact_mobile",
-              ]
-            }
-          ]
-        }
-      ]
+    const { quoteId } = req.params;
+    const validatedBody = await employerOnboardingSchema.validate(req.body, { abortEarly: false });
+
+    const quote = await BrokerQuote.findByPk(quoteId);
+    if (!quote) {
+      await t.rollback();
+      return res.status(404).json({ success: false, message: "Quote not found" });
+    }
+
+    // Save or update onboarding details
+    const [details, created] = await BrokerQuoteOnboardingDetail.findOrCreate({
+      where: { quote_id: quoteId },
+      defaults: {
+        ...validatedBody,
+        lead_id: quote.lead_id,
+      },
+      transaction: t,
     });
 
-    return res.status(200).json({
+    if (!created) {
+      await details.update(validatedBody, { transaction: t });
+    }
+
+    // Update quote status to reflect that onboarding details are captured
+    await quote.update({ quote_status: "Awaiting OTP" }, { transaction: t });
+
+    await t.commit();
+
+    return res.status(created ? 201 : 200).json({
       success: true,
-      data: quotes,
+      message: "Employer onboarding details saved successfully",
+      data: details,
     });
   } catch (err: any) {
-    return res.status(400).json(sequelizeErrorHandler(err));
+    if (t) await t.rollback();
+    return res.status(err.name === "ValidationError" ? 400 : 500).json({
+      success: false,
+      message: err.message || "An error occurred while saving onboarding details",
+      errors: err.inner?.map((e: any) => ({ field: e.path, message: e.message })) || [],
+    });
   }
 };
 
