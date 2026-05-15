@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { QUOTE_TYPE_OPTIONS, QUOTE_STATUS_OPTIONS } = require("../enums/brokerPortalEnums");
 
 module.exports = (sequelize, DataTypes) => {
   class BrokerQuote extends Model {
@@ -44,19 +45,11 @@ module.exports = (sequelize, DataTypes) => {
         unique: true,
       },
       quote_type: {
-        type: DataTypes.ENUM("Quick", "Full"),
+        type: DataTypes.ENUM(...QUOTE_TYPE_OPTIONS),
         allowNull: true,
       },
       quote_status: {
-        type: DataTypes.ENUM(
-          "Draft",
-          "Generated",
-          "Revised",
-          "Awaiting Employer Acceptance",
-          "Accepted",
-          "Expired",
-          "Rejected",
-        ),
+        type: DataTypes.ENUM(...QUOTE_STATUS_OPTIONS),
         allowNull: true,
       },
       quote_version: {

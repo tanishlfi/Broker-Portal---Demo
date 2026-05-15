@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 const { BrokerQuote, BrokerLead, BrokerQuoteBenefit, BrokerQuickQuoteData, BrokerEmployee, BrokerQuoteOnboardingDetail, sequelize } = require("../models");
+const { Op } = require("sequelize");
 import { sequelizeErrorHandler } from "../middleware/sequelize_error";
 import { v4 as uuidv4 } from "uuid";
 import { PricingService } from "../services/pricingService";
 import { quickQuoteSchema, fullQuoteSchema, employerOnboardingSchema } from "../utils/validation";
 import { UploadedFile } from "express-fileupload";
 import { parseAndValidateEmployeesFile } from "../services/broker.employee.upload.service";
+import { applyFilters } from "../utils/filterHelper";
 
 /**
  * @swagger
@@ -396,7 +398,7 @@ export const createQuoteController = async (req: Request, res: Response) => {
  * @swagger
  * /broker/quotes/lead/{leadId}:
  *   get:
- *     summary: Get all quotes for a specific lead
+ *     summary: Get all quotes for a specific lead with filtering and pagination
  *     tags: [Broker Quotes]
  *     parameters:
  *       - in: path
@@ -404,6 +406,37 @@ export const createQuoteController = async (req: Request, res: Response) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: quote_status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: searchFields
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
  *     responses:
  *       200:
  *         description: List of quotes
@@ -411,9 +444,20 @@ export const createQuoteController = async (req: Request, res: Response) => {
 export const getQuotesByLeadController = async (req: Request, res: Response) => {
   try {
     const { leadId } = req.params;
-    const quotes = await BrokerQuote.findAll({
-      where: { lead_id: leadId },
-      order: [["createdAt", "DESC"]],
+
+    const { where, limit, offset, order, pagination } = applyFilters(
+      req.query,
+      ["quote_status", "quote_type", "quote_reference"]
+    );
+
+    // Force lead_id filter
+    where.lead_id = leadId;
+
+    const { count, rows: quotes } = await BrokerQuote.findAndCountAll({
+      where,
+      limit,
+      offset,
+      order,
       include: [
         { model: BrokerQuoteBenefit, as: "benefits" },
         { model: BrokerQuickQuoteData, as: "quick_quote_data" }
@@ -423,7 +467,14 @@ export const getQuotesByLeadController = async (req: Request, res: Response) => 
     return res.status(200).json({
       success: true,
       message: "Quotes fetched successfully for lead",
-      data: quotes,
+      data: {
+        quotes,
+        pagination: {
+          total: count,
+          ...pagination,
+          totalPages: Math.ceil(count / limit)
+        }
+      },
     });
   } catch (err: any) {
     return res.status(500).json(sequelizeErrorHandler(err));
@@ -434,7 +485,7 @@ export const getQuotesByLeadController = async (req: Request, res: Response) => 
  * @swagger
  * /broker/quotes/representative/{representativeId}:
  *   get:
- *     summary: Get all quotes for a specific broker representative
+ *     summary: Get all quotes for a specific broker representative with filtering and pagination
  *     tags: [Broker Quotes]
  *     parameters:
  *       - in: path
@@ -442,6 +493,41 @@ export const getQuotesByLeadController = async (req: Request, res: Response) => 
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: quote_status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *       - in: query
+ *         name: clientName
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: searchFields
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
  *     responses:
  *       200:
  *         description: List of quotes
@@ -449,24 +535,50 @@ export const getQuotesByLeadController = async (req: Request, res: Response) => 
 export const getQuotesByRepresentativeController = async (req: Request, res: Response) => {
   try {
     const { representativeId } = req.params;
-    const quotes = await BrokerQuote.findAll({
+    const { clientName } = req.query;
+
+    const { where, limit, offset, order, pagination } = applyFilters(
+      req.query,
+      ["quote_status", "quote_type", "quote_reference"]
+    );
+
+    const { count, rows: quotes } = await BrokerQuote.findAndCountAll({
+      where,
+      limit,
+      offset,
+      order,
       include: [
         {
           model: BrokerLead,
           as: "lead",
           where: { representative_id: representativeId },
-          attributes: ["lead_id", "lead_reference", "representative_id"]
+          attributes: ["lead_id", "lead_reference", "representative_id"],
+          include: [
+            {
+              model: require("../models").BrokerEmployer,
+              as: "employer",
+              where: clientName ? { employer_name: { [Op.like]: `%${clientName}%` } } : undefined,
+              required: !!clientName
+            }
+          ]
         },
         { model: BrokerQuoteBenefit, as: "benefits" },
         { model: BrokerQuickQuoteData, as: "quick_quote_data" }
       ],
-      order: [["createdAt", "DESC"]]
+      distinct: true
     });
 
     return res.status(200).json({
       success: true,
       message: "Quotes fetched successfully for representative",
-      data: quotes,
+      data: {
+        quotes,
+        pagination: {
+          total: count,
+          ...pagination,
+          totalPages: Math.ceil(count / limit)
+        }
+      },
     });
   } catch (err: any) {
     return res.status(500).json(sequelizeErrorHandler(err));

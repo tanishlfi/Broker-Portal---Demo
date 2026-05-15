@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { CHANGE_TYPE } = require("../enums/brokerPortalEnums");
 
 module.exports = (sequelize, DataTypes) => {
   class BrokerHistory extends Model {
@@ -24,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       change_type: {
-        type: DataTypes.ENUM("CREATE", "UPDATE", "DELETE"),
+        type: DataTypes.ENUM(...CHANGE_TYPE),
         allowNull: false,
       },
       before_value: {

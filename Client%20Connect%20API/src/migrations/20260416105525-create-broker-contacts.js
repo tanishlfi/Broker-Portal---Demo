@@ -41,7 +41,7 @@ module.exports = {
           allowNull: true,
         },
         preferred_communication_method: {
-          type: Sequelize.ENUM("Email", "SMS", "Phone"),
+          type: Sequelize.ENUM("Email", "SMS"),
           allowNull: true,
         },
         created_at: {

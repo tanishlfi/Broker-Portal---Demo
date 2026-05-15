@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { LEAD_STATUS_OPTIONS } = require("../enums/brokerPortalEnums");
 
 module.exports = (sequelize, DataTypes) => {
   class BrokerLead extends Model {
@@ -36,19 +37,7 @@ module.exports = (sequelize, DataTypes) => {
         unique: true,
       },
       lead_status: {
-        type: DataTypes.ENUM(
-          "Draft",
-          "In Progress",
-          "Quote Generated",
-          "Awaiting Employer Acceptance",
-          "Accepted",
-          "Onboarding Submitted",
-          "Pending Approval",
-          "Approved",
-          "Rejected",
-          "Expired",
-          "Cancelled",
-        ),
+        type: DataTypes.ENUM(...LEAD_STATUS_OPTIONS),
         allowNull: false,
       },
       representative_id: {

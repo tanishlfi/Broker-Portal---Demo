@@ -1,4 +1,9 @@
 import * as Yup from "yup";
+import { 
+  PREFERRED_COMMUNICATION_METHOD_OPTIONS, 
+  REFERENCE_TYPE_OPTIONS, 
+  BANK_ACCOUNT_TYPE_OPTIONS 
+} from "../enums/brokerPortalEnums";
 
 // Lead Management Validations
 export const createLeadSchema = Yup.object().shape({
@@ -14,7 +19,7 @@ export const createLeadSchema = Yup.object().shape({
   contactMobile: Yup.string()
     .matches(/^0[6-8]\d{8}$/, "Must be a valid South African mobile number (e.g., 0821234567)")
     .required("Mobile cannot be empty"),
-  preferredCommunicationMethod: Yup.string().oneOf(["Email", "SMS", "Phone"], "Must be valid communication preference").nullable(),
+  preferredCommunicationMethod: Yup.string().oneOf(PREFERRED_COMMUNICATION_METHOD_OPTIONS, "Must be valid communication preference").nullable(),
   representativeId: Yup.string().uuid("Must be valid ID format").required("Representative ID is required"),
   brokerId: Yup.string().uuid("Must be valid ID format").required("Broker ID is required"),
 });
@@ -33,7 +38,7 @@ export const updateLeadSchema = Yup.object().shape({
     contact_last_name: Yup.string().min(1, "Contact surname cannot be empty"),
     contact_email: Yup.string().email("Must be a valid email format"),
     contact_mobile: Yup.string().matches(/^0[6-8]\d{8}$/, "Must be a valid South African mobile number"),
-    preferred_communication_method: Yup.string().oneOf(["Email", "SMS", "Phone"], "Must be valid communication preference"),
+    preferred_communication_method: Yup.string().oneOf(PREFERRED_COMMUNICATION_METHOD_OPTIONS, "Must be valid communication preference"),
   }).nullable(),
   lastSavedStep: Yup.number().integer().min(1).nullable(),
 });
@@ -91,7 +96,7 @@ export const fullQuoteSchema = Yup.object().shape({
 
 export const sendOtpSchema = Yup.object().shape({
   referenceId: Yup.string().uuid("Invalid reference ID").required(),
-  referenceType: Yup.string().oneOf(["Lead", "Quote"]).required(),
+  referenceType: Yup.string().oneOf(REFERENCE_TYPE_OPTIONS).required(),
 });
 
 export const verifyOtpSchema = Yup.object().shape({
@@ -144,7 +149,7 @@ export const employerOnboardingSchema = Yup.object().shape({
   // Payment Details
   bank_name: Yup.string().required("Bank name is required"),
   bank_account_number: Yup.string().required("Bank account number is required"),
-  bank_account_type: Yup.string().oneOf(["Cheque", "Current", "Savings", "Transmission"], "Invalid account type").required(),
+  bank_account_type: Yup.string().oneOf(BANK_ACCOUNT_TYPE_OPTIONS, "Invalid account type").required(),
   debit_day_of_month: Yup.number().integer().min(1).max(31).required("Debit day is required"),
   source_of_funds: Yup.string().required("Source of funds is required"),
   company_tax_number: Yup.string().required("Company tax number is required"),

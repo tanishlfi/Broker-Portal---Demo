@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { PREFERRED_COMMUNICATION_METHOD_OPTIONS } = require("../enums/brokerPortalEnums");
 
 module.exports = (sequelize, DataTypes) => {
   class BrokerContact extends Model {
@@ -39,7 +40,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       preferred_communication_method: {
-        type: DataTypes.ENUM("Email", "SMS", "Phone"),
+        type: DataTypes.ENUM(...PREFERRED_COMMUNICATION_METHOD_OPTIONS),
         allowNull: true,
       },
       created_at: {

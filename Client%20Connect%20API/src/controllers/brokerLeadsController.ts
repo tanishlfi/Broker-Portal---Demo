@@ -7,6 +7,7 @@ import {
 } from "../utils/validation";
 import { UploadedFile } from "express-fileupload";
 import { parseAndValidateEmployeesFile } from "../services/broker.employee.upload.service"; // Force re-parse
+import { applyFilters } from "../utils/filterHelper";
 
 const {
   BrokerLead,
@@ -209,22 +210,32 @@ export const createLead = async (req: Request, res: Response) => {
  *         name: limit
  *         schema:
  *           type: integer
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: searchFields
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
  *     responses:
  *       200:
  *         description: List of leads
  */
 export const getLeads = async (req: Request, res: Response) => {
   try {
-    const {
-      representativeId,
-      leadId,
-      clientName,
-      leadStatus,
-      dateCreatedStart,
-      dateCreatedEnd,
-      page = 1,
-      limit = 10,
-    } = req.query;
+    const { representativeId, clientName } = req.query;
 
     if (!representativeId) {
       return res.status(400).json({
@@ -233,42 +244,36 @@ export const getLeads = async (req: Request, res: Response) => {
       });
     }
 
-    const offset = (Number(page) - 1) * Number(limit);
+    const { where, limit, offset, order, pagination } = applyFilters(
+      req.query,
+      ["lead_status", "lead_reference", "broker_id"],
+      "lead_created_at"
+    );
 
-    const leadWhere: any = { representative_id: representativeId };
+    // Force representativeId filter
+    where.representative_id = representativeId;
+
+    // Handle employer-specific filtering (clientName)
     const employerWhere: any = {};
-
-    if (leadId) {
-      leadWhere.lead_reference = { [Op.like]: `%${leadId}%` };
-    }
-    if (leadStatus) {
-      leadWhere.lead_status = leadStatus;
-    }
-    if (dateCreatedStart && dateCreatedEnd) {
-      leadWhere.lead_created_at = {
-        [Op.between]: [new Date(dateCreatedStart as string), new Date(dateCreatedEnd as string)]
-      };
-    }
-
     if (clientName) {
       employerWhere.employer_name = { [Op.like]: `%${clientName}%` };
     }
 
     const { count, rows: leads } = await BrokerLead.findAndCountAll({
-      where: leadWhere,
+      where,
       include: [
         { 
           model: BrokerEmployer, 
           as: "employer",
-          where: Object.keys(employerWhere).length ? employerWhere : undefined,
-          required: Object.keys(employerWhere).length > 0
+          where: clientName ? employerWhere : undefined,
+          required: !!clientName
         },
         { model: BrokerContact, as: "contact" },
         { model: BrokerQuote, as: "quotes", required: false }
       ],
-      order: [["lead_created_at", "DESC"]],
-      limit: Number(limit),
-      offset: offset,
+      order: order.length > 0 ? order : [["lead_created_at", "DESC"]],
+      limit,
+      offset,
       distinct: true,
     });
 
@@ -279,9 +284,8 @@ export const getLeads = async (req: Request, res: Response) => {
         leads,
         pagination: {
           total: count,
-          page: Number(page),
-          limit: Number(limit),
-          totalPages: Math.ceil(count / Number(limit))
+          ...pagination,
+          totalPages: Math.ceil(count / limit)
         }
       },
     });
@@ -289,6 +293,7 @@ export const getLeads = async (req: Request, res: Response) => {
     return res.status(500).json(sequelizeErrorHandler(error));
   }
 };
+
 
 /**
  * @swagger

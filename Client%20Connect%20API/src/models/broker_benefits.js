@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { BENEFIT_TYPE } = require("../enums/brokerPortalEnums");
 
 module.exports = (sequelize, DataTypes) => {
   class BrokerBenefit extends Model {
@@ -23,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       benefit_name: { type: DataTypes.STRING, allowNull: false },
-      benefit_type: { type: DataTypes.ENUM("Life", "Funeral", "Accident", "VAPS"), allowNull: false },
+      benefit_type: { type: DataTypes.ENUM(...BENEFIT_TYPE), allowNull: false },
       is_mandatory: { type: DataTypes.BOOLEAN, defaultValue: false },
       is_embedded: { type: DataTypes.BOOLEAN, defaultValue: false },
       default_cover_amount: { type: DataTypes.DECIMAL(18, 2), allowNull: true },

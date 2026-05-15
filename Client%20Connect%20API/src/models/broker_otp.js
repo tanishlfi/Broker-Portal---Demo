@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { REFERENCE_TYPE_OPTIONS , SENT_METHOD} = require("../enums/brokerPortalEnums");
 
 module.exports = (sequelize, DataTypes) => {
   class BrokerOTP extends Model {
@@ -20,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       reference_type: {
-        type: DataTypes.ENUM("Lead", "Quote"),
+        type: DataTypes.ENUM(...REFERENCE_TYPE_OPTIONS),
         allowNull: false,
       },
       otp_code: {
@@ -52,7 +53,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       sent_method: {
-        type: DataTypes.ENUM("Email", "SMS"),
+        type: DataTypes.ENUM(...SENT_METHOD),
         defaultValue: "Email",
       },
     },
