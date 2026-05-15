@@ -51,15 +51,26 @@ export default function DashboardPage() {
         const representativeId = getRepresentativeId() ?? undefined;
         const leads = await getLeads(representativeId);
         
-        const activeLeads = leads.filter((l) => ["Draft", "In Progress", "Quote Generated", "Onboarding Submitted"].includes(l.status)).length;
+        const activeLeads = leads.filter((l) => 
+          ["Draft", "In Progress", "Quote Generated", "Awaiting Employer Acceptance", "Accepted", "Onboarding Submitted", "Pending Approval"].includes(l.status)
+        ).length;
         
-        // Active Quotes: Assuming any quote status other than Expired/Cancelled/Rejected is "Active"
-        const activeQuotes = leads.filter((l) => l.quoteStatus && !["Expired", "Cancelled", "Rejected"].includes(l.quoteStatus)).length;
+        // Active Quotes: Count all quotes across all leads that are not in a terminal state
+        const allQuotes = leads.flatMap(l => l.quotes || []);
+        const activeQuotes = allQuotes.filter(q => 
+          !["Expired", "Cancelled", "Rejected"].includes(q.quoteStatus)
+        ).length;
         
-        // Near Expiry: Assuming quotes expire in 30 days. For simplicity, we just count quotes created > 25 days ago and < 30 days.
-        // Or if backend provides expiration date, use that. Since we only have createdAt, let's estimate or just return 0 if no field.
-        // For demonstration, let's return 0 for now until expiration logic is implemented.
-        const quotesNearExpiry = 0;
+        // Near Expiry: Quotes expiring in the next 7 days
+        const sevenDaysFromNow = new Date();
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+        const now = new Date();
+
+        const quotesNearExpiry = allQuotes.filter(q => {
+          if (!q.expiryDate) return false;
+          const expiry = new Date(q.expiryDate);
+          return expiry > now && expiry <= sevenDaysFromNow;
+        }).length;
 
         setStats({
           activeLeads,

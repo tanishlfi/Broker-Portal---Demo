@@ -5,8 +5,10 @@ import { Plus, Search, ChevronDown, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import CancelQuoteModal from "@/components/quotes/CancelQuoteModal";
+import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
 import { getLeads, type Lead as ApiLead } from "@/lib/api/leads";
 import { updateQuoteStatus, formatRand, type Quote as ApiQuote } from "@/lib/api/quotes";
+import { getRepresentativeId } from "@/lib/auth";
 
 interface Quote {
   id: string;
@@ -44,6 +46,7 @@ export default function QuotesPage() {
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedQuoteForApproval, setSelectedQuoteForApproval] = useState<Quote | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedQuoteForCancel, setSelectedQuoteForCancel] = useState<Quote | null>(null);
@@ -56,13 +59,17 @@ export default function QuotesPage() {
     }
   }, [searchParams]);
 
-  // Load leads (for the "Add New Quote" modal) and derive quotes from lead quote data
+  // Load leads (for the "Add New Quote" modal) and fetch actual quotes
   useEffect(() => {
-    async function load() {
-      setLeadsLoading(true);
+    let intervalId: NodeJS.Timeout;
+
+    async function load(isInitial = false) {
+      if (isInitial) setLeadsLoading(true);
       try {
-        const apiLeads = await getLeads();
-        // Build leads list for the modal
+        const representativeId = getRepresentativeId() ?? undefined;
+        
+        // 1. Load leads for the "New Quote" selection modal
+        const apiLeads = await getLeads(representativeId);
         setLeads(
           apiLeads.map((l) => ({
             id: l.leadId,
@@ -73,31 +80,60 @@ export default function QuotesPage() {
             leadReference: l.leadReference,
           }))
         );
-        // Derive quotes from leads that have a quoteStatus
-        const derivedQuotes: Quote[] = apiLeads
-          .filter((l) => l.quoteStatus)
-          .map((l) => ({
-            id: l.leadId,
-            companyName: l.employerName,
-            quoteType: "Quick Quote" as const,
-            daysRemaining: 30,
-            quoteId: l.leadReference,
-            quoteReference: l.leadReference,
-            monthlyPremium: "—",
-            coverageAmount: "—",
-            createdDate: l.createdAt
-              ? new Date(l.createdAt).toLocaleDateString("en-ZA")
-              : "—",
-            status: (l.quoteStatus as Quote["status"]) ?? "new",
-          }));
-        if (derivedQuotes.length > 0) setQuotes(derivedQuotes);
-      } catch {
-        // keep existing state on error
+
+        // 2. Load actual quotes from the quotes API
+        const { getQuotes } = await import("@/lib/api/quotes");
+        const apiQuotes = await getQuotes(representativeId);
+
+        // Map backend quotes to frontend Quote interface
+        const derivedQuotes: Quote[] = apiQuotes.map((q) => {
+          // Status mapping: backend -> frontend tabs
+          let tabStatus: Quote["status"] = "new";
+          const backendStatus = q.status;
+
+          if (["Draft", "Generated", "Revised"].includes(backendStatus)) {
+            tabStatus = "new";
+          } else if (["Awaiting Employer Acceptance", "Awaiting OTP"].includes(backendStatus)) {
+            tabStatus = "pending";
+          } else if (backendStatus === "Accepted") {
+            tabStatus = "onboarding";
+          } else if (backendStatus === "Expired") {
+            tabStatus = "approved";
+          } else if (["Rejected", "Cancelled"].includes(backendStatus)) {
+            tabStatus = "cancelled";
+          }
+
+          // Calculate days remaining (using validUntilDays from API or defaulting to 30)
+          const createdDate = new Date(q.createdAt);
+          const expiryDate = new Date(createdDate.getTime() + (q.validUntilDays || 30) * 24 * 60 * 60 * 1000);
+          const daysRemaining = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+
+          return {
+            id: q.quoteId, // Actual quote UUID
+            companyName: q.companyName,
+            quoteType: q.quoteType,
+            daysRemaining,
+            quoteId: q.quoteReference, // Human readable reference
+            quoteReference: q.quoteReference,
+            monthlyPremium: formatRand(q.monthlyPremium),
+            coverageAmount: formatRand(q.coverageAmount),
+            createdDate: createdDate.toLocaleDateString("en-ZA"),
+            status: tabStatus,
+          };
+        });
+
+        setQuotes(derivedQuotes);
+      } catch (err) {
+        console.error("Failed to load quotes:", err);
       } finally {
-        setLeadsLoading(false);
+        if (isInitial) setLeadsLoading(false);
       }
     }
-    load();
+
+    load(true);
+    intervalId = setInterval(() => load(false), 10000); // Poll every 10s
+
+    return () => clearInterval(intervalId);
   }, []);
 
   // Filter quotes by active tab
@@ -105,10 +141,11 @@ export default function QuotesPage() {
 
   // Update tab counts dynamically
   const tabs = [
-    { key: "new" as const, label: `New Quotes (${quotes.filter(q => q.status === "new").length})`, count: quotes.filter(q => q.status === "new").length },
-    { key: "onboarding" as const, label: `In Onboarding (${quotes.filter(q => q.status === "onboarding").length})`, count: quotes.filter(q => q.status === "onboarding").length },
-    { key: "cancelled" as const, label: `Cancelled (${quotes.filter(q => q.status === "cancelled").length})`, count: quotes.filter(q => q.status === "cancelled").length },
-    { key: "approved" as const, label: `Expired Quoted`, count: 0 },
+    { key: "new" as const, label: `New Quotes (${quotes.filter(q => q.status === "new").length})` },
+    { key: "pending" as const, label: `Awaiting Acceptance (${quotes.filter(q => q.status === "pending").length})` },
+    { key: "onboarding" as const, label: `In Onboarding (${quotes.filter(q => q.status === "onboarding").length})` },
+    { key: "cancelled" as const, label: `Cancelled (${quotes.filter(q => q.status === "cancelled").length})` },
+    { key: "approved" as const, label: `Expired (${quotes.filter(q => q.status === "approved").length})` },
   ];
 
   const handleProceedWithQuote = () => {
@@ -121,8 +158,26 @@ export default function QuotesPage() {
 
   const handleMarkAsApproved = (quote: Quote) => {
     setSelectedQuoteForApproval(quote);
-    setShowApproveModal(true);
+    setShowCheckoutModal(true); // Open the new checkout modal first
     setOpenActionsMenu(null);
+  };
+
+  const handleCheckoutNext = async () => {
+    if (selectedQuoteForApproval) {
+      // For now, we skip saving onboarding details to backend as requested
+      // try {
+      //   await saveOnboardingDetails(selectedQuoteForApproval.id, onboardingData);
+      //   setShowCheckoutModal(false);
+      //   setShowApproveModal(true);
+      // } catch (err) {
+      //   console.error("Failed to save onboarding details:", err);
+      //   alert("Failed to save onboarding details. Please try again.");
+      // }
+      
+      // Directly move to the approval (OTP) modal
+      setShowCheckoutModal(false);
+      setShowApproveModal(true);
+    }
   };
 
   const handleCancelQuote = (quote: Quote) => {
@@ -430,6 +485,20 @@ export default function QuotesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Checkout Info Modal - The new step */}
+      {showCheckoutModal && selectedQuoteForApproval && (
+        <CheckoutInfoModal
+          isOpen={showCheckoutModal}
+          onClose={() => {
+            setShowCheckoutModal(false);
+            setSelectedQuoteForApproval(null);
+          }}
+          quoteId={selectedQuoteForApproval.quoteReference}
+          companyName={selectedQuoteForApproval.companyName}
+          onNext={handleCheckoutNext}
+        />
       )}
 
       {/* Approve Quote Modal */}

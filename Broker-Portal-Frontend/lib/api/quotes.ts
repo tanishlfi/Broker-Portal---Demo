@@ -44,7 +44,16 @@ export type QuoteStatus =
   | "approved"
   | "onboarding"
   | "cancelled"
-  | "expired";
+  | "expired"
+  | "Draft"
+  | "Generated"
+  | "Revised"
+  | "Awaiting Employer Acceptance"
+  | "Awaiting OTP"
+  | "Accepted"
+  | "Expired"
+  | "Rejected"
+  | "Cancelled";
 
 export interface QuoteStatusPayload {
   status: QuoteStatus;
@@ -148,6 +157,28 @@ export async function updateQuoteStatus(
   return apiClient(`/broker/quotes/${quoteId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status } satisfies QuoteStatusPayload),
+  });
+}
+
+/** GET /broker/quotes/representative/{representativeId} — get all quotes for a specific representative */
+export async function getQuotes(representativeId?: string): Promise<Quote[]> {
+  const repId = representativeId || "00000000-0000-0000-0000-000000000000";
+  const json = await apiClient<{ success: boolean; data: any[] }>(
+    `/broker/quotes/representative/${repId}`,
+    { cache: "no-store" }
+  );
+
+  return (json.data || []).map(normaliseQuote);
+}
+
+/** POST /broker/quotes/{quoteId}/employer-details — save onboarding details */
+export async function saveOnboardingDetails(
+  quoteId: string,
+  data: any
+): Promise<{ success: boolean; data: any }> {
+  return apiClient(`/broker/quotes/${quoteId}/employer-details`, {
+    method: "POST",
+    body: JSON.stringify(data),
   });
 }
 

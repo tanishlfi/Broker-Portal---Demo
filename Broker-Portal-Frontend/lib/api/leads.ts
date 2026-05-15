@@ -16,6 +16,14 @@ export interface CreateLeadPayload {
   brokerId: string;
 }
 
+export interface QuoteSummary {
+  quoteId: string;
+  quoteReference: string;
+  quoteStatus: string;
+  expiryDate?: string;
+  createdAt: string;
+}
+
 export interface Lead {
   leadId: string;
   leadReference: string;
@@ -26,7 +34,8 @@ export interface Lead {
   contactLastName: string;
   contactEmail: string;
   status: string;
-  quoteStatus?: string;
+  quoteStatus?: string; // Kept for backward compatibility
+  quotes: QuoteSummary[];
   createdAt: string;
 }
 
@@ -59,6 +68,13 @@ export async function getLeads(representativeId?: string): Promise<Lead[]> {
     contactEmail:       l.contact?.contact_email ?? "",
     status:             l.lead_status,
     quoteStatus:        l.quotes?.[0]?.quote_status ?? undefined,
+    quotes: (l.quotes || []).map((q: any) => ({
+      quoteId: q.quote_id,
+      quoteReference: q.quote_reference,
+      quoteStatus: q.quote_status,
+      expiryDate: q.quote_expiry_date,
+      createdAt: q.created_at || q.createdAt,
+    })),
     createdAt:          l.lead_created_at ?? l.createdAt,
   }));
 }
