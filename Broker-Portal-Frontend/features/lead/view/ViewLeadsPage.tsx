@@ -64,9 +64,6 @@ function QuoteBadge({ quoteStatus }: { quoteStatus?: string }) {
   const styles: Record<string, { bg: string; color: string; opacity?: number }> = {
     "Quick Quote":              { bg: "#4B4B4B", color: "#fff" },
     "Full Quote":               { bg: "#6B6B6B", color: "#fff" },
-    "Draft":                    { bg: "rgba(58, 58, 58, 0.8)", color: "#E6E6E6" },
-    "Generated":                { bg: "rgba(0, 184, 219, 0.15)", color: "#00B8DB" },
-    "Accepted":                 { bg: "rgba(34, 197, 94, 0.15)", color: "#22c55e" },
     "Submitted for Onboarding": { bg: "rgba(0,201,80,0.9)", color: "#fff" },
     "Expired":                  { bg: "#4B4B4B", color: "#fff", opacity: 0.5 },
     "Cancelled":                { bg: "#EF4444", color: "#fff" },
@@ -500,14 +497,20 @@ export default function ViewLeadsPage() {
                       </td>
 
                       {/* Quote type */}
-                      {/* Quote type */}
                       <td style={{ padding: "16px 8px" }}>
-                        {lead.quoteType ? <QuoteBadge quoteStatus={lead.quoteType} /> : <span style={{ color: "#A0A0A0", fontSize: "14px" }}>—</span>}
+                        {lead.quoteStatus && (lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote")
+                          ? <QuoteBadge quoteStatus={lead.quoteStatus} />
+                          : <span style={{ color: "#A0A0A0", fontSize: "14px" }}>—</span>
+                        }
                       </td>
 
                       {/* Quote Status */}
                       <td style={{ padding: "16px 8px" }}>
-                        <QuoteBadge quoteStatus={lead.quoteStatus} />
+                        <QuoteBadge quoteStatus={
+                          lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote"
+                            ? undefined
+                            : lead.quoteStatus
+                        } />
                       </td>
 
                       {/* Created Date */}

@@ -5,9 +5,8 @@ import { Plus, Search, ChevronDown, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import CancelQuoteModal from "@/components/quotes/CancelQuoteModal";
-import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
 import { getLeads, type Lead as ApiLead } from "@/lib/api/leads";
-import { getQuotes, updateQuoteStatus, formatRand, type Quote as ApiQuote } from "@/lib/api/quotes";
+import { updateQuoteStatus, formatRand, type Quote as ApiQuote } from "@/lib/api/quotes";
 
 interface Quote {
   id: string;
@@ -45,7 +44,6 @@ export default function QuotesPage() {
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedQuoteForApproval, setSelectedQuoteForApproval] = useState<Quote | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedQuoteForCancel, setSelectedQuoteForCancel] = useState<Quote | null>(null);
@@ -58,55 +56,41 @@ export default function QuotesPage() {
     }
   }, [searchParams]);
 
-  // Load leads (for the "Add New Quote" modal) and load real-time quotes directly from backend
+  // Load leads (for the "Add New Quote" modal) and derive quotes from lead quote data
   useEffect(() => {
     async function load() {
       setLeadsLoading(true);
       try {
-        const [leadsRes, quotesRes] = await Promise.allSettled([
-          getLeads(),
-          getQuotes(),
-        ]);
-
-        if (leadsRes.status === "fulfilled") {
-          setLeads(
-            leadsRes.value.map((l) => ({
-              id: l.leadId,
-              companyName: l.employerName,
-              employees: l.numberOfEmployees,
-              status: l.status,
-              leadId: l.leadId,
-              leadReference: l.leadReference,
-            }))
-          );
-        }
-
-        if (quotesRes.status === "fulfilled" && quotesRes.value.success) {
-          const apiQuotesMapped: Quote[] = quotesRes.value.data.map((q) => {
-            let st = q.status as Quote["status"];
-            if (st === ("draft" as any) || st === ("generated" as any)) {
-              st = "new";
-            }
-            if (!["new", "onboarding", "approved", "pending", "cancelled"].includes(st)) {
-              st = "new";
-            }
-            return {
-              id: q.quoteId || q.quoteReference || Math.random().toString(),
-              companyName: q.companyName || "Unknown Company",
-              quoteType: q.quoteType || "Quick Quote",
-              daysRemaining: q.validUntilDays ?? 30,
-              quoteId: q.quoteReference || q.quoteId,
-              quoteReference: q.quoteReference || q.quoteId,
-              monthlyPremium: q.monthlyPremium !== undefined && q.monthlyPremium !== null ? formatRand(Number(q.monthlyPremium)) : "—",
-              coverageAmount: q.coverageAmount !== undefined && q.coverageAmount !== null ? formatRand(Number(q.coverageAmount)) : "—",
-              createdDate: q.createdAt
-                ? new Date(q.createdAt).toLocaleDateString("en-ZA")
-                : new Date().toLocaleDateString("en-ZA"),
-              status: st,
-            };
-          });
-          setQuotes(apiQuotesMapped);
-        }
+        const apiLeads = await getLeads();
+        // Build leads list for the modal
+        setLeads(
+          apiLeads.map((l) => ({
+            id: l.leadId,
+            companyName: l.employerName,
+            employees: l.numberOfEmployees,
+            status: l.status,
+            leadId: l.leadId,
+            leadReference: l.leadReference,
+          }))
+        );
+        // Derive quotes from leads that have a quoteStatus
+        const derivedQuotes: Quote[] = apiLeads
+          .filter((l) => l.quoteStatus)
+          .map((l) => ({
+            id: l.leadId,
+            companyName: l.employerName,
+            quoteType: "Quick Quote" as const,
+            daysRemaining: 30,
+            quoteId: l.leadReference,
+            quoteReference: l.leadReference,
+            monthlyPremium: "—",
+            coverageAmount: "—",
+            createdDate: l.createdAt
+              ? new Date(l.createdAt).toLocaleDateString("en-ZA")
+              : "—",
+            status: (l.quoteStatus as Quote["status"]) ?? "new",
+          }));
+        if (derivedQuotes.length > 0) setQuotes(derivedQuotes);
       } catch {
         // keep existing state on error
       } finally {
@@ -116,15 +100,8 @@ export default function QuotesPage() {
     load();
   }, []);
 
-  // Filter quotes by active tab and search query
-  const filteredQuotes = quotes.filter((quote) => {
-    const matchesTab = quote.status === activeTab;
-    const matchesSearch = searchQuery
-      ? quote.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        quote.quoteId.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    return matchesTab && matchesSearch;
-  });
+  // Filter quotes by active tab
+  const filteredQuotes = quotes.filter((quote) => quote.status === activeTab);
 
   // Update tab counts dynamically
   const tabs = [
@@ -144,7 +121,7 @@ export default function QuotesPage() {
 
   const handleMarkAsApproved = (quote: Quote) => {
     setSelectedQuoteForApproval(quote);
-    setShowCheckoutModal(true);
+    setShowApproveModal(true);
     setOpenActionsMenu(null);
   };
 
@@ -453,23 +430,6 @@ export default function QuotesPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Checkout/Servicing Info Modal */}
-      {showCheckoutModal && selectedQuoteForApproval && (
-        <CheckoutInfoModal
-          isOpen={showCheckoutModal}
-          onClose={() => {
-            setShowCheckoutModal(false);
-            setSelectedQuoteForApproval(null);
-          }}
-          onNext={() => {
-            setShowCheckoutModal(false);
-            setShowApproveModal(true);
-          }}
-          companyName={selectedQuoteForApproval.companyName}
-          quoteId={selectedQuoteForApproval.quoteId}
-        />
       )}
 
       {/* Approve Quote Modal */}
