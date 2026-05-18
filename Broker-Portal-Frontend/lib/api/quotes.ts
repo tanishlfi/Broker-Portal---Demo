@@ -163,12 +163,16 @@ export async function updateQuoteStatus(
 /** GET /broker/quotes/representative/{representativeId} — get all quotes for a specific representative */
 export async function getQuotes(representativeId?: string): Promise<Quote[]> {
   const repId = representativeId || "00000000-0000-0000-0000-000000000000";
-  const json = await apiClient<{ success: boolean; data: any[] }>(
+  const json = await apiClient<{ success: boolean; data: any }>(
     `/broker/quotes/representative/${repId}`,
     { cache: "no-store" }
   );
 
-  return (json.data || []).map(normaliseQuote);
+  const quotesList = json.data && Array.isArray(json.data.quotes)
+    ? json.data.quotes
+    : (Array.isArray(json.data) ? json.data : []);
+
+  return quotesList.map(normaliseQuote);
 }
 
 /** POST /broker/quotes/{quoteId}/employer-details — save onboarding details */

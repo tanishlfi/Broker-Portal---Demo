@@ -30,7 +30,20 @@ export async function apiClient<T>(path: string, options: FetchOptions = {}): Pr
 
   if (res.status === 304) return { success: true, data: [] } as unknown as T;
 
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.message || "Request failed");
-  return json;
+  const text = await res.text();
+  let data: any;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (err) {
+    // If not JSON, but status is OK, this is unexpected
+    if (res.ok) throw new Error("Unexpected non-JSON response from server");
+    // If not JSON and status is error, use the raw text as error message
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+
+  if (!res.ok) {
+    throw new Error(data.message || `Request failed with status ${res.status}`);
+  }
+  
+  return data;
 }

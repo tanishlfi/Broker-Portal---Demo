@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Lock, Info, Calendar } from "lucide-react";
+import { X, Lock, Info } from "lucide-react";
+import CustomInput from "@/components/ui/CustomInput";
+import CustomSelect from "@/components/ui/CustomSelect";
+import OptionToggleGroup from "@/components/ui/OptionToggleGroup";
 
 interface CheckoutInfoModalProps {
   isOpen: boolean;
@@ -134,6 +137,22 @@ export default function CheckoutInfoModal({
     });
   };
 
+  const labelStyle: React.CSSProperties = {
+    fontSize: "16px",
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    display: "block",
+    marginBottom: "10px",
+  };
+
+  const sectionHeaderStyle: React.CSSProperties = {
+    fontSize: "28px",
+    fontWeight: "bold",
+    color: "#1FC3EB",
+    marginTop: "24px",
+    marginBottom: "16px",
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -179,509 +198,421 @@ export default function CheckoutInfoModal({
 
           {/* Question: Authorised */}
           <div className="space-y-4">
-            <label className="text-[16px] font-bold text-white block">
+            <label style={labelStyle}>
               Are you authorised to act on behalf of the organisation?
             </label>
-            <div className="flex flex-col gap-3">
-              {[
-                { label: "Yes", value: "Yes" },
-                { label: "No", value: "No" },
-              ].map((opt) => (
-                <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center">
-                    <input
-                      type="radio"
-                      name="authorised"
-                      value={opt.value}
-                      checked={authorised === opt.value}
-                      onChange={(e) => setAuthorised(e.target.value)}
-                      className="w-5 h-5 accent-[#1FC3EB] cursor-pointer"
-                    />
-                  </div>
-                  <span className="text-[15px] text-[#E6E6E6] group-hover:text-white transition-colors">{opt.label}</span>
-                </label>
-              ))}
-            </div>
+            <OptionToggleGroup
+              options={["Yes", "No"]}
+              value={authorised}
+              onChange={setAuthorised}
+            />
           </div>
 
           {/* Section: Your Details */}
-          <div className="space-y-8 pt-4 border-t border-[#2D2D2D]">
-            <h4 className="text-[28px] font-bold text-[#1FC3EB]">Your Details</h4>
+          <div className="space-y-6 pt-4 border-t border-[#2D2D2D]">
+            <h4 style={sectionHeaderStyle}>Your Details</h4>
 
             {/* Question: Director */}
             <div className="space-y-4">
-              <label className="text-[16px] font-bold text-white block">
+              <label style={labelStyle}>
                 Are you a director or member of the organisation?
               </label>
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: "Yes", value: "Yes" },
-                  { label: "No", value: "No" },
-                ].map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="isDirector"
-                      value={opt.value}
-                      checked={isDirector === opt.value}
-                      onChange={(e) => setIsDirector(e.target.value)}
-                      className="w-5 h-5 accent-[#1FC3EB] cursor-pointer"
-                    />
-                    <span className="text-[15px] text-[#E6E6E6] group-hover:text-white transition-colors">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Input fields with consistent styling */}
-            {[
-              { label: "First name", value: firstName, setter: setFirstName },
-              { label: "Surname", value: surname, setter: setSurname },
-              { label: "Date of birth (dd/mm/yyyy)", value: dob, setter: setDob, isDate: true },
-              { label: "Cellphone", value: cellphone, setter: setCellphone },
-              { label: "Landline", value: landline, setter: setLandline, placeholder: "(optional)" },
-            ].map((field) => (
-              <div key={field.label} className="space-y-2.5">
-                <label className="text-[16px] font-bold text-white block">{field.label}</label>
-                <div className="relative">
-                  <input
-                    type={field.isDate ? "date" : "text"}
-                    placeholder={field.placeholder}
-                    value={field.value}
-                    onChange={(e) => field.setter(e.target.value)}
-                    className="w-full h-12 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[15px] text-white focus:border-[#1FC3EB] focus:outline-none transition-all shadow-sm placeholder:text-[#666666] appearance-none"
-                    style={{ colorScheme: "dark" }}
-                  />
-                  {field.isDate && (
-                    <Calendar size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] pointer-events-none" />
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Question: SA ID */}
-            <div className="space-y-3">
-              <label className="text-[15px] font-bold text-white block">
-                Do you have a South African ID Number?
-              </label>
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: "Yes", value: "Yes" },
-                  { label: "No", value: "No" },
-                ].map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="hasSaId"
-                      value={opt.value}
-                      checked={hasSaId === opt.value}
-                      onChange={(e) => setHasSaId(e.target.value)}
-                      className="w-4 h-4 accent-[#1FC3EB] cursor-pointer"
-                    />
-                    <span className="text-[14px] text-[#E6E6E6] group-hover:text-white transition-colors">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Input: ID or Passport */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">ID or passport number</label>
-              <p className="text-[11px] text-[#A0A0A0]">Used as a password for opening documents containing employee details</p>
-              <input
-                type="text"
-                value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
+              <OptionToggleGroup
+                options={["Yes", "No"]}
+                value={isDirector}
+                onChange={setIsDirector}
               />
             </div>
 
-            {/* Input: Passport Expiry */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">
-                Passport expiry (dd/mm/yyyy)
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={passportExpiry}
-                  onChange={(e) => setPassportExpiry(e.target.value)}
-                  className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors appearance-none"
-                  style={{ colorScheme: "dark" }}
+            {/* Inputs: First Name & Surname */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>First name</label>
+                <CustomInput
+                  type="text"
+                  placeholder="First name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                 />
-                <Calendar size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] pointer-events-none" />
+              </div>
+              <div>
+                <label style={labelStyle}>Surname</label>
+                <CustomInput
+                  type="text"
+                  placeholder="Surname"
+                  value={surname}
+                  onChange={(e) => setSurname(e.target.value)}
+                />
               </div>
             </div>
 
-            {/* Input: Nationality */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">What is your nationality?</label>
-              <select
-                value={nationality}
-                onChange={(e) => setNationality(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23A0A0A0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 16px center",
-                }}
-              >
-                <option value="" className="bg-[#1E1E1E]">Please select</option>
-                <option value="South African" className="bg-[#1E1E1E]">South African</option>
-                <option value="Other" className="bg-[#1E1E1E]">Other</option>
-              </select>
+            {/* Date of Birth */}
+            <div>
+              <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
+              <CustomInput
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                style={{ colorScheme: "dark" }}
+              />
             </div>
 
-            {/* Input: Home Address */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Home Address</label>
-              <input
+            {/* Cellphone & Landline */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>Cellphone</label>
+                <CustomInput
+                  type="text"
+                  placeholder="Cellphone"
+                  value={cellphone}
+                  onChange={(e) => setCellphone(e.target.value)}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Landline</label>
+                <CustomInput
+                  type="text"
+                  placeholder="(optional)"
+                  value={landline}
+                  onChange={(e) => setLandline(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Question: SA ID */}
+            <div className="space-y-4">
+              <label style={labelStyle}>
+                Do you have a South African ID Number?
+              </label>
+              <OptionToggleGroup
+                options={["Yes", "No"]}
+                value={hasSaId}
+                onChange={setHasSaId}
+              />
+            </div>
+
+            {/* ID or Passport Number */}
+            <div>
+              <label style={labelStyle}>ID or passport number</label>
+              <p className="text-[11px] text-[#A0A0A0] mb-2">Used as a password for opening documents containing employee details</p>
+              <CustomInput
+                type="text"
+                placeholder="ID or passport number"
+                value={idNumber}
+                onChange={(e) => setIdNumber(e.target.value)}
+              />
+            </div>
+
+            {/* Passport Expiry */}
+            <div>
+              <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
+              <CustomInput
+                type="date"
+                value={passportExpiry}
+                onChange={(e) => setPassportExpiry(e.target.value)}
+                style={{ colorScheme: "dark" }}
+              />
+            </div>
+
+            {/* Nationality */}
+            <div>
+              <label style={labelStyle}>What is your nationality?</label>
+              <CustomSelect
+                value={nationality}
+                onChange={(e) => setNationality(e.target.value)}
+              >
+                <option value="">Please select</option>
+                <option value="South African">South African</option>
+                <option value="Other">Other</option>
+              </CustomSelect>
+            </div>
+
+            {/* Home Address */}
+            <div>
+              <label style={labelStyle}>Home Address</label>
+              <CustomInput
                 type="text"
                 placeholder="Type your address ..."
                 value={homeAddress}
                 onChange={(e) => setHomeAddress(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white placeholder:text-[#666666] focus:border-[#1FC3EB] focus:outline-none transition-colors"
               />
             </div>
 
-            {/* Input: Email for Policy */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Email address for policy document and logging in</label>
-              <p className="text-[11px] text-[#A0A0A0]">Please note sensitive employee info will be sent to this address</p>
-              <input
+            {/* Emails */}
+            <div>
+              <label style={labelStyle}>Email address for policy document and logging in</label>
+              <p className="text-[11px] text-[#A0A0A0] mb-2">Please note sensitive employee info will be sent to this address</p>
+              <CustomInput
                 type="email"
+                placeholder="Email address for policy"
                 value={emailForPolicy}
                 onChange={(e) => setEmailForPolicy(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
               />
             </div>
 
-            {/* Input: Email for Invoice */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Email address for monthly invoice</label>
-              <input
+            <div>
+              <label style={labelStyle}>Email address for monthly invoice</label>
+              <CustomInput
                 type="email"
+                placeholder="Email address for invoice"
                 value={emailForInvoice}
                 onChange={(e) => setEmailForInvoice(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Section: Boss / MD / CEO details */}
-          <div className="space-y-8 pt-4 border-t border-[#2D2D2D]">
-            <h4 className="text-[28px] font-bold text-[#1FC3EB]">Boss / MD / CEO details</h4>
+          <div className="space-y-6 pt-4 border-t border-[#2D2D2D]">
+            <h4 style={sectionHeaderStyle}>Boss / MD / CEO details</h4>
 
-            {/* Boss: First Name */}
-            <div className="space-y-2.5">
-              <label className="text-[16px] font-bold text-white block">First name</label>
-              <input
-                type="text"
-                value={bossFirstName}
-                onChange={(e) => setBossFirstName(e.target.value)}
-                className="w-full h-12 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[15px] text-white focus:border-[#1FC3EB] focus:outline-none transition-all shadow-sm"
-              />
-            </div>
-
-            {/* Boss: Surname */}
-            <div className="space-y-2.5">
-              <label className="text-[16px] font-bold text-white block">Surname</label>
-              <input
-                type="text"
-                value={bossSurname}
-                onChange={(e) => setBossSurname(e.target.value)}
-                className="w-full h-12 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[15px] text-white focus:border-[#1FC3EB] focus:outline-none transition-all shadow-sm"
-              />
-            </div>
-
-            {/* Boss: DOB */}
-            <div className="space-y-2.5">
-              <label className="text-[16px] font-bold text-white block">Date of birth (dd/mm/yyyy)</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={bossDob}
-                  onChange={(e) => setBossDob(e.target.value)}
-                  className="w-full h-12 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[15px] text-white focus:border-[#1FC3EB] focus:outline-none transition-all shadow-sm appearance-none"
-                  style={{ colorScheme: "dark" }}
+            {/* First Name & Surname */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>First name</label>
+                <CustomInput
+                  type="text"
+                  placeholder="First name"
+                  value={bossFirstName}
+                  onChange={(e) => setBossFirstName(e.target.value)}
                 />
-                <Calendar size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] pointer-events-none" />
+              </div>
+              <div>
+                <label style={labelStyle}>Surname</label>
+                <CustomInput
+                  type="text"
+                  placeholder="Surname"
+                  value={bossSurname}
+                  onChange={(e) => setBossSurname(e.target.value)}
+                />
               </div>
             </div>
 
-            {/* Boss: SA ID Question */}
-            <div className="space-y-3">
-              <label className="text-[15px] font-bold text-white block">
+            {/* DOB */}
+            <div>
+              <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
+              <CustomInput
+                type="date"
+                value={bossDob}
+                onChange={(e) => setBossDob(e.target.value)}
+                style={{ colorScheme: "dark" }}
+              />
+            </div>
+
+            {/* Boss SA ID Question */}
+            <div className="space-y-4">
+              <label style={labelStyle}>
                 Does your Boss / MD / CEO have a South African ID Number?
               </label>
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: "Yes", value: "Yes" },
-                  { label: "No", value: "No" },
-                ].map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="bossHasSaId"
-                      value={opt.value}
-                      checked={bossHasSaId === opt.value}
-                      onChange={(e) => setBossHasSaId(e.target.value)}
-                      className="w-4 h-4 accent-[#1FC3EB] cursor-pointer"
-                    />
-                    <span className="text-[14px] text-[#E6E6E6] group-hover:text-white transition-colors">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Boss: ID or Passport */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">ID or passport</label>
-              <p className="text-[11px] text-[#A0A0A0]">Used as a password for opening documents containing employee details</p>
-              <input
-                type="text"
-                value={bossIdNumber}
-                onChange={(e) => setBossIdNumber(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
+              <OptionToggleGroup
+                options={["Yes", "No"]}
+                value={bossHasSaId}
+                onChange={setBossHasSaId}
               />
             </div>
 
-            {/* Boss: Passport Expiry */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Passport expiry (dd/mm/yyyy)</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={bossPassportExpiry}
-                  onChange={(e) => setBossPassportExpiry(e.target.value)}
-                  className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors appearance-none"
-                  style={{ colorScheme: "dark" }}
-                />
-                <Calendar size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] pointer-events-none" />
-              </div>
+            {/* Boss ID or Passport */}
+            <div>
+              <label style={labelStyle}>ID or passport</label>
+              <p className="text-[11px] text-[#A0A0A0] mb-2">Used as a password for opening documents containing employee details</p>
+              <CustomInput
+                type="text"
+                placeholder="ID or passport"
+                value={bossIdNumber}
+                onChange={(e) => setBossIdNumber(e.target.value)}
+              />
             </div>
 
-            {/* Boss: Nationality */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">What is their nationality?</label>
-              <select
+            {/* Boss Passport Expiry */}
+            <div>
+              <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
+              <CustomInput
+                type="date"
+                value={bossPassportExpiry}
+                onChange={(e) => setBossPassportExpiry(e.target.value)}
+                style={{ colorScheme: "dark" }}
+              />
+            </div>
+
+            {/* Boss Nationality */}
+            <div>
+              <label style={labelStyle}>What is their nationality?</label>
+              <CustomSelect
                 value={bossNationality}
                 onChange={(e) => setBossNationality(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23A0A0A0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 16px center",
-                }}
               >
-                <option value="" className="bg-[#1E1E1E]">Please select</option>
-                <option value="South African" className="bg-[#1E1E1E]">South African</option>
-                <option value="Other" className="bg-[#1E1E1E]">Other</option>
-              </select>
+                <option value="">Please select</option>
+                <option value="South African">South African</option>
+                <option value="Other">Other</option>
+              </CustomSelect>
             </div>
 
-            {/* Boss: Home Address */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Home Address</label>
-              <input
+            {/* Boss Home Address */}
+            <div>
+              <label style={labelStyle}>Home Address</label>
+              <CustomInput
                 type="text"
                 placeholder="Type your address ..."
                 value={bossHomeAddress}
                 onChange={(e) => setBossHomeAddress(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white placeholder:text-[#666666] focus:border-[#1FC3EB] focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Section: Organisation details */}
-          <div className="space-y-8 pt-4 border-t border-[#2D2D2D]">
-            <h4 className="text-[28px] font-bold text-[#1FC3EB]">Organisation details</h4>
-            
-            <p className="text-[14px] text-[#EF4444] font-medium leading-relaxed">
+          <div className="space-y-6 pt-4 border-t border-[#2D2D2D]">
+            <h4 style={sectionHeaderStyle}>Organisation details</h4>
+
+            <p className="text-[14px] text-[#EF4444] font-medium leading-relaxed mb-4">
               If you cannot fill in the information required in this section, please call us on 021 045 1448
             </p>
 
-            {/* Org: Business Type */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">What kind of business is this?</label>
-              <select
+            {/* Business Type */}
+            <div>
+              <label style={labelStyle}>What kind of business is this?</label>
+              <CustomSelect
                 value={businessType}
                 onChange={(e) => setBusinessType(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#1FC3EB] rounded-lg px-4 text-[14px] text-white focus:outline-none transition-colors appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%231FC3EB' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 16px center",
-                }}
               >
-                <option value="Public (Listed) Company [Ltd]" className="bg-[#1E1E1E]">Public (Listed) Company [Ltd]</option>
-                <option value="Private Company (Pty) Ltd" className="bg-[#1E1E1E]">Private Company (Pty) Ltd</option>
-                <option value="Sole Proprietor" className="bg-[#1E1E1E]">Sole Proprietor</option>
-                <option value="Trust" className="bg-[#1E1E1E]">Trust</option>
-              </select>
+                <option value="Public (Listed) Company [Ltd]">Public (Listed) Company [Ltd]</option>
+                <option value="Private Company (Pty) Ltd">Private Company (Pty) Ltd</option>
+                <option value="Sole Proprietor">Sole Proprietor</option>
+                <option value="Trust">Trust</option>
+              </CustomSelect>
             </div>
 
-            {/* Org: Country of Inc */}
-            <div className="space-y-3">
-              <label className="text-[15px] font-bold text-white block">Country of Incorporation/Registration</label>
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: "South Africa", value: "South Africa" },
-                  { label: "Other", value: "Other" },
-                ].map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="countryOfInc"
-                      value={opt.value}
-                      checked={countryOfInc === opt.value}
-                      onChange={(e) => setCountryOfInc(e.target.value)}
-                      className="w-4 h-4 accent-[#1FC3EB] cursor-pointer"
-                    />
-                    <span className="text-[14px] text-[#E6E6E6] group-hover:text-white transition-colors">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
+            {/* Country of Incorporation */}
+            <div className="space-y-4">
+              <label style={labelStyle}>Country of Incorporation/Registration</label>
+              <OptionToggleGroup
+                options={["South Africa", "Other"]}
+                value={countryOfInc}
+                onChange={setCountryOfInc}
+              />
             </div>
 
-            {/* Org: Registered Name */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Registered name</label>
-              <input
+            {/* Registered & Trading Name */}
+            <div>
+              <label style={labelStyle}>Registered name</label>
+              <CustomInput
                 type="text"
+                placeholder="Registered name"
                 value={registeredName}
                 onChange={(e) => setRegisteredName(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#1FC3EB] rounded-lg px-4 text-[14px] text-white focus:outline-none transition-colors"
               />
             </div>
 
-            {/* Org: Trading Name */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Trading name</label>
-              <input
+            <div>
+              <label style={labelStyle}>Trading name</label>
+              <CustomInput
                 type="text"
+                placeholder="Trading name"
                 value={tradingName}
                 onChange={(e) => setTradingName(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
               />
             </div>
 
-            {/* Org: Registration No */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Registration no</label>
-              <input
-                type="text"
-                value={registrationNo}
-                onChange={(e) => setRegistrationNo(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
-              />
-            </div>
-
-            {/* Org: Stock Exchange */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Name of Stock Exchange Listing</label>
-              <input
-                type="text"
-                value={stockExchangeName}
-                onChange={(e) => setStockExchangeName(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
-              />
-            </div>
-
-            {/* Org: Registered Address */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Registered Address</label>
-              <input
-                type="text"
-                placeholder="Type your address ..."
-                value={registeredAddress}
-                onChange={(e) => setRegisteredAddress(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white placeholder:text-[#666666] focus:border-[#1FC3EB] focus:outline-none transition-colors"
-              />
-            </div>
-
-            {/* Org: Physical Address */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Physical Address</label>
-              <p className="text-[11px] text-[#A0A0A0]">Provide Head Office address if there are multiple addresses</p>
-              <input
-                type="text"
-                placeholder="Type your address ..."
-                value={physicalAddress}
-                onChange={(e) => setPhysicalAddress(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white placeholder:text-[#666666] focus:border-[#1FC3EB] focus:outline-none transition-colors"
-              />
-            </div>
-
-            {/* Org: Source of Funds */}
-            <div className="space-y-3">
-              <label className="text-[15px] font-bold text-white block">Source of Funds</label>
-              <div className="flex flex-col gap-3">
-                {["Company profits", "Investment returns", "Donations", "Government"].map((opt) => (
-                  <label key={opt} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="sourceOfFunds"
-                      value={opt}
-                      checked={sourceOfFunds === opt}
-                      onChange={(e) => setSourceOfFunds(e.target.value)}
-                      className="w-4 h-4 accent-[#1FC3EB] cursor-pointer"
-                    />
-                    <span className="text-[14px] text-[#E6E6E6] group-hover:text-white transition-colors">{opt}</span>
-                  </label>
-                ))}
+            {/* Registration No & Stock Exchange */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>Registration no</label>
+                <CustomInput
+                  type="text"
+                  placeholder="Registration no"
+                  value={registrationNo}
+                  onChange={(e) => setRegistrationNo(e.target.value)}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Name of Stock Exchange Listing</label>
+                <CustomInput
+                  type="text"
+                  placeholder="Stock exchange listing"
+                  value={stockExchangeName}
+                  onChange={(e) => setStockExchangeName(e.target.value)}
+                />
               </div>
             </div>
 
-            {/* Org: Tax Number */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Company Tax Number</label>
-              <input
+            {/* Addresses */}
+            <div>
+              <label style={labelStyle}>Registered Address</label>
+              <CustomInput
                 type="text"
-                value={taxNumber}
-                onChange={(e) => setTaxNumber(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
+                placeholder="Type registered address ..."
+                value={registeredAddress}
+                onChange={(e) => setRegisteredAddress(e.target.value)}
               />
             </div>
 
-            {/* Org: VAT Number */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Company VAT Number (if applicable)</label>
-              <input
+            <div>
+              <label style={labelStyle}>Physical Address</label>
+              <p className="text-[11px] text-[#A0A0A0] mb-2">Provide Head Office address if there are multiple addresses</p>
+              <CustomInput
                 type="text"
-                placeholder="(optional)"
-                value={vatNumber}
-                onChange={(e) => setVatNumber(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white placeholder:text-[#666666] focus:border-[#1FC3EB] focus:outline-none transition-colors"
+                placeholder="Type physical address ..."
+                value={physicalAddress}
+                onChange={(e) => setPhysicalAddress(e.target.value)}
               />
+            </div>
+
+            {/* Source of Funds */}
+            <div className="space-y-4">
+              <label style={labelStyle}>Source of Funds</label>
+              <OptionToggleGroup
+                options={["Company profits", "Investment returns", "Donations", "Government"]}
+                value={sourceOfFunds}
+                onChange={setSourceOfFunds}
+              />
+            </div>
+
+            {/* Tax & VAT Number */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>Company Tax Number</label>
+                <CustomInput
+                  type="text"
+                  placeholder="Tax number"
+                  value={taxNumber}
+                  onChange={(e) => setTaxNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Company VAT Number (if applicable)</label>
+                <CustomInput
+                  type="text"
+                  placeholder="(optional)"
+                  value={vatNumber}
+                  onChange={(e) => setVatNumber(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
           {/* Section: Payment details */}
-          <div className="space-y-8 pt-4 border-t border-[#2D2D2D]">
-            <h4 className="text-[28px] font-bold text-[#1FC3EB]">Payment details</h4>
-            
+          <div className="space-y-6 pt-4 border-t border-[#2D2D2D]">
+            <h4 style={sectionHeaderStyle}>Payment details</h4>
+
             {/* Legal Mandate Text */}
             <div className="space-y-4 text-[13px] text-[#A0A0A0] leading-relaxed">
               <p>
                 I authorise By checking the box below, you authorise to deduct the monthly premium of{" "}
-                <strong className="text-white">Rand Mutual Assurance</strong> from R1,436's bank account (details below), 
-                on condition the amount deducted never exceeds the amount committed to under this policy. This mandate 
-                will commence on the debit order date selected below and will continue monthly thereafter 
-                until it is terminated by giving not less than one month's notice. The reference number for the 
+                <strong className="text-white">Rand Mutual Assurance</strong> from R1,436's bank account (details below),
+                on condition the amount deducted never exceeds the amount committed to under this policy. This mandate
+                will commence on the debit order date selected below and will continue monthly thereafter
+                until it is terminated by giving not less than one month's notice. The reference number for the
                 deduction will be combined with my policy number.
               </p>
               <p>
-                In the event the payment day falls on a Sunday, or recognised South African public holiday, 
-                the payment day will automatically be the preceding ordinary business day. If there are 
-                insufficient funds in the nominated account to meet the obligation, you are entitled to track 
-                my account and re-present the instruction for payment as soon as sufficient funds are 
+                In the event the payment day falls on a Sunday, or recognised South African public holiday,
+                the payment day will automatically be the preceding ordinary business day. If there are
+                insufficient funds in the nominated account to meet the obligation, you are entitled to track
+                my account and re-present the instruction for payment as soon as sufficient funds are
                 available in my account.
               </p>
               <p>
-                I agree that cancelling this mandate will not cancel the agreement, and that I will not be 
-                entitled to any refund of amounts which you have withdrawn while this Authority was in force, 
-                if such amounts were legally owing to you. I also acknowledge that this Authority may only be 
+                I agree that cancelling this mandate will not cancel the agreement, and that I will not be
+                entitled to any refund of amounts which you have withdrawn while this Authority was in force,
+                if such amounts were legally owing to you. I also acknowledge that this Authority may only be
                 ceded or assigned to a third party if the Agreement is also ceded or assigned to that third party.
               </p>
             </div>
@@ -694,84 +625,61 @@ export default function CheckoutInfoModal({
                 onChange={(e) => setAcknowledged(e.target.checked)}
                 className="w-5 h-5 accent-[#1FC3EB] rounded bg-[#262626] border-[#4A4A4A] cursor-pointer"
               />
-              <span className="text-[15px] font-bold text-white group-hover:text-[#1FC3EB] transition-colors">Acknowledge</span>
+              <span className="text-[15px] font-bold text-white group-hover:text-[#1FC3EB] transition-colors">
+                Acknowledge
+              </span>
             </label>
 
             {/* Bank Dropdown */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Bank</label>
-              <select
+            <div>
+              <label style={labelStyle}>Bank</label>
+              <CustomSelect
                 value={bank}
                 onChange={(e) => setBank(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#1FC3EB] rounded-lg px-4 text-[14px] text-white focus:outline-none transition-colors appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%231FC3EB' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 16px center",
-                }}
               >
-                <option value="African Bank" className="bg-[#1E1E1E]">African Bank</option>
-                <option value="ABSA" className="bg-[#1E1E1E]">ABSA</option>
-                <option value="Capitec" className="bg-[#1E1E1E]">Capitec</option>
-                <option value="FNB" className="bg-[#1E1E1E]">FNB</option>
-                <option value="Nedbank" className="bg-[#1E1E1E]">Nedbank</option>
-                <option value="Standard Bank" className="bg-[#1E1E1E]">Standard Bank</option>
-              </select>
+                <option value="African Bank">African Bank</option>
+                <option value="ABSA">ABSA</option>
+                <option value="Capitec">Capitec</option>
+                <option value="FNB">FNB</option>
+                <option value="Nedbank">Nedbank</option>
+                <option value="Standard Bank">Standard Bank</option>
+              </CustomSelect>
             </div>
 
             {/* Bank Account Number */}
-            <div className="space-y-2">
-              <label className="text-[15px] font-bold text-white block">Bank account number</label>
+            <div>
+              <label style={labelStyle}>Bank account number</label>
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Lock size={16} className="text-[#666666]" />
-                </div>
-                <input
+                <CustomInput
                   type="text"
+                  placeholder="Bank account number"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg pl-10 pr-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors"
                 />
               </div>
             </div>
 
             {/* Bank Account Type */}
-            <div className="space-y-3">
-              <label className="text-[15px] font-bold text-white block">Bank account type</label>
-              <div className="flex flex-col gap-3">
-                {["Cheque", "Current", "Savings", "Transmission"].map((type) => (
-                  <label key={type} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="accountType"
-                      value={type}
-                      checked={accountType === type}
-                      onChange={(e) => setAccountType(e.target.value)}
-                      className="w-4 h-4 accent-[#1FC3EB] cursor-pointer"
-                    />
-                    <span className="text-[14px] text-[#E6E6E6] group-hover:text-white transition-colors">{type}</span>
-                  </label>
-                ))}
-              </div>
+            <div className="space-y-4">
+              <label style={labelStyle}>Bank account type</label>
+              <OptionToggleGroup
+                options={["Cheque", "Current", "Savings", "Transmission"]}
+                value={accountType}
+                onChange={setAccountType}
+              />
             </div>
 
             {/* Debit Day Dropdown */}
-            <div className="space-y-2 pb-8">
-              <label className="text-[15px] font-bold text-white block">Which day of the month should we debit the bank account?</label>
-              <select
+            <div className="pb-8">
+              <label style={labelStyle}>Which day of the month should we debit the bank account?</label>
+              <CustomSelect
                 value={debitDay}
                 onChange={(e) => setDebitDay(e.target.value)}
-                className="w-full h-11 bg-[#262626] border border-[#4A4A4A] rounded-lg px-4 text-[14px] text-white focus:border-[#1FC3EB] focus:outline-none transition-colors appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23A0A0A0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 16px center",
-                }}
               >
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={String(day)} className="bg-[#1E1E1E]">{day}</option>
+                  <option key={day} value={String(day)}>{day}</option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           </div>
         </div>
