@@ -29,13 +29,13 @@ import {
 } from "@/components/ui/table";
 import { LeadStatus } from "@/lib/enums";
 
-
 const PAGE_SIZE = 10;
 
 const fmt = (d: string) => {
   const dt = new Date(d);
   return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
 };
+
 
 
 export default function ViewLeadsPage() {

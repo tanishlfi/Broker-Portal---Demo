@@ -14,6 +14,7 @@ export const CustomSelect = forwardRef<HTMLSelectElement, CustomSelectProps>(
   ({ error, className = "", style, containerStyle, onFocus, onBlur, onMouseEnter, onMouseLeave, children, value, onChange, disabled, ...props }, ref) => {
     const internalRef = useRef<HTMLSelectElement>(null);
     useImperativeHandle(ref, () => internalRef.current!);
+
     return (
       <FormControl fullWidth style={containerStyle} error={!!error}>
         <Select

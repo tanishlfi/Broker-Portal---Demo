@@ -12,6 +12,7 @@ export const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
   ({ error, className = "", style, containerStyle, onFocus, onBlur, onMouseEnter, onMouseLeave, type, placeholder, value, onChange, disabled, readOnly, required, ...props }, ref) => {
     const internalRef = useRef<HTMLInputElement>(null);
     useImperativeHandle(ref, () => internalRef.current!);
+
     return (
       <TextField
         inputRef={internalRef}
