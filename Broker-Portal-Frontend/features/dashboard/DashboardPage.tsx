@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
 import {
   Plus,
   ClipboardList,
@@ -9,7 +14,6 @@ import {
   TriangleAlert,
   CircleDollarSign,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants";
 import DashboardCard from "@/components/ui/DashboardCard";
 import { getLeads } from "@/lib/api/leads";
@@ -40,7 +44,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState({
     activeLeads: 0,
-    failedInvoices: 0, // Placeholder as we don't have invoice API yet
+    failedInvoices: 0,
     activeQuotes: 0,
     quotesNearExpiry: 0,
   });
@@ -55,13 +59,11 @@ export default function DashboardPage() {
           ["Draft", "In Progress", "Quote Generated", "Awaiting Employer Acceptance", "Accepted", "Onboarding Submitted", "Pending Approval"].includes(l.status)
         ).length;
         
-        // Active Quotes: Count all quotes across all leads that are not in a terminal state
         const allQuotes = leads.flatMap(l => l.quotes || []);
         const activeQuotes = allQuotes.filter(q => 
           !["Expired", "Cancelled", "Rejected"].includes(q.quoteStatus)
         ).length;
         
-        // Near Expiry: Quotes expiring in the next 7 days
         const sevenDaysFromNow = new Date();
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
         const now = new Date();
@@ -108,64 +110,126 @@ export default function DashboardPage() {
   ];
 
   return (
-    <main
-      className="flex-1 overflow-y-auto p-5"
-      style={{ background: "var(--background)" }}
+    <Box
+      component="main"
+      sx={{
+        flex: 1,
+        overflowY: "auto",
+        p: "20px",
+        bgcolor: "var(--background)",
+      }}
     >
-      <h2 className="mb-6 text-2xl font-medium" style={{ color: "#f4f4f5" }}>
+      <Typography
+        variant="h2"
+        sx={{
+          mb: "24px",
+          fontSize: "1.5rem",
+          fontWeight: 500,
+          color: "#f4f4f5",
+        }}
+      >
         Dashboard
-      </h2>
+      </Typography>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4 mb-8">
+      <Grid container spacing={3} sx={{ mb: "32px" }}>
         {statCards.map(({ value, label, icon: Icon }) => (
-          <div
-            key={label}
-            className="rounded-xl border p-4"
-            style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
-              borderColor: "rgba(100, 116, 139, 0.24)",
-            }}
-          >
-            <div className="mb-1 flex items-start justify-between gap-3">
-              <p className="text-2xl font-semibold leading-none" style={{ color: "#f7f7f7" }}>
-                {value}
-              </p>
-              <Icon size={16} style={{ color: "#aeb4c0" }} />
-            </div>
-            <p className="text-xs" style={{ color: "#9ca3af" }}>
-              {label}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div>ī
-        <h3 className="mb-6 text-lg font-medium" style={{ color: "#ededed" }}>
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-          {quickActions.map(({ title, description, icon: Icon, href }) => (
-            <DashboardCard
-              key={title}
-              title={title}
-              description={description}
-              icon={<Icon size={15} />}
-              onClick={() => router.push(href)}
-              className="rounded-2xl p-4"
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(48,48,48,0.8) 0%, rgba(42,42,42,0.75) 100%)",
-                borderColor: "#30363d",
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }} key={label}>
+            <Card
+              sx={{
+                p: "16px",
+                borderRadius: "12px",
+                border: "1px solid rgba(100, 116, 139, 0.24)",
+                background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
+                boxShadow: "none",
               }}
-              iconWrapperClassName="inline-flex h-7 w-7 items-center justify-center rounded-full"
-              iconWrapperStyle={{ background: "rgba(148,163,184,0.14)", color: "#d1d5db", marginBottom: "24px" }}
-              titleClassName="mb-2 text-base"
-              titleStyle={{ fontSize: "22px", fontWeight: 500, lineHeight: "24px", color: "#f5f5f5" }}
-              descriptionStyle={{ fontSize: "12px", color: "#8f96a3", lineHeight: "18px" }}
-            />
+            >
+              <Box
+                sx={{
+                  mb: "4px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: "1.5rem",
+                    fontWeight: 600,
+                    lineHeight: 1,
+                    color: "#f7f7f7",
+                  }}
+                >
+                  {value}
+                </Typography>
+                <Icon size={16} style={{ color: "#aeb4c0" }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  color: "#9ca3af",
+                }}
+              >
+                {label}
+              </Typography>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Box>
+        <Typography
+          variant="h3"
+          sx={{
+            mb: "24px",
+            fontSize: "1.125rem",
+            fontWeight: 500,
+            color: "#ededed",
+          }}
+        >
+          Quick Actions
+        </Typography>
+        <Grid container spacing={3}>
+          {quickActions.map(({ title, description, icon: Icon, href }) => (
+            <Grid size={{ xs: 12, sm: 6, xl: 4 }} key={title}>
+              <DashboardCard
+                title={title}
+                description={description}
+                icon={<Icon size={15} />}
+                onClick={() => router.push(href)}
+                style={{
+                  background: "linear-gradient(180deg, rgba(48,48,48,0.8) 0%, rgba(42,42,42,0.75) 100%)",
+                  borderColor: "#30363d",
+                  borderRadius: "16px",
+                }}
+                iconWrapperStyle={{
+                  display: "inline-flex",
+                  height: "28px",
+                  width: "28px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(148,163,184,0.14)",
+                  color: "#d1d5db",
+                  marginBottom: "24px",
+                }}
+                titleStyle={{
+                  fontSize: "22px",
+                  fontWeight: 500,
+                  lineHeight: "24px",
+                  color: "#f5f5f5",
+                  marginBottom: "8px",
+                }}
+                descriptionStyle={{
+                  fontSize: "12px",
+                  color: "#8f96a3",
+                  lineHeight: "18px",
+                }}
+              />
+            </Grid>
           ))}
-        </div>
-      </div>
-    </main>
+        </Grid>
+      </Box>
+    </Box>
   );
 }

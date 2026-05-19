@@ -6,6 +6,7 @@ import { BackButton, NextButton } from "@/components/ui/StepButtons";
 import StepProgress from "@/components/ui/StepProgress";
 import DownloadQuoteModal from "@/components/ui/DownloadQuoteModal";
 import { getProductList, calculatePricing, type Product } from "../../../lib/api/products";
+import Slider from "@/components/ui/Slider";
 
 const QUICK_STEPS = ["Quote Details", "Adjust Cover Amounts"];
 
@@ -27,6 +28,8 @@ interface AdjustCoverageStepProps {
   province: string;
   industry: string;
   quoteReference?: string;
+  companyName?: string;
+  genderMix?: string;
 }
 
 const labelStyle: React.CSSProperties = {
@@ -47,15 +50,6 @@ const coverageItemStyle: React.CSSProperties = {
   gap: "12px",
 };
 
-const sliderStyle: React.CSSProperties = {
-  width: "100%",
-  height: "6px",
-  borderRadius: "3px",
-  background: "#30363D",
-  outline: "none",
-  WebkitAppearance: "none",
-};
-
 export default function AdjustCoverageStep({ 
   onBack, 
   onGenerateQuote, 
@@ -65,7 +59,9 @@ export default function AdjustCoverageStep({
   averageIncome,
   province,
   industry,
-  quoteReference
+  quoteReference,
+  companyName = "",
+  genderMix = "Not specified",
 }: AdjustCoverageStepProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [lifeCover, setLifeCover] = useState(100000);
@@ -238,14 +234,12 @@ export default function AdjustCoverageStep({
                   {formatCurrency(lifeCover)}
                 </span>
               </div>
-              <input
-                type="range"
-                min="50000"
-                max="2000000"
-                step="10000"
+              <Slider
+                min={50000}
+                max={2000000}
+                step={10000}
                 value={lifeCover}
-                onChange={(e) => setLifeCover(Number(e.target.value))}
-                style={sliderStyle}
+                onChange={setLifeCover}
               />
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280" }}>
                 <span>R0.00</span>
@@ -261,14 +255,12 @@ export default function AdjustCoverageStep({
                   {formatCurrency(funeralCover)}
                 </span>
               </div>
-              <input
-                type="range"
-                min="5000"
-                max="100000"
-                step="1000"
+              <Slider
+                min={5000}
+                max={100000}
+                step={1000}
                 value={funeralCover}
-                onChange={(e) => setFuneralCover(Number(e.target.value))}
-                style={sliderStyle}
+                onChange={setFuneralCover}
               />
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280" }}>
                 <span>R5,000</span>
@@ -284,14 +276,12 @@ export default function AdjustCoverageStep({
                   {formatCurrency(occupationalDisability)}
                 </span>
               </div>
-              <input
-                type="range"
-                min="5000"
-                max="200000"
-                step="1000"
+              <Slider
+                min={5000}
+                max={200000}
+                step={1000}
                 value={occupationalDisability}
-                onChange={(e) => setOccupationalDisability(Number(e.target.value))}
-                style={sliderStyle}
+                onChange={setOccupationalDisability}
               />
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280" }}>
                 <span>R5,000</span>
@@ -355,7 +345,11 @@ export default function AdjustCoverageStep({
         </div>
       </div>
 
-      {showModal && <DownloadQuoteModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <DownloadQuoteModal
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </>
   );
 }

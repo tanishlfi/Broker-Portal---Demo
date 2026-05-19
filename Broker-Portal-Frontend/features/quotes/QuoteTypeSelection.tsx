@@ -3,6 +3,9 @@
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bolt, List } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
 import DashboardCard from "@/components/ui/DashboardCard";
 
 function QuoteTypeSelectionContent() {
@@ -14,20 +17,28 @@ function QuoteTypeSelectionContent() {
   const ref = searchParams.get("ref") || "";
 
   const handleQuickQuote = () => {
-    // Navigate to quick quote page
     router.push(`/lead/${leadId}/quote?ref=${ref}&company=${encodeURIComponent(companyName)}&type=quick`);
   };
 
   const handleFullQuote = () => {
-    // Navigate to full quote page
     router.push(`/lead/${leadId}/quote?ref=${ref}&company=${encodeURIComponent(companyName)}&type=full`);
   };
 
   return (
-    <main className="relative flex-1 overflow-hidden p-5" style={{ background: "var(--background)" }}>
-      <div
-        className="absolute pointer-events-none"
-        style={{
+    <Box
+      component="main"
+      sx={{
+        position: "relative",
+        flex: 1,
+        overflow: "hidden",
+        p: "20px",
+        bgcolor: "var(--background)",
+      }}
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          pointerEvents: "none",
           width: "608px",
           height: "608px",
           right: "-200px",
@@ -39,28 +50,47 @@ function QuoteTypeSelectionContent() {
         }}
       />
 
-      <section className="relative mx-auto max-w-7xl">
-        <div className="px-1 py-4">
-          <h1 className="text-[31px] font-medium leading-8 text-white">Quote Generation</h1>
-        </div>
+      <Box component="section" sx={{ position: "relative", mx: "auto", maxWidth: "1280px" }}>
+        <Box sx={{ px: "4px", py: "16px" }}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: "31px",
+              fontWeight: 500,
+              lineHeight: 1.25,
+              color: "#FFFFFF",
+            }}
+          >
+            Quote Generation
+          </Typography>
+        </Box>
 
-        <div className="pt-3">
-          <div className="flex flex-wrap gap-4">
+        <Box sx={{ pt: "12px" }}>
+          <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", gap: "16px 0px", mb: "16px" }}>
             <DashboardCard
               title="Quick Cost Estimate"
               description="Simple and Fast! In 30 sec or less"
               icon={<Bolt size={15} />}
               onClick={handleQuickQuote}
-              className="rounded-2xl p-4"
               style={{
                 background: "linear-gradient(180deg, rgba(48,48,48,0.8) 0%, rgba(42,42,42,0.75) 100%)",
                 borderColor: "#30363d",
                 width: "271px",
                 height: "225px",
                 minHeight: "225px",
+                borderRadius: "16px",
               }}
-              iconWrapperClassName="inline-flex h-9 w-9 items-center justify-center rounded-xl"
-              iconWrapperStyle={{ background: "rgba(148,163,184,0.14)", color: "#d1d5db", marginBottom: "36px" }}
+              iconWrapperStyle={{
+                display: "inline-flex",
+                height: "36px",
+                width: "36px",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "12px",
+                backgroundColor: "rgba(148,163,184,0.14)",
+                color: "#d1d5db",
+                marginBottom: "36px",
+              }}
               titleStyle={{ fontSize: "22px", fontWeight: 500, lineHeight: "24px", color: "#f5f5f5" }}
               descriptionStyle={{ fontSize: "12px", color: "#8f96a3", lineHeight: "18px" }}
             />
@@ -70,35 +100,53 @@ function QuoteTypeSelectionContent() {
               description="Complete pricing using real names, the income, birthdate, and salary of each employee."
               icon={<List size={15} />}
               onClick={handleFullQuote}
-              className="rounded-2xl p-4"
               style={{
                 background: "linear-gradient(180deg, rgba(48,48,48,0.8) 0%, rgba(42,42,42,0.75) 100%)",
                 borderColor: "#30363d",
                 width: "271px",
                 height: "225px",
                 minHeight: "225px",
+                borderRadius: "16px",
               }}
-              iconWrapperClassName="inline-flex h-9 w-9 items-center justify-center rounded-xl"
-              iconWrapperStyle={{ background: "rgba(148,163,184,0.14)", color: "#d1d5db", marginBottom: "24px" }}
+              iconWrapperStyle={{
+                display: "inline-flex",
+                height: "36px",
+                width: "36px",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "12px",
+                backgroundColor: "rgba(148,163,184,0.14)",
+                color: "#d1d5db",
+                marginBottom: "24px",
+              }}
               titleStyle={{ fontSize: "22px", fontWeight: 500, lineHeight: "24px", color: "#f5f5f5" }}
               descriptionStyle={{ fontSize: "12px", color: "#8f96a3", lineHeight: "18px" }}
             />
-          </div>
+          </Stack>
 
-          <ul className="mt-4 list-disc pl-5 text-xs" style={{ color: "#8f96a3", lineHeight: "20px" }}>
-            <li>18 to 64 years old.</li>
-            <li>Permanently employed or on 6+ month contract.</li>
-            <li>Legally employed & actively working 20+ hours a week in SA.</li>
-          </ul>
-        </div>
-      </section>
-    </main>
+          <Box
+            component="ul"
+            sx={{
+              mt: "16px",
+              pl: "20px",
+              color: "#8f96a3",
+              fontSize: "12px",
+              lineHeight: "20px",
+            }}
+          >
+            <Box component="li">18 to 64 years old.</Box>
+            <Box component="li">Permanently employed or on 6+ month contract.</Box>
+            <Box component="li">Legally employed & actively working 20+ hours a week in SA.</Box>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
 export default function QuoteTypeSelection() {
   return (
-    <Suspense fallback={<div className="px-6 pt-6 text-white">Loading...</div>}>
+    <Suspense fallback={<Box sx={{ px: "24px", pt: "24px", color: "#FFFFFF" }}>Loading...</Box>}>
       <QuoteTypeSelectionContent />
     </Suspense>
   );

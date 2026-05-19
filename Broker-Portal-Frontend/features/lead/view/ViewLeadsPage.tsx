@@ -2,10 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Eye, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import { Plus, Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { getLeads, cancelLead, Lead } from "@/lib/api/leads";
 import { ROUTES } from "@/lib/constants";
 import { getRepresentativeId } from "@/lib/auth";
+import Badge from "@/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { LeadStatus } from "@/lib/enums";
+
 
 const PAGE_SIZE = 10;
 
@@ -14,89 +37,15 @@ const fmt = (d: string) => {
   return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, { bg: string; color: string }> = {
-    "Draft":                { bg: "#3A3A3A", color: "#fff" },
-    "In Progress":          { bg: "#00B8DB", color: "#fff" },
-    "Quote Generated":      { bg: "#00B8DB", color: "#fff" },
-    "Accepted":             { bg: "#22c55e", color: "#fff" },
-    "Onboarding Submitted": { bg: "#22c55e", color: "#fff" },
-    "Approved":             { bg: "#22c55e", color: "#fff" },
-    "Rejected":             { bg: "#EF4444", color: "#fff" },
-    "Expired":              { bg: "#EF4444", color: "#fff" },
-    "Cancelled":            { bg: "#EF4444", color: "#fff" },
-    // Legacy support
-    "Active":               { bg: "#00B8DB", color: "#fff" },
-    "Completed":            { bg: "#22c55e", color: "#fff" },
-  };
-  const s = styles[status] ?? { bg: "#4B4B4B", color: "#fff" };
-  return (
-    <span style={{
-      display: "inline-block",
-      padding: "2px 8px",
-      borderRadius: "8px",
-      background: s.bg,
-      color: s.color,
-      fontSize: "12px",
-      fontWeight: 500,
-      whiteSpace: "nowrap",
-    }}>
-      {status}
-    </span>
-  );
-}
-
-function QuoteBadge({ quoteStatus }: { quoteStatus?: string }) {
-  if (!quoteStatus) return <span style={{ color: "#A0A0A0", fontSize: "14px" }}>—</span>;
-
-  const styles: Record<string, { bg: string; color: string; opacity?: number }> = {
-    "Quick Quote":              { bg: "#4B4B4B", color: "#fff" },
-    "Full Quote":               { bg: "#6B6B6B", color: "#fff" },
-    "Submitted for Onboarding": { bg: "rgba(0,201,80,0.9)", color: "#fff" },
-    "Expired":                  { bg: "#4B4B4B", color: "#fff", opacity: 0.5 },
-    "Cancelled":                { bg: "#EF4444", color: "#fff" },
-    "Approved":                 { bg: "rgba(0,201,80,0.9)", color: "#fff" },
-  };
-  const s = styles[quoteStatus] ?? { bg: "#4B4B4B", color: "#fff" };
-  return (
-    <span style={{
-      display: "inline-block",
-      padding: "2px 8px",
-      borderRadius: "8px",
-      background: s.bg,
-      color: s.color,
-      fontSize: "12px",
-      fontWeight: 500,
-      opacity: s.opacity ?? 1,
-      whiteSpace: "nowrap",
-    }}>
-      {quoteStatus}
-    </span>
-  );
-}
 
 export default function ViewLeadsPage() {
   const router = useRouter();
-  const [leads, setLeads]         = useState<Lead[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatus] = useState("All");
   const [quoteFilter, setQuote]   = useState("All");
   const [page, setPage]           = useState(1);
-  const [statusOpen, setStatusOpen] = useState(false);
-  const [quoteOpen, setQuoteOpen]   = useState(false);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClick = () => {
-      setStatusOpen(false);
-      setQuoteOpen(false);
-    };
-    if (statusOpen || quoteOpen) {
-      document.addEventListener('click', handleClick);
-      return () => document.removeEventListener('click', handleClick);
-    }
-  }, [statusOpen, quoteOpen]);
 
   useEffect(() => {
     (async () => {
@@ -120,237 +69,203 @@ export default function ViewLeadsPage() {
     return (
       (!q || l.employerName.toLowerCase().includes(q) || l.leadReference.toLowerCase().includes(q) || (l.registrationNumber ?? "").toLowerCase().includes(q)) &&
       (statusFilter === "All" || l.status === statusFilter) &&
-      (quoteFilter  === "All" || l.quoteStatus === quoteFilter)
+      (quoteFilter === "All" || l.quoteStatus === quoteFilter)
     );
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage   = Math.min(page, totalPages);
-  const start      = (safePage - 1) * PAGE_SIZE;
-  const rows       = filtered.slice(start, start + PAGE_SIZE);
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * PAGE_SIZE;
+  const rows = filtered.slice(start, start + PAGE_SIZE);
 
-  const total     = leads.length;
-  const active    = leads.filter((l) => ["Draft", "In Progress", "Quote Generated", "Onboarding Submitted"].includes(l.status)).length;
-  const accepted  = leads.filter((l) => ["Accepted", "Approved"].includes(l.status)).length;
+  const total = leads.length;
+  const active = leads.filter((l) => ["Draft", "In Progress", "Quote Generated", "Onboarding Submitted"].includes(l.status)).length;
+  const accepted = leads.filter((l) => ["Accepted", "Approved"].includes(l.status)).length;
   const cancelled = leads.filter((l) => ["Cancelled", "Rejected", "Expired"].includes(l.status)).length;
 
   const statusOptions = ["All", ...Array.from(new Set(leads.map(l => l.status))).filter(Boolean)];
-  const quoteOptions  = ["All", ...Array.from(new Set(leads.map(l => l.quoteStatus))).filter((s): s is string => Boolean(s))];
+  const quoteOptions = ["All", ...Array.from(new Set(leads.map(l => l.quoteStatus))).filter((s): s is string => Boolean(s))];
 
   return (
-    <div style={{
-      position: "relative",
-      width: "100%",
-      minHeight: "calc(100vh - 120px)",
-      background: "rgba(24, 24, 24, 0.8)",
-      border: "1px solid rgba(29, 51, 68, 0.4)",
-      borderRadius: "16px",
-      padding: "24px",
-      boxSizing: "border-box",
-      fontFamily: "'Inter', sans-serif",
-    }}>
+    <Paper
+      elevation={0}
+      sx={{
+        position: "relative",
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
+        background: "rgba(24, 24, 24, 0.8)",
+        border: "1px solid rgba(29, 51, 68, 0.4)",
+        borderRadius: "16px",
+        padding: "24px",
+        boxSizing: "border-box",
+        fontFamily: "'Inter', sans-serif",
+        overflow: "hidden",
+      }}
+    >
       {/* Background blur */}
-      <div style={{
-        position: "absolute",
-        width: "608px",
-        height: "608px",
-        right: "-100px",
-        bottom: "-100px",
-        background: "#00C0E8",
-        opacity: 0.05,
-        filter: "blur(172px)",
-        borderRadius: "50%",
-        pointerEvents: "none",
-        zIndex: 0,
-      }} />
+      <Box
+        sx={{
+          position: "absolute",
+          width: "608px",
+          height: "608px",
+          right: "-100px",
+          bottom: "-100px",
+          background: "#00C0E8",
+          opacity: 0.05,
+          filter: "blur(172px)",
+          borderRadius: "50%",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
 
-      <div style={{ position: "relative", zIndex: 1 }}>
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-          <h1 style={{ fontSize: "22px", fontWeight: 600, color: "var(--foreground)", margin: 0 }}>Leads</h1>
-          <button
+      <Box sx={{ position: "relative", zIndex: 1 }}>
+        
+        {/* Header */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <Typography variant="h1" sx={{ fontSize: "22px", fontWeight: 600, color: "var(--foreground)", margin: 0 }}>
+            Leads
+          </Typography>
+          <Button
             onClick={() => router.push(ROUTES.newLead)}
-            style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              padding: "8px 13px", height: "40px",
-              background: "#1FC3EB", color: "#0A0A0A",
-              border: "none", borderRadius: "8px",
-              fontFamily: "'Inter', sans-serif", fontSize: "14px", fontWeight: 700,
-              cursor: "pointer", transition: "background 0.2s ease"
+            variant="contained"
+            startIcon={<Plus size={20} />}
+            sx={{
+              bgcolor: "#1FC3EB",
+              color: "#0A0A0A",
+              borderRadius: "8px",
+              fontWeight: 700,
+              fontSize: "14px",
+              textTransform: "none",
+              height: "40px",
+              px: "16px",
+              "&:hover": {
+                bgcolor: "#0DB5D8",
+              },
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#0DB5D8")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#1FC3EB")}
           >
-            <Plus size={20} color="#0A0A0A" />
             Add New Lead
-          </button>
-        </div>
+          </Button>
+        </Box>
 
         {/* Stats Cards */}
-        <div style={{ display: "flex", gap: "22px", marginBottom: "26px" }}>
+        <Grid container spacing={3} sx={{ marginBottom: "26px" }}>
           {[
             { label: "Total Leads", value: total },
-            { label: "Active",      value: active },
-            { label: "Accepted",    value: accepted },
-            { label: "Cancelled",   value: cancelled },
+            { label: "Active", value: active },
+            { label: "Accepted", value: accepted },
+            { label: "Cancelled", value: cancelled },
           ].map(({ label, value }) => (
-            <div key={label} style={{
-              flex: 1,
-              boxSizing: "border-box",
-              background: "#262626",
-              border: "1px solid #30363D",
-              borderRadius: "12px",
-              height: "88px",
-              padding: "0 23px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              gap: "3px",
-            }}>
-              <p style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "20px",
-                fontWeight: 700,
-                lineHeight: "24px",
-                color: "#E6E6E6",
-                margin: 0,
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={label}>
+              <Box sx={{
+                boxSizing: "border-box",
+                background: "#262626",
+                border: "1px solid #30363D",
+                borderRadius: "12px",
+                height: "88px",
+                padding: "0 23px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: "3px",
               }}>
-                {value}
-              </p>
-              <p style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "14px",
-                fontWeight: 400,
-                lineHeight: "17px",
-                color: "#C5C5C5",
-                margin: 0,
-              }}>
-                {label}
-              </p>
-            </div>
+                <Typography sx={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  lineHeight: "24px",
+                  color: "#E6E6E6",
+                  margin: 0,
+                }}>
+                  {value}
+                </Typography>
+                <Typography sx={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "14px",
+                  fontWeight: 400,
+                  lineHeight: "17px",
+                  color: "#C5C5C5",
+                  margin: 0,
+                }}>
+                  {label}
+                </Typography>
+              </Box>
+            </Grid>
           ))}
-        </div>
+        </Grid>
 
         {/* Search & Filters */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "26px" }}>
+        <Grid container spacing={2} sx={{ marginBottom: "26px", alignItems: "center" }}>
           {/* Search */}
-          <div style={{ position: "relative", width: "648px" }}>
-            <Search size={20} style={{
-              position: "absolute", left: "10px", top: "50%",
-              transform: "translateY(-50%)", color: "#A0A0A0",
-              pointerEvents: "none",
-            }} />
-            <input
-              type="text"
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
               placeholder="Search by company name or lead ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{
-                boxSizing: "border-box",
-                width: "100%", height: "40px",
-                background: "#262626", border: "1.875px solid #333333",
-                borderRadius: "8px", padding: "8px 12px 8px 40px",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "14px", fontWeight: 400,
-                lineHeight: "17px",
-                letterSpacing: "-0.150391px",
-                color: "#FFFFFF",
-                outline: "none",
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={20} color="#A0A0A0" />
+                    </InputAdornment>
+                  ),
+                }
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  height: "40px",
+                  bgcolor: "#262626",
+                }
               }}
             />
-          </div>
+          </Grid>
 
           {/* Status Filter */}
-          <div style={{ position: "relative", width: "220px" }}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setStatusOpen(!statusOpen); setQuoteOpen(false); }}
-              style={{
-                boxSizing: "border-box",
-                width: "100%", height: "40px",
-                background: "#262626", border: "1.875px solid #333333",
-                borderRadius: "8px", padding: "8px 12px",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "14px", fontWeight: 500,
-                lineHeight: "14px",
-                letterSpacing: "-0.150391px",
-                color: "#A0A0A0",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                cursor: "pointer", outline: "none",
-              }}
-            >
-              <span>{statusFilter === "All" ? "Status" : statusFilter}</span>
-              <ChevronDown size={16} style={{ opacity: 0.5 }} />
-            </button>
-            {statusOpen && (
-              <div style={{
-                position: "absolute", top: "44px", left: 0, width: "100%",
-                background: "#262626", border: "1px solid #333333",
-                borderRadius: "8px", zIndex: 50, overflow: "hidden",
-              }}>
-                {statusOptions.map((opt) => (
-                  <button key={opt} onClick={() => { setStatus(opt); setStatusOpen(false); }}
-                    style={{
-                      width: "100%", padding: "9px 14px", textAlign: "left",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "14px", color: statusFilter === opt ? "#1FC3EB" : "#FFFFFF",
-                      background: statusFilter === opt ? "rgba(31,195,235,0.08)" : "transparent",
-                      border: "none", cursor: "pointer",
-                    }}
-                  >
-                    {opt === "All" ? "All Statuses" : opt}
-                  </button>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatus(e.target.value)}
+                displayEmpty
+                inputProps={{ "aria-label": "Status Filter" }}
+                sx={{
+                  height: "40px",
+                  bgcolor: "#262626",
+                }}
+              >
+                <MenuItem value="All">All Statuses</MenuItem>
+                {statusOptions.filter(opt => opt !== "All").map(opt => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                 ))}
-              </div>
-            )}
-          </div>
+              </Select>
+            </FormControl>
+          </Grid>
 
           {/* Quote Status Filter */}
-          <div style={{ position: "relative", width: "220px" }}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setQuoteOpen(!quoteOpen); setStatusOpen(false); }}
-              style={{
-                boxSizing: "border-box",
-                width: "100%", height: "40px",
-                background: "#262626", border: "1.875px solid #333333",
-                borderRadius: "8px", padding: "8px 12px",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "14px", fontWeight: 500,
-                lineHeight: "14px",
-                letterSpacing: "-0.150391px",
-                color: "#A0A0A0",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                cursor: "pointer", outline: "none",
-              }}
-            >
-              <span>{quoteFilter === "All" ? "Quote Status" : quoteFilter}</span>
-              <ChevronDown size={16} style={{ opacity: 0.5 }} />
-            </button>
-            {quoteOpen && (
-              <div style={{
-                position: "absolute", top: "44px", left: 0, width: "220px",
-                background: "#262626", border: "1px solid #333333",
-                borderRadius: "8px", zIndex: 50, overflow: "hidden",
-              }}>
-                {quoteOptions.map((opt) => (
-                  <button key={opt} onClick={() => { setQuote(opt); setQuoteOpen(false); }}
-                    style={{
-                      width: "100%", padding: "9px 14px", textAlign: "left",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "14px", color: quoteFilter === opt ? "#1FC3EB" : "#FFFFFF",
-                      background: quoteFilter === opt ? "rgba(31,195,235,0.08)" : "transparent",
-                      border: "none", cursor: "pointer", whiteSpace: "nowrap",
-                    }}
-                  >
-                    {opt === "All" ? "All Quote Statuses" : opt}
-                  </button>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth>
+              <Select
+                value={quoteFilter}
+                onChange={(e) => setQuote(e.target.value)}
+                displayEmpty
+                inputProps={{ "aria-label": "Quote Status Filter" }}
+                sx={{
+                  height: "40px",
+                  bgcolor: "#262626",
+                }}
+              >
+                <MenuItem value="All">All Quote Statuses</MenuItem>
+                {quoteOptions.filter(opt => opt !== "All").map(opt => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                 ))}
-              </div>
-            )}
-          </div>
-        </div>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
 
         {/* Table */}
-        <div style={{
+        <Box sx={{
           boxSizing: "border-box",
           background: "#2D2D2D",
           border: "0.625px solid #4A4A4A",
@@ -358,290 +273,261 @@ export default function ViewLeadsPage() {
           overflow: "hidden",
         }}>
           {loading ? (
-            <div style={{ padding: "48px", textAlign: "center", color: "#A0A0A0" }}>Loading leads…</div>
+            <Typography sx={{ padding: "48px", textAlign: "center", color: "#A0A0A0" }}>Loading leads…</Typography>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: "48px", textAlign: "center" }}>
-              <p style={{ color: "#A0A0A0", marginBottom: "16px" }}>No leads found.</p>
-              <button onClick={() => router.push(ROUTES.newLead)} style={{
-                background: "#1FC3EB", color: "#0A0A0A", border: "none",
-                borderRadius: "6px", padding: "8px 20px", fontWeight: 600,
-                fontSize: "14px", cursor: "pointer",
-              }}>
+            <Box sx={{ padding: "48px", textAlign: "center" }}>
+              <Typography sx={{ color: "#A0A0A0", marginBottom: "16px" }}>No leads found.</Typography>
+              <Button
+                onClick={() => router.push(ROUTES.newLead)}
+                variant="contained"
+                sx={{
+                  background: "#1FC3EB",
+                  color: "#0A0A0A",
+                  borderRadius: "6px",
+                  padding: "8px 20px",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  textTransform: "none",
+                  "&:hover": {
+                    background: "#0DB5D8",
+                  }
+                }}
+              >
                 Create First Lead
-              </button>
-            </div>
+              </Button>
+            </Box>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Inter', sans-serif" }}>
+            <Box sx={{ overflowX: "auto" }}>
+              <Table>
                 {/* Header */}
-                <thead>
-                  <tr style={{ background: "rgba(58,58,58,0.5)", borderBottom: "0.625px solid #4A4A4A" }}>
+                <TableHeader>
+                  <TableRow>
                     {["Lead ID", "Company Name", "Contact Person", "Employees", "Status", "Quote", "Quote Status", "Created Date", "Actions"].map((h) => (
-                      <th key={h} style={{
-                        padding: "10px 8px",
-                        textAlign: "left",
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#FFFFFF",
-                        whiteSpace: "nowrap",
-                      }}>
+                      <TableHead key={h}>
                         {h}
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
-                </thead>
+                  </TableRow>
+                </TableHeader>
 
                 {/* Body */}
-                <tbody>
+                <TableBody>
                   {rows.map((lead) => (
-                    <tr key={lead.leadId} style={{ borderBottom: "0.625px solid #4A4A4A" }}>
+                    <TableRow key={lead.leadId}>
                       {/* Lead ID */}
-                      <td style={{
-                        padding: "16px 8px",
-                        fontFamily: "'Menlo', monospace",
-                        fontSize: "14px",
-                        fontWeight: 400,
-                        lineHeight: "20px",
-                        color: "#FFFFFF",
-                        whiteSpace: "nowrap"
-                      }}>
+                      <TableCell sx={{ fontFamily: "'Menlo', monospace" }}>
                         {lead.leadReference}
-                      </td>
+                      </TableCell>
 
                       {/* Company Name */}
-                      <td style={{ padding: "8px 8px" }}>
-                        <p style={{
-                          fontFamily: "'Inter', sans-serif",
-                          fontSize: "14px",
-                          fontWeight: 500,
-                          lineHeight: "20px",
-                          letterSpacing: "-0.150391px",
-                          color: "#FFFFFF",
-                          margin: 0,
-                        }}>
+                      <TableCell>
+                        <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "#FFFFFF", m: 0 }}>
                           {lead.employerName}
-                        </p>
+                        </Typography>
                         {lead.registrationNumber && (
-                          <p style={{
-                            fontFamily: "'Inter', sans-serif",
-                            fontSize: "12px",
-                            fontWeight: 400,
-                            lineHeight: "16px",
-                            color: "#A0A0A0",
-                            marginTop: "2px",
-                            marginBottom: 0,
-                          }}>
+                          <Typography sx={{ fontSize: "12px", color: "#A0A0A0", mt: "2px", m: 0 }}>
                             {lead.registrationNumber}
-                          </p>
+                          </Typography>
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Contact Person */}
-                      <td style={{ padding: "8px 8px" }}>
-                        <p style={{
-                          fontFamily: "'Inter', sans-serif",
-                          fontSize: "14px",
-                          fontWeight: 400,
-                          lineHeight: "20px",
-                          letterSpacing: "-0.150391px",
-                          color: "#FFFFFF",
-                          margin: 0,
-                        }}>
+                      <TableCell>
+                        <Typography sx={{ fontSize: "14px", color: "#FFFFFF", m: 0 }}>
                           {lead.contactFirstName} {lead.contactLastName}
-                        </p>
-                        <p style={{
-                          fontFamily: "'Inter', sans-serif",
-                          fontSize: "12px",
-                          fontWeight: 400,
-                          lineHeight: "16px",
-                          color: "#A0A0A0",
-                          marginTop: "2px",
-                          marginBottom: 0,
-                        }}>
+                        </Typography>
+                        <Typography sx={{ fontSize: "12px", color: "#A0A0A0", mt: "2px", m: 0 }}>
                           {lead.contactEmail}
-                        </p>
-                      </td>
+                        </Typography>
+                      </TableCell>
 
                       {/* Employees */}
-                      <td style={{
-                        padding: "16px 8px",
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 400,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#FFFFFF",
-                        textAlign: "center",
-                      }}>
+                      <TableCell sx={{ textAlign: "center" }}>
                         {lead.numberOfEmployees.toLocaleString()}
-                      </td>
+                      </TableCell>
 
                       {/* Status */}
-                      <td style={{ padding: "16px 8px" }}>
-                        <StatusBadge status={lead.status} />
-                      </td>
+                      <TableCell>
+                        <Badge label={lead.status} type="status" />
+                      </TableCell>
 
                       {/* Quote type */}
-                      <td style={{ padding: "16px 8px" }}>
+                      <TableCell>
                         {lead.quoteStatus && (lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote")
-                          ? <QuoteBadge quoteStatus={lead.quoteStatus} />
-                          : <span style={{ color: "#A0A0A0", fontSize: "14px" }}>—</span>
+                          ? <Badge label={lead.quoteStatus} type="quote" />
+                          : <Typography sx={{ color: "#A0A0A0", fontSize: "14px" }}>—</Typography>
                         }
-                      </td>
+                      </TableCell>
 
                       {/* Quote Status */}
-                      <td style={{ padding: "16px 8px" }}>
-                        <QuoteBadge quoteStatus={
-                          lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote"
-                            ? undefined
-                            : lead.quoteStatus
-                        } />
-                      </td>
+                      <TableCell>
+                        {lead.quoteStatus && lead.quoteStatus !== "Quick Quote" && lead.quoteStatus !== "Full Quote"
+                          ? <Badge label={lead.quoteStatus} type="quote" />
+                          : <Typography sx={{ color: "#A0A0A0", fontSize: "14px" }}>—</Typography>
+                        }
+                      </TableCell>
 
                       {/* Created Date */}
-                      <td style={{
-                        padding: "16px 8px",
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 400,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#FFFFFF",
-                        whiteSpace: "nowrap"
-                      }}>
+                      <TableCell>
                         {fmt(lead.createdAt)}
-                      </td>
+                      </TableCell>
 
                       {/* Actions */}
-                      <td style={{ padding: "10px 8px" }}>
-                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                            <button
-                              onClick={() => router.push(`/lead/${lead.leadId}`)}
-                              style={{
-                                display: "flex", alignItems: "center", gap: "6px",
-                                padding: "6px 10px", height: "32px",
-                                background: "rgba(58,58,58,0.5)", border: "0.625px solid #4A4A4A",
-                                borderRadius: "8px", color: "#FFFFFF",
-                                fontFamily: "'Inter', sans-serif",
-                                fontSize: "14px", fontWeight: 500,
-                                lineHeight: "20px",
-                                letterSpacing: "-0.150391px",
-                                cursor: "pointer",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              <Eye size={14} />
-                              View
-                            </button>
+                      <TableCell>
+                        <Box sx={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                          <Button
+                            onClick={() => router.push(`/lead/${lead.leadId}`)}
+                            variant="outlined"
+                            startIcon={<Eye size={14} />}
+                            sx={{
+                              padding: "4px 10px",
+                              height: "32px",
+                              bgcolor: "rgba(58,58,58,0.5)",
+                              borderColor: "#4A4A4A",
+                              borderRadius: "8px",
+                              color: "#FFFFFF",
+                              textTransform: "none",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              "&:hover": {
+                                bgcolor: "rgba(80,80,80,0.5)",
+                                borderColor: "#666666",
+                              }
+                            }}
+                          >
+                            View
+                          </Button>
                           {lead.status !== "Cancelled" && lead.status !== "Completed" && (
-                            <button
+                            <Button
                               onClick={() => router.push(`/quotes/new?leadId=${lead.leadId}&ref=${lead.leadReference}&company=${encodeURIComponent(lead.employerName)}`)}
-                              style={{
-                                display: "flex", alignItems: "center", gap: "6px",
-                                padding: "6px 10px", height: "32px",
-                                background: "#1FC3EB", border: "none",
-                                borderRadius: "8px", color: "#0A0A0A",
-                                fontSize: "14px", fontWeight: 500, cursor: "pointer",
-                                whiteSpace: "nowrap",
+                              variant="contained"
+                              sx={{
+                                padding: "4px 10px",
+                                height: "32px",
+                                bgcolor: "#1FC3EB",
+                                color: "#0A0A0A",
+                                border: "none",
+                                borderRadius: "8px",
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                textTransform: "none",
+                                "&:hover": {
+                                  bgcolor: "#0DB5D8",
+                                }
                               }}
                             >
                               Continue
-                            </button>
+                            </Button>
                           )}
-                        </div>
-                      </td>
-                    </tr>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </Box>
           )}
 
           {/* Pagination */}
           {!loading && filtered.length > 0 && (
-            <div style={{
+            <Box sx={{
               padding: "12px 16px",
               borderTop: "0.625px solid #4A4A4A",
               background: "rgba(58,58,58,0.3)",
               display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
-              <span style={{
+              <Typography sx={{
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
                 fontWeight: 400,
-                lineHeight: "20px",
-                letterSpacing: "-0.150391px",
                 color: "#A0A0A0",
               }}>
                 Showing {start + 1} to {Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length} entries
-              </span>
-              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              </Typography>
+              <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                 {/* Previous */}
-                <button
+                <Button
                   disabled={safePage === 1}
                   onClick={() => setPage((p) => p - 1)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "4px",
-                    padding: "6px 10px", height: "32px",
-                    background: "transparent", border: "0.625px solid #4A4A4A",
-                    borderRadius: "8px", color: safePage === 1 ? "#4A4A4A" : "#FFFFFF",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px", fontWeight: 500,
-                    lineHeight: "20px",
-                    letterSpacing: "-0.150391px",
-                    cursor: safePage === 1 ? "default" : "pointer",
+                  variant="outlined"
+                  startIcon={<ChevronLeft size={14} />}
+                  sx={{
+                    height: "32px",
+                    px: "10px",
+                    bgcolor: "transparent",
+                    borderColor: "#4A4A4A",
+                    borderRadius: "8px",
+                    color: safePage === 1 ? "#4A4A4A" : "#FFFFFF",
+                    textTransform: "none",
+                    fontSize: "14px",
+                    fontWeight: 500,
                     opacity: safePage === 1 ? 0.5 : 1,
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.05)",
+                      borderColor: "#666666",
+                    }
                   }}
                 >
-                  <ChevronLeft size={14} /> Previous
-                </button>
+                  Previous
+                </Button>
 
                 {/* Page numbers */}
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <button key={n} onClick={() => setPage(n)} style={{
-                    width: "32px", height: "32px",
-                    background: n === safePage ? "#1FC3EB" : "transparent",
-                    border: n === safePage ? "none" : "0.625px solid #4A4A4A",
-                    borderRadius: "8px",
-                    color: n === safePage ? "#0A0A0A" : "#FFFFFF",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px", fontWeight: 500,
-                    lineHeight: "20px",
-                    letterSpacing: "-0.150391px",
-                    cursor: "pointer",
-                  }}>
+                  <Button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    variant={n === safePage ? "contained" : "outlined"}
+                    sx={{
+                      minWidth: "32px",
+                      width: "32px",
+                      height: "32px",
+                      p: 0,
+                      bgcolor: n === safePage ? "#1FC3EB" : "transparent",
+                      borderColor: n === safePage ? "none" : "#4A4A4A",
+                      borderRadius: "8px",
+                      color: n === safePage ? "#0A0A0A" : "#FFFFFF",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      "&:hover": {
+                        bgcolor: n === safePage ? "#0DB5D8" : "rgba(255,255,255,0.05)",
+                      }
+                    }}
+                  >
                     {n}
-                  </button>
+                  </Button>
                 ))}
 
                 {/* Next */}
-                <button
+                <Button
                   disabled={safePage === totalPages}
                   onClick={() => setPage((p) => p + 1)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "4px",
-                    padding: "6px 10px", height: "32px",
-                    background: "transparent", border: "0.625px solid #4A4A4A",
-                    borderRadius: "8px", color: safePage === totalPages ? "#4A4A4A" : "#FFFFFF",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px", fontWeight: 500,
-                    lineHeight: "20px",
-                    letterSpacing: "-0.150391px",
-                    cursor: safePage === totalPages ? "default" : "pointer",
+                  variant="outlined"
+                  endIcon={<ChevronRight size={14} />}
+                  sx={{
+                    height: "32px",
+                    px: "10px",
+                    bgcolor: "transparent",
+                    borderColor: "#4A4A4A",
+                    borderRadius: "8px",
+                    color: safePage === totalPages ? "#4A4A4A" : "#FFFFFF",
+                    textTransform: "none",
+                    fontSize: "14px",
+                    fontWeight: 500,
                     opacity: safePage === totalPages ? 0.5 : 1,
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.05)",
+                      borderColor: "#666666",
+                    }
                   }}
                 >
-                  Next <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
+                  Next
+                </Button>
+              </Stack>
+            </Box>
           )}
-        </div>
+        </Box>
 
-      </div>
-    </div>
+      </Box>
+    </Paper>
   );
 }

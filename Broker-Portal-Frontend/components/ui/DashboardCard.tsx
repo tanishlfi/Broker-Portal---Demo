@@ -1,4 +1,8 @@
 import React from "react";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
+import Typography from "@mui/material/Typography";
 
 interface DashboardCardProps {
   title: string;
@@ -20,57 +24,86 @@ export default function DashboardCard({
   description,
   icon,
   onClick,
-  className,
   style,
-  iconWrapperClassName,
   iconWrapperStyle,
-  titleClassName,
   titleStyle,
-  descriptionClassName,
   descriptionStyle,
 }: DashboardCardProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`group flex h-full w-full flex-col rounded-lg p-6 text-left ${className ?? ""}`}
-      style={{
-        background: "#2d2d2d",
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderColor: "rgb(58, 58, 58)",
-        cursor: onClick ? "pointer" : "default",
-        transition: "border-color 0.2s, background 0.2s",
-        ...style,
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.borderColor = "#1FC3EB";
-        el.style.background = "rgba(31, 195, 235, 0.05)";
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.borderColor = "rgb(58, 58, 58)";
-        el.style.background = "#2d2d2d";
+  const cardContent = (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        width: "100%",
+        p: "24px",
       }}
     >
-      <div
-        className={`mb-4 transition-transform group-hover:scale-110 ${iconWrapperClassName ?? ""}`}
-        style={{ color: "#1FC3EB", ...iconWrapperStyle }}
+      <Box
+        sx={{
+          mb: "16px",
+          color: "#1FC3EB",
+          transition: "transform 0.2s ease-in-out",
+          ".MuiCardActionArea-root:hover &": {
+            transform: "scale(1.1)",
+          },
+          ...iconWrapperStyle,
+        }}
       >
         {icon}
-      </div>
-      <h3
-        style={{ fontSize: "1.125rem", fontWeight: 500, lineHeight: 1.5, color: "#ffffff", ...titleStyle }}
-        className={`mb-2 ${titleClassName ?? ""}`}
+      </Box>
+      <Typography
+        variant="h3"
+        sx={{
+          fontSize: "1.125rem",
+          fontWeight: 500,
+          lineHeight: 1.5,
+          color: "#ffffff",
+          mb: "8px",
+          ...titleStyle,
+        }}
       >
         {title}
-      </h3>
-      <p
-        style={{ fontSize: "0.875rem", color: "#9ca3af", lineHeight: 1.5, ...descriptionStyle }}
-        className={`flex-1 ${descriptionClassName ?? ""}`}
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{
+          fontSize: "0.875rem",
+          color: "#9ca3af",
+          lineHeight: 1.5,
+          flex: 1,
+          ...descriptionStyle,
+        }}
       >
         {description}
-      </p>
-    </button>
+      </Typography>
+    </Box>
+  );
+
+  return (
+    <Card
+      sx={{
+        bgcolor: "#2d2d2d",
+        border: "1px solid rgb(58, 58, 58)",
+        borderRadius: "8px",
+        height: "100%",
+        width: "100%",
+        boxShadow: "none",
+        transition: "all 0.2s ease",
+        "&:hover": {
+          borderColor: "#1FC3EB",
+          bgcolor: "rgba(31, 195, 235, 0.05)",
+        },
+        ...style,
+      }}
+    >
+      {onClick ? (
+        <CardActionArea onClick={onClick} sx={{ height: "100%", width: "100%" }}>
+          {cardContent}
+        </CardActionArea>
+      ) : (
+        cardContent
+      )}
+    </Card>
   );
 }

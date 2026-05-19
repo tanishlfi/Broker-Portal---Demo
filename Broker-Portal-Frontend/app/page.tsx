@@ -52,19 +52,19 @@ export default function Home() {
       clearCookie("bp_token");
       clearCookie("bp_broker_id");
 
-      router.replace("/brokerPortal/dashboard");
+      router.replace("/dashboard");
       return;
     }
 
     // No cookie — check if existing token in localStorage is still valid
     if (isTokenValid()) {
-      router.replace("/brokerPortal/dashboard");
+      router.replace("/dashboard");
     } else {
       localStorage.removeItem("bp_token");
 
       // In local dev, skip auth and go straight to dashboard
       if (process.env.NODE_ENV === "development") {
-        router.replace("/brokerPortal/dashboard");
+        router.replace("/dashboard");
       }
       // In production with no token, stay on page (shouldn't happen in multizone flow)
     }

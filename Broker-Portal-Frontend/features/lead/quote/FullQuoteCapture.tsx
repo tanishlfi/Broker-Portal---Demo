@@ -16,6 +16,10 @@ import CustomInput from "@/components/ui/CustomInput";
 import CustomSelect from "@/components/ui/CustomSelect";
 import OptionToggleGroup from "@/components/ui/OptionToggleGroup";
 import AdjustFullCoverStep from "./components/AdjustFullCoverStep";
+import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
+import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
+import { useRouter } from "next/navigation";
+
 
 interface Employee {
   id: string; name: string; firstName: string; surname: string;
@@ -30,6 +34,7 @@ interface FullQuoteCaptureProps {
   leadReference?: string;
   quickQuoteData?: any;
   quoteReference?: string;
+  leadId: string;
   onBack: () => void;
   onGenerate: (data: any) => Promise<any>;
 }
@@ -51,10 +56,19 @@ const STEPS = ["Quote Details", "Employee Information", "Cover Adjustments"];
 
 const EMPTY_FORM = { firstName: "", surname: "", dob: "", salary: "", idType: "SA ID", identification: "" };
 
-export default function FullQuoteCapture({ companyName = "—", leadReference = "—", quickQuoteData, quoteReference, onBack, onGenerate }: FullQuoteCaptureProps) {
+// ── component ──────────────────────────────────────────────────────────────────
+
+export default function FullQuoteCapture({ companyName = "—", leadReference = "—", quickQuoteData, quoteReference, leadId, onBack, onGenerate }: FullQuoteCaptureProps) {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [coverMode, setCoverMode] = useState<"multiple" | "equal">("multiple");
+  const [createdQuote, setCreatedQuote] = useState<{ id: string; quoteReference: string } | null>(null);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [isGeneratingForApproval, setIsGeneratingForApproval] = useState(false);
 
   // Step 1 fields
   const [employees, setEmployeesCount] = useState(quickQuoteData?.employees || "");
@@ -167,7 +181,37 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
   };
 
   const handleNext = async () => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep === 1) {
+      if (employeeList.length === 0) return;
+      setIsImporting(true);
+      try {
+        const { importEmployees } = await import('@/lib/api/employees');
+        const formattedEmployees = employeeList.map(e => ({
+          firstName: e.firstName || e.name.split(' ')[0] || "Unknown",
+          surname: e.surname || e.name.split(' ').slice(1).join(' ') || "Unknown",
+          gender: e.gender && ["M", "F", "Other"].includes(e.gender.charAt(0).toUpperCase())
+            ? e.gender.charAt(0).toUpperCase()
+            : "M",
+          income: parseFloat(e.income || e.salary || "1000") || 1000,
+          dateOfBirth: e.dob ? (e.dob.includes('/') ? e.dob.split('/').reverse().join('-') : e.dob) : "2000-01-01",
+          email: e.email || "user@example.com",
+          cellNumber: e.cellNumber || "0821234567",
+          employmentStartDate: e.startDate ? (e.startDate.includes('/') ? e.startDate.split('/').reverse().join('-') : e.startDate) : "2026-05-18",
+          idNumber: e.identification || "1234567890123",
+          nationality: e.nationality || "South African",
+        }));
+
+        await importEmployees({ lead_id: leadId, employees: formattedEmployees });
+        setIsImporting(false);
+        setCurrentStep(s => s + 1);
+      } catch (err: any) {
+        setIsImporting(false);
+        console.error("Employee import failed:", err);
+        const errMsg = err.message || JSON.stringify(err.errors) || "Unknown error";
+        alert("Failed to import employees: " + errMsg);
+        return;
+      }
+    } else if (currentStep < STEPS.length - 1) {
       setCurrentStep(s => s + 1);
     } else {
       const data = {
@@ -183,9 +227,9 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
         industry: industry || null,
         generate_options: generateOptions,
         benefits: [
-          { benefit_type: "Life Cover", multiple: lifeCover },
+          { benefit_type: "Life Cover", [coverMode === "multiple" ? "multiple" : "cover_amount"]: lifeCover },
           { benefit_type: "Funeral Cover", cover_amount: funeralCover },
-          { benefit_type: "Occupational Disability", multiple: occupationalDisability },
+          { benefit_type: "Occupational Disability", [coverMode === "multiple" ? "multiple" : "cover_amount"]: occupationalDisability },
           ...(additionalBenefits.augmentation ? [{ benefit_type: "Augmentation" }] : []),
           ...(additionalBenefits.commutingJourney ? [{ benefit_type: "Commuting Journey" }] : []),
           ...(additionalBenefits.riotAndStrike ? [{ benefit_type: "Riot and Strike" }] : []),
@@ -201,6 +245,46 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
       } catch (err) {
         // Error is handled in the parent component
       }
+    }
+  };
+
+  const handleApproveQuoteDirectly = async () => {
+    setIsGeneratingForApproval(true);
+    const data = {
+      product_id: productId || undefined,
+      rma_member_number: rmaNumber || null,
+      is_permanent_employees: permanentlyEmployed === "Yes",
+      is_actively_at_work: activelyAtWork === "Yes",
+      is_replacing_policy: existingPolicy === "Yes",
+      replaced_policy_includes_disability: existingPolicy === "Yes" ? replacedPolicyIncludesDisability === "Yes" : null,
+      is_policy_older_than_6_months: existingPolicy === "Yes" ? isPolicyOlderThan6Months === "Yes" : null,
+      replaced_policy_start_date: (existingPolicy === "Yes" && replacedPolicyStartDate) ? replacedPolicyStartDate : null,
+      province: province || null,
+      industry: industry || null,
+      generate_options: generateOptions,
+      benefits: [
+        { benefit_type: "Life Cover", [coverMode === "multiple" ? "multiple" : "cover_amount"]: lifeCover },
+        { benefit_type: "Funeral Cover", cover_amount: funeralCover },
+        { benefit_type: "Occupational Disability", [coverMode === "multiple" ? "multiple" : "cover_amount"]: occupationalDisability },
+        ...(additionalBenefits.augmentation ? [{ benefit_type: "Augmentation" }] : []),
+        ...(additionalBenefits.commutingJourney ? [{ benefit_type: "Commuting Journey" }] : []),
+        ...(additionalBenefits.riotAndStrike ? [{ benefit_type: "Riot and Strike" }] : []),
+        ...(additionalBenefits.comprehensivePersonalAccident ? [{ benefit_type: "Comprehensive Personal Accident" }] : []),
+        ...(additionalBenefits.classicPersonalAccident ? [{ benefit_type: "Classic Personal Accident" }] : []),
+      ],
+      employees: employeeList,
+      employeeFile: employeeFile,
+    };
+    try {
+      const quote = await onGenerate(data);
+      if (quote) {
+        setCreatedQuote({ id: quote.quoteId, quoteReference: quote.quoteReference });
+        setShowCheckoutModal(true);
+      }
+    } catch (err) {
+      console.error("Failed to generate quote for approval:", err);
+    } finally {
+      setIsGeneratingForApproval(false);
     }
   };
 
@@ -274,7 +358,7 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                 <OptionToggleGroup
                   options={["Yes", "No"]}
                   value={permanentlyEmployed}
-                  onChange={val => setPermanentlyEmployed(val as "Yes" | "No")}
+                  onChange={(val: string) => setPermanentlyEmployed(val as "Yes" | "No")}
                   buttonStyle={yesNoButtonStyle}
                 />
               </div>
@@ -287,7 +371,7 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                 <OptionToggleGroup
                   options={["Yes", "No"]}
                   value={activelyAtWork}
-                  onChange={val => setActivelyAtWork(val as "Yes" | "No")}
+                  onChange={(val: string) => setActivelyAtWork(val as "Yes" | "No")}
                   buttonStyle={yesNoButtonStyle}
                 />
               </div>
@@ -300,7 +384,7 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                 <OptionToggleGroup
                   options={["Yes", "No"]}
                   value={existingPolicy}
-                  onChange={val => setExistingPolicy(val as "Yes" | "No")}
+                  onChange={(val: string) => setExistingPolicy(val as "Yes" | "No")}
                   buttonStyle={yesNoButtonStyle}
                 />
               </div>
@@ -315,7 +399,7 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                     <OptionToggleGroup
                       options={["Yes", "No"]}
                       value={replacedPolicyIncludesDisability}
-                      onChange={val => setReplacedPolicyIncludesDisability(val as "Yes" | "No")}
+                      onChange={(val: string) => setReplacedPolicyIncludesDisability(val as "Yes" | "No")}
                       buttonStyle={yesNoButtonStyle}
                     />
                   </div>
@@ -328,7 +412,7 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                     <OptionToggleGroup
                       options={["Yes", "No"]}
                       value={isPolicyOlderThan6Months}
-                      onChange={val => setIsPolicyOlderThan6Months(val as "Yes" | "No")}
+                      onChange={(val: string) => setIsPolicyOlderThan6Months(val as "Yes" | "No")}
                       buttonStyle={yesNoButtonStyle}
                     />
                   </div>
@@ -575,6 +659,8 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
               industry={industry}
               averageAge={averageAge}
               setProductId={setProductId}
+              coverMode={coverMode}
+              setCoverMode={setCoverMode}
             />
           )}
         </>
@@ -583,14 +669,58 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
       {/* Back + Generate Quote */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "24px" }}>
         <BackButton onClick={handleBack} />
-        {currentStep < STEPS.length - 1 ? (
-          <NextButton label="Next Step" onClick={handleNext} />
-        ) : (
-          <NextButton label="Generate Quote" onClick={handleNext} />
-        )}
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          {currentStep === 2 && (
+            <NextButton
+              label={isGeneratingForApproval ? "Generating..." : "Approve Quote"}
+              onClick={handleApproveQuoteDirectly}
+              disabled={isGeneratingForApproval}
+            />
+          )}
+          {currentStep < STEPS.length - 1 ? (
+            <NextButton label={isImporting ? "Uploading..." : "Next Step"} onClick={handleNext} disabled={isImporting || (currentStep === 1 && employeeList.length === 0)} />
+          ) : (
+            <NextButton label="Generate Quote" onClick={handleNext} />
+          )}
+        </div>
       </div>
 
       {showModal && <DownloadQuoteModal onClose={() => setShowModal(false)} />}
+
+      {showCheckoutModal && createdQuote && (
+        <CheckoutInfoModal
+          isOpen={showCheckoutModal}
+          onClose={() => {
+            setShowCheckoutModal(false);
+            setCreatedQuote(null);
+          }}
+          quoteId={createdQuote.quoteReference}
+          companyName={companyName}
+          onNext={async (onboardingData) => {
+            // TODO: Implement onboarding details save when API endpoint is available
+            setShowCheckoutModal(false);
+            setShowApproveModal(true);
+          }}
+        />
+      )}
+
+      {showApproveModal && createdQuote && (
+        <ApproveQuoteModal
+          isOpen={showApproveModal}
+          onClose={() => {
+            setShowApproveModal(false);
+            setCreatedQuote(null);
+          }}
+          quoteId={createdQuote.id}
+          quoteReference={createdQuote.quoteReference}
+          companyName={companyName}
+          onSendOTP={() => {
+            setShowApproveModal(false);
+            setCreatedQuote(null);
+            router.push("/quotes?tab=onboarding");
+          }}
+        />
+      )}
     </div>
   );
 }

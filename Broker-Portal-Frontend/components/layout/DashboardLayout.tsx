@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import Box from "@mui/material/Box";
 import Sidebar from "./Sidebar";
 import DashboardHeader from "./DashboardHeader";
 
@@ -50,13 +51,21 @@ export default function DashboardLayout({ children, title = "", subtitle, header
   return (
     <>
       <Sidebar />
-      <div
-        className="flex flex-col flex-1 overflow-y-auto h-screen"
-        style={{ marginLeft: "var(--sidebar-width)", background: "var(--background)", fontFamily: "'Inter', sans-serif" }}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          overflowY: "auto",
+          height: "100vh",
+          marginLeft: "var(--sidebar-width)",
+          background: "var(--background)",
+          fontFamily: "'Inter', sans-serif",
+        }}
       >
         <DashboardHeader title={title} subtitle={subtitle} showUser={true} />
         {children}
-      </div>
+      </Box>
     </>
   );
 }

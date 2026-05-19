@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import ToggleButton from "@mui/material/ToggleButton";
+import FormHelperText from "@mui/material/FormHelperText";
 
 interface OptionItem {
   label: string;
@@ -14,6 +17,7 @@ interface OptionToggleGroupProps {
   style?: React.CSSProperties;
   buttonStyle?: React.CSSProperties;
   error?: string;
+  orientation?: "horizontal" | "vertical";
 }
 
 export function OptionToggleGroup({
@@ -23,57 +27,69 @@ export function OptionToggleGroup({
   style,
   buttonStyle,
   error,
+  orientation = "horizontal",
 }: OptionToggleGroupProps) {
   const formattedOptions: OptionItem[] = options.map((opt) =>
     typeof opt === "string" ? { label: opt, value: opt } : opt
   );
 
+  const handleToggle = (
+    event: React.MouseEvent<HTMLElement>,
+    newValue: string | null
+  ) => {
+    if (newValue !== null) {
+      onChange(newValue);
+    }
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", ...style }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%" }}>
+      <ToggleButtonGroup
+        value={value}
+        exclusive
+        onChange={handleToggle}
+        orientation={orientation}
+        style={{
+          gap: "8px",
+          flexWrap: orientation === "vertical" ? "nowrap" : "wrap",
+          flexDirection: orientation === "vertical" ? "column" : "row",
+          width: "100%",
+          ...style
+        }}
+        sx={{
+          "& .MuiToggleButtonGroup-grouped": {
+            border: `1px solid ${error ? "#ef4444" : "#333333"} !important`,
+            borderRadius: "8px !important",
+            margin: "0 !important",
+            width: orientation === "vertical" ? "100%" : undefined,
+          },
+        }}
+      >
         {formattedOptions.map((option) => {
-          const active = value === option.value;
           return (
-            <button
+            <ToggleButton
               key={option.value}
-              type="button"
-              onClick={() => onChange(option.value)}
+              value={option.value}
               style={{
                 height: "36px",
                 padding: "0 20px",
-                borderRadius: "6px",
-                border: `1px solid ${active ? "#1FC3EB" : error ? "#ef4444" : "#30363D"}`,
-                background: active ? "rgba(31,195,235,0.15)" : "#2a2a2a",
-                color: active ? "#1FC3EB" : "#9ca3af",
-                fontSize: "0.875rem",
-                fontWeight: active ? 500 : 400,
-                cursor: "pointer",
-                transition: "all 0.15s",
-                boxSizing: "border-box",
+                width: orientation === "vertical" ? "100%" : undefined,
+                justifyContent: orientation === "vertical" ? "flex-start" : "center",
                 ...buttonStyle,
               }}
-              onMouseEnter={(e) => {
-                if (!active) {
-                  e.currentTarget.style.borderColor = "rgba(31,195,235,0.5)";
-                  e.currentTarget.style.color = "#ffffff";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!active) {
-                  e.currentTarget.style.borderColor = error ? "#ef4444" : "#30363D";
-                  e.currentTarget.style.color = "#9ca3af";
-                }
+              sx={{
+                borderColor: error ? "#ef4444 !important" : undefined,
               }}
             >
               {option.label}
-            </button>
+            </ToggleButton>
           );
         })}
-      </div>
+      </ToggleButtonGroup>
       {error && (
-        <p style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: "4px", margin: "4px 0 0 0" }}>
+        <FormHelperText style={{ color: "#ef4444", marginLeft: 0, marginTop: "4px", fontSize: "0.75rem" }}>
           {error}
-        </p>
+        </FormHelperText>
       )}
     </div>
   );

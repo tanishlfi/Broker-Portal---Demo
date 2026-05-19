@@ -26,6 +26,8 @@ interface AdjustFullCoverStepProps {
   industry: string;
   averageAge: string;
   setProductId?: (id: string) => void;
+  coverMode?: "multiple" | "equal";
+  setCoverMode?: (mode: "multiple" | "equal") => void;
 }
 
 export function AdjustFullCoverStep({
@@ -43,6 +45,8 @@ export function AdjustFullCoverStep({
   industry,
   averageAge,
   setProductId,
+  coverMode = "multiple",
+  setCoverMode,
 }: AdjustFullCoverStepProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [totalMonthlyPremium, setTotalMonthlyPremium] = useState(0);
@@ -58,6 +62,16 @@ export function AdjustFullCoverStep({
   } = additionalBenefits;
 
   useEffect(() => {
+    if (coverMode === "multiple") {
+      setLifeCover(1.5);
+      setOccupationalDisability(2.5);
+    } else {
+      setLifeCover(100000);
+      setOccupationalDisability(100000);
+    }
+  }, [coverMode, setLifeCover, setOccupationalDisability]);
+
+  useEffect(() => {
     getProductList()
       .then((data) => {
         setProducts(data);
@@ -67,18 +81,14 @@ export function AdjustFullCoverStep({
         data.forEach((p) => {
           p.benefits.forEach((b) => {
             const type = b.benefit_type.toUpperCase();
-            if (type === "LIFE" && b.default_cover_amount) {
-              setLifeCover(1.5);
-            } else if (type === "ACCIDENT" || type === "OCCUPATIONAL DISABILITY") {
-              setOccupationalDisability(2.5);
-            } else if (type === "FUNERAL" && b.default_cover_amount) {
+            if (type === "FUNERAL" && b.default_cover_amount) {
               setFuneralCover(b.default_cover_amount);
             }
           });
         });
       })
       .catch(console.error);
-  }, [setLifeCover, setOccupationalDisability, setFuneralCover, setProductId]);
+  }, [setFuneralCover, setProductId]);
 
   const updatePricing = useCallback(async () => {
     if (products.length === 0) return;
@@ -103,10 +113,18 @@ export function AdjustFullCoverStep({
             const type = b.benefit_type.toUpperCase();
             if (type === "LIFE") {
               isSelected = true;
-              multiple = lifeCover;
+              if (coverMode === "multiple") {
+                multiple = lifeCover;
+              } else {
+                coverAmount = lifeCover;
+              }
             } else if (type === "ACCIDENT" || type === "OCCUPATIONAL DISABILITY") {
               isSelected = true;
-              multiple = occupationalDisability;
+              if (coverMode === "multiple") {
+                multiple = occupationalDisability;
+              } else {
+                coverAmount = occupationalDisability;
+              }
             } else if (type === "FUNERAL") {
               isSelected = true;
               coverAmount = funeralCover;
@@ -124,7 +142,7 @@ export function AdjustFullCoverStep({
             return {
               benefit_id: b.benefit_id,
               benefit_type: b.benefit_type,
-              cover_amount: coverAmount,
+              cover_amount: coverAmount > 0 ? coverAmount : undefined,
               multiple: multiple > 0 ? multiple : undefined,
               is_selected: isSelected,
             };
@@ -153,6 +171,7 @@ export function AdjustFullCoverStep({
     industry,
     averageIncome,
     averageAge,
+    coverMode,
   ]);
 
   useEffect(() => {
@@ -207,12 +226,13 @@ export function AdjustFullCoverStep({
       <div style={{ background: "#1E1E1E", border: "1px solid #273444", borderRadius: "10px", padding: "12px" }}>
         <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
           <button
+            onClick={() => setCoverMode?.("multiple")}
             style={{
               padding: "6px 10px",
-              background: "#2C3239",
+              background: coverMode === "multiple" ? "#2C3239" : "transparent",
               border: "1px solid #3A4149",
               borderRadius: "6px",
-              color: "#E5E7EB",
+              color: coverMode === "multiple" ? "#E5E7EB" : "#9CA3AF",
               fontSize: "0.72rem",
               cursor: "pointer",
             }}
@@ -220,12 +240,13 @@ export function AdjustFullCoverStep({
             Multiple of Salary
           </button>
           <button
+            onClick={() => setCoverMode?.("equal")}
             style={{
               padding: "6px 10px",
-              background: "transparent",
+              background: coverMode === "equal" ? "#2C3239" : "transparent",
               border: "1px solid #3A4149",
               borderRadius: "6px",
-              color: "#9CA3AF",
+              color: coverMode === "equal" ? "#E5E7EB" : "#9CA3AF",
               fontSize: "0.72rem",
               cursor: "pointer",
             }}
@@ -249,13 +270,15 @@ export function AdjustFullCoverStep({
           <label
             style={{ fontSize: "0.75rem", color: "#d1d5db", fontWeight: 500, display: "block", marginBottom: "8px" }}
           >
-            Life cover - {lifeCover}x annual salary (max R2M)
+            {coverMode === "multiple"
+              ? `Life cover - ${lifeCover}x annual salary (max R2M)`
+              : `Life cover - R${lifeCover.toLocaleString("en-ZA")} (max R2M)`}
           </label>
           <input
             type="range"
-            min="0.5"
-            max="5"
-            step="0.5"
+            min={coverMode === "multiple" ? 0.5 : 50000}
+            max={coverMode === "multiple" ? 5 : 2000000}
+            step={coverMode === "multiple" ? 0.5 : 10000}
             value={lifeCover}
             onChange={(e) => setLifeCover(Number(e.target.value))}
             className="adjust-slider"
@@ -264,8 +287,8 @@ export function AdjustFullCoverStep({
           <div
             style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "#6b7280", marginTop: "4px" }}
           >
-            <span>0.5x annual salary</span>
-            <span>5x Annual Salary</span>
+            <span>{coverMode === "multiple" ? "0.5x annual salary" : "R50,000"}</span>
+            <span>{coverMode === "multiple" ? "5x Annual Salary" : "R2,000,000"}</span>
           </div>
           <ul style={{ fontSize: "0.67rem", color: "#9ca3af", margin: "8px 0 0 0", paddingLeft: "16px" }}>
             <li>0.19% of salary up to a max of R317 per employee p/m*</li>
@@ -278,13 +301,15 @@ export function AdjustFullCoverStep({
           <label
             style={{ fontSize: "0.75rem", color: "#d1d5db", fontWeight: 500, display: "block", marginBottom: "8px" }}
           >
-            Occupational Disability cover - {occupationalDisability}x annual salary (max R2M)
+            {coverMode === "multiple"
+              ? `Occupational Disability cover - ${occupationalDisability}x annual salary (max R2M)`
+              : `Occupational Disability cover - R${occupationalDisability.toLocaleString("en-ZA")} (max R2M)`}
           </label>
           <input
             type="range"
-            min="0.5"
-            max="5"
-            step="0.5"
+            min={coverMode === "multiple" ? 0.5 : 5000}
+            max={coverMode === "multiple" ? 5 : 200000}
+            step={coverMode === "multiple" ? 0.5 : 1000}
             value={occupationalDisability}
             onChange={(e) => setOccupationalDisability(Number(e.target.value))}
             className="adjust-slider"
@@ -293,8 +318,8 @@ export function AdjustFullCoverStep({
           <div
             style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "#6b7280", marginTop: "4px" }}
           >
-            <span>0.5x annual salary</span>
-            <span>5x Annual Salary</span>
+            <span>{coverMode === "multiple" ? "0.5x annual salary" : "R5,000"}</span>
+            <span>{coverMode === "multiple" ? "5x Annual Salary" : "R200,000"}</span>
           </div>
           <ul style={{ fontSize: "0.67rem", color: "#9ca3af", margin: "8px 0 0 0", paddingLeft: "16px" }}>
             <li>0.19% of salary up to a max of R869 per employee p/m*</li>

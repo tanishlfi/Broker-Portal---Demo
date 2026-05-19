@@ -9,6 +9,7 @@ interface ApproveQuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   quoteId: string;
+  quoteReference: string;
   companyName: string;
   contactFirstName?: string;
   contactLastName?: string;
@@ -21,6 +22,7 @@ export default function ApproveQuoteModal({
   isOpen,
   onClose,
   quoteId,
+  quoteReference,
   companyName,
   contactFirstName,
   contactLastName,
@@ -100,7 +102,7 @@ export default function ApproveQuoteModal({
               color: "#FFFFFF",
             }}
           >
-            Approve Quote ({quoteId})
+            Approve Quote ({quoteReference})
           </h2>
         </div>
 

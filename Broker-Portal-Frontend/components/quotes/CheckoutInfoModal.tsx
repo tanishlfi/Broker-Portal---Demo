@@ -4,7 +4,32 @@ import React, { useState } from "react";
 import { X, Lock, Info } from "lucide-react";
 import CustomInput from "@/components/ui/CustomInput";
 import CustomSelect from "@/components/ui/CustomSelect";
-import OptionToggleGroup from "@/components/ui/OptionToggleGroup";
+interface RadioGroupProps {
+  name: string;
+  options: string[];
+  value: string;
+  onChange: (val: string) => void;
+}
+
+function CustomRadioGroup({ name, options, value, onChange }: RadioGroupProps) {
+  return (
+    <div className="flex flex-col gap-3 mt-2">
+      {options.map((opt) => (
+        <label key={opt} className="flex items-center gap-2 cursor-pointer text-[15px] text-white font-sans">
+          <input
+            type="radio"
+            name={name}
+            value={opt}
+            checked={value === opt}
+            onChange={() => onChange(opt)}
+            className="w-[18px] h-[18px] accent-[#1FC3EB] cursor-pointer"
+          />
+          {opt}
+        </label>
+      ))}
+    </div>
+  );
+}
 
 interface CheckoutInfoModalProps {
   isOpen: boolean;
@@ -75,12 +100,17 @@ export default function CheckoutInfoModal({
     dob.trim() !== "" &&
     cellphone.trim() !== "" &&
     idNumber.trim() !== "" &&
+    (hasSaId === "Yes" || passportExpiry.trim() !== "") &&
+    nationality.trim() !== "" &&
+    homeAddress.trim() !== "" &&
     emailForPolicy.trim() !== "" &&
     emailForInvoice.trim() !== "" &&
     bossFirstName.trim() !== "" &&
     bossSurname.trim() !== "" &&
     bossDob.trim() !== "" &&
     bossIdNumber.trim() !== "" &&
+    (bossHasSaId === "Yes" || bossPassportExpiry.trim() !== "") &&
+    bossNationality.trim() !== "" &&
     registeredName.trim() !== "" &&
     tradingName.trim() !== "" &&
     registrationNo.trim() !== "" &&
@@ -90,6 +120,7 @@ export default function CheckoutInfoModal({
     acknowledged &&
     accountNumber.trim() !== "" &&
     debitDay !== "";
+
 
   const handleNext = () => {
     onNext({
@@ -126,8 +157,8 @@ export default function CheckoutInfoModal({
       registered_address: registeredAddress,
       physical_address: physicalAddress,
       source_of_funds: sourceOfFunds,
-      tax_number: taxNumber,
-      vat_number: vatNumber,
+      company_tax_number: taxNumber,
+      company_vat_number: vatNumber,
       // Payment Details
       bank_name: bank,
       bank_account_number: accountNumber,
@@ -201,7 +232,8 @@ export default function CheckoutInfoModal({
             <label style={labelStyle}>
               Are you authorised to act on behalf of the organisation?
             </label>
-            <OptionToggleGroup
+            <CustomRadioGroup
+              name="authorised"
               options={["Yes", "No"]}
               value={authorised}
               onChange={setAuthorised}
@@ -217,7 +249,8 @@ export default function CheckoutInfoModal({
               <label style={labelStyle}>
                 Are you a director or member of the organisation?
               </label>
-              <OptionToggleGroup
+              <CustomRadioGroup
+                name="isDirector"
                 options={["Yes", "No"]}
                 value={isDirector}
                 onChange={setIsDirector}
@@ -225,7 +258,7 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Inputs: First Name & Surname */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="space-y-6">
               <div>
                 <label style={labelStyle}>First name</label>
                 <CustomInput
@@ -258,7 +291,7 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Cellphone & Landline */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="space-y-6">
               <div>
                 <label style={labelStyle}>Cellphone</label>
                 <CustomInput
@@ -284,7 +317,8 @@ export default function CheckoutInfoModal({
               <label style={labelStyle}>
                 Do you have a South African ID Number?
               </label>
-              <OptionToggleGroup
+              <CustomRadioGroup
+                name="hasSaId"
                 options={["Yes", "No"]}
                 value={hasSaId}
                 onChange={setHasSaId}
@@ -366,7 +400,7 @@ export default function CheckoutInfoModal({
             <h4 style={sectionHeaderStyle}>Boss / MD / CEO details</h4>
 
             {/* First Name & Surname */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="space-y-6">
               <div>
                 <label style={labelStyle}>First name</label>
                 <CustomInput
@@ -403,7 +437,8 @@ export default function CheckoutInfoModal({
               <label style={labelStyle}>
                 Does your Boss / MD / CEO have a South African ID Number?
               </label>
-              <OptionToggleGroup
+              <CustomRadioGroup
+                name="bossHasSaId"
                 options={["Yes", "No"]}
                 value={bossHasSaId}
                 onChange={setBossHasSaId}
@@ -483,7 +518,8 @@ export default function CheckoutInfoModal({
             {/* Country of Incorporation */}
             <div className="space-y-4">
               <label style={labelStyle}>Country of Incorporation/Registration</label>
-              <OptionToggleGroup
+              <CustomRadioGroup
+                name="countryOfInc"
                 options={["South Africa", "Other"]}
                 value={countryOfInc}
                 onChange={setCountryOfInc}
@@ -512,7 +548,7 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Registration No & Stock Exchange */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="space-y-6">
               <div>
                 <label style={labelStyle}>Registration no</label>
                 <CustomInput
@@ -558,7 +594,8 @@ export default function CheckoutInfoModal({
             {/* Source of Funds */}
             <div className="space-y-4">
               <label style={labelStyle}>Source of Funds</label>
-              <OptionToggleGroup
+              <CustomRadioGroup
+                name="sourceOfFunds"
                 options={["Company profits", "Investment returns", "Donations", "Government"]}
                 value={sourceOfFunds}
                 onChange={setSourceOfFunds}
@@ -566,7 +603,7 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Tax & VAT Number */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="space-y-6">
               <div>
                 <label style={labelStyle}>Company Tax Number</label>
                 <CustomInput
@@ -662,7 +699,8 @@ export default function CheckoutInfoModal({
             {/* Bank Account Type */}
             <div className="space-y-4">
               <label style={labelStyle}>Bank account type</label>
-              <OptionToggleGroup
+              <CustomRadioGroup
+                name="accountType"
                 options={["Cheque", "Current", "Savings", "Transmission"]}
                 value={accountType}
                 onChange={setAccountType}

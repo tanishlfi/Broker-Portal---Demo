@@ -88,6 +88,13 @@ export interface Quote {
   contactMobile?: string;
   validUntilDays?: number;
   createdAt: string;
+  benefitBreakdown?: Array<{
+    benefit_name: string;
+    benefit_type: string;
+    cover_amount: number;
+    premium_amount: number;
+    premium_rate: number;
+  }>;
 }
 
 // ── API functions ──────────────────────────────────────────────────────────────
@@ -160,19 +167,58 @@ export async function updateQuoteStatus(
   });
 }
 
+export interface QuoteFilterParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
+  search?: string;
+  searchFields?: string | string[];
+  quote_status?: string;
+  quote_type?: string;
+  clientName?: string;
+}
+
 /** GET /broker/quotes/representative/{representativeId} — get all quotes for a specific representative */
-export async function getQuotes(representativeId?: string): Promise<Quote[]> {
+export async function getQuotes(
+  representativeId?: string,
+  filters?: QuoteFilterParams
+): Promise<Quote[] & { pagination?: any }> {
   const repId = representativeId || "00000000-0000-0000-0000-000000000000";
+  const params = new URLSearchParams();
+
+  if (filters) {
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== "") {
+        if (Array.isArray(val)) {
+          params.append(key, val.join(","));
+        } else {
+          params.append(key, String(val));
+        }
+      }
+    });
+  }
+
+  const queryStr = params.toString();
   const json = await apiClient<{ success: boolean; data: any }>(
-    `/broker/quotes/representative/${repId}`,
+    `/broker/quotes/representative/${repId}${queryStr ? `?${queryStr}` : ""}`,
     { cache: "no-store" }
   );
 
-  const quotesList = json.data && Array.isArray(json.data.quotes)
-    ? json.data.quotes
-    : (Array.isArray(json.data) ? json.data : []);
+  const list = Array.isArray(json.data) ? json.data : (json.data?.quotes ?? []);
 
-  return quotesList.map(normaliseQuote);
+  const resultList: Quote[] & { pagination?: any } = list.map(normaliseQuote);
+
+  if (json.data?.pagination) {
+    Object.defineProperty(resultList, "pagination", {
+      value: json.data.pagination,
+      writable: true,
+      enumerable: false,
+      configurable: true,
+    });
+  }
+
+  return resultList;
 }
 
 /** POST /broker/quotes/{quoteId}/employer-details — save onboarding details */
@@ -191,34 +237,41 @@ export async function saveOnboardingDetails(
 /** Map raw API response to a normalised Quote object */
 export function normaliseQuote(raw: any): Quote {
   return {
-    quoteId:            raw.quote_id        ?? raw.quoteId        ?? "",
-    quoteReference:     raw.quote_reference ?? raw.quoteReference ?? "",
-    leadReference:      raw.lead_reference  ?? raw.leadReference  ?? "",
-    quoteType:          raw.quote_type?.toLowerCase() === "full" ? "Full Quote" : "Quick Quote",
-    status:             raw.quote_status    ?? raw.status         ?? "new",
-    companyName:        raw.employer?.employer_name ?? raw.companyName ?? "",
+    quoteId: raw.quote_id ?? raw.quoteId ?? "",
+    quoteReference: raw.quote_reference ?? raw.quoteReference ?? "",
+    leadReference: raw.lead_reference ?? raw.leadReference ?? "",
+    quoteType: raw.quote_type?.toLowerCase() === "full" ? "Full Quote" : "Quick Quote",
+    status: raw.quote_status ?? raw.status ?? "new",
+    companyName: raw.employer?.employer_name ?? raw.companyName ?? "",
     registrationNumber: raw.employer?.registration_number ?? raw.registrationNumber,
-    numberOfEmployees:  raw.number_of_employees ?? raw.numberOfEmployees ?? 0,
-    averageAge:         raw.average_age         ?? raw.averageAge,
+    numberOfEmployees: raw.number_of_employees ?? raw.numberOfEmployees ?? 0,
+    averageAge: raw.average_age ?? raw.averageAge,
     averageMonthlyIncome: raw.average_monthly_income ?? raw.averageMonthlyIncome,
-    genderSplit:        raw.gender_split    ?? raw.genderSplit,
-    province:           raw.province,
-    industry:           raw.industry,
-    monthlyPremium:     raw.monthly_premium ?? raw.monthlyPremium ?? 0,
-    coverageAmount:     raw.coverage_amount ?? raw.coverageAmount ?? 0,
-    lifeCover:          raw.life_cover      ?? raw.lifeCover,
-    funeralCover:       raw.funeral_cover   ?? raw.funeralCover,
+    genderSplit: raw.gender_split ?? raw.genderSplit,
+    province: raw.province,
+    industry: raw.industry,
+    monthlyPremium: raw.monthly_premium ?? raw.monthlyPremium ?? 0,
+    coverageAmount: raw.coverage_amount ?? raw.coverageAmount ?? 0,
+    lifeCover: raw.life_cover ?? raw.lifeCover,
+    funeralCover: raw.funeral_cover ?? raw.funeralCover,
     occupationalDisability: raw.occupational_disability ?? raw.occupationalDisability,
-    scheme:             raw.scheme,
-    benefits:           raw.benefits,
+    scheme: raw.scheme,
+    benefits: raw.benefits,
     valueAddedServices: raw.value_added_services ?? raw.valueAddedServices,
-    deductible:         raw.deductible,
-    contactFirstName:   raw.contact?.contact_first_name ?? raw.contactFirstName,
-    contactLastName:    raw.contact?.contact_last_name  ?? raw.contactLastName,
-    contactEmail:       raw.contact?.contact_email      ?? raw.contactEmail,
-    contactMobile:      raw.contact?.contact_mobile     ?? raw.contactMobile,
-    validUntilDays:     raw.valid_until_days ?? raw.validUntilDays ?? 30,
-    createdAt:          raw.quote_created_at ?? raw.createdAt ?? "",
+    deductible: raw.deductible,
+    contactFirstName: raw.contact?.contact_first_name ?? raw.contactFirstName,
+    contactLastName: raw.contact?.contact_last_name ?? raw.contactLastName,
+    contactEmail: raw.contact?.contact_email ?? raw.contactEmail,
+    contactMobile: raw.contact?.contact_mobile ?? raw.contactMobile,
+    validUntilDays: raw.valid_until_days ?? raw.validUntilDays ?? 30,
+    createdAt: raw.createdAt ?? raw.quote_created_at ?? "",
+    benefitBreakdown: raw.benefits?.map((b: any) => ({
+      benefit_name: b.benefit_name,
+      benefit_type: b.benefit_type,
+      cover_amount: parseFloat(b.cover_amount),
+      premium_amount: parseFloat(b.premium_amount),
+      premium_rate: parseFloat(b.premium_rate),
+    })),
   };
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Button from "@mui/material/Button";
 
 interface BackButtonProps {
   onClick: () => void;
@@ -15,36 +16,30 @@ interface NextButtonProps {
 
 export function BackButton({ onClick, label = "Back" }: BackButtonProps) {
   return (
-    <button
+    <Button
       onClick={onClick}
-      style={{
+      sx={{
         width: "78px",
         height: "33px",
         borderRadius: "100px",
         border: "1px solid #333333",
-        background: "transparent",
+        bgcolor: "transparent",
         color: "#d1d5db",
         fontSize: "0.875rem",
         fontWeight: 400,
-        cursor: "pointer",
-        padding: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxSizing: "border-box",
-        transition: "border-color 0.15s, color 0.15s",
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = "#9ca3af";
-        (e.currentTarget as HTMLElement).style.color = "#ffffff";
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = "#333333";
-        (e.currentTarget as HTMLElement).style.color = "#d1d5db";
+        textTransform: "none",
+        p: 0,
+        minWidth: "auto",
+        transition: "all 0.15s ease",
+        "&:hover": {
+          borderColor: "#9ca3af",
+          color: "#ffffff",
+          bgcolor: "transparent",
+        },
       }}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -55,37 +50,34 @@ interface SaveDraftButtonProps {
 
 export function SaveDraftButton({ onClick, label = "Save Draft" }: SaveDraftButtonProps) {
   return (
-    <button
+    <Button
       onClick={onClick}
-      style={{
+      sx={{
         width: "115px",
         height: "33px",
         borderRadius: "100px",
         border: "1px solid #333333",
-        background: "transparent",
+        bgcolor: "transparent",
         color: "#d1d5db",
         fontSize: "0.875rem",
         fontWeight: 400,
-        cursor: "pointer",
-        padding: "8px 22px",
+        textTransform: "none",
+        p: "8px 22px",
+        minWidth: "auto",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: "10px",
-        boxSizing: "border-box",
-        transition: "border-color 0.15s, color 0.15s",
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = "#9ca3af";
-        (e.currentTarget as HTMLElement).style.color = "#ffffff";
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = "#333333";
-        (e.currentTarget as HTMLElement).style.color = "#d1d5db";
+        transition: "all 0.15s ease",
+        "&:hover": {
+          borderColor: "#9ca3af",
+          color: "#ffffff",
+          bgcolor: "transparent",
+        },
       }}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -103,102 +95,98 @@ interface ProceedButtonProps {
 
 export function SaveLeadButton({ onClick, label = "Save Lead Details", disabled = false }: SaveLeadButtonProps) {
   return (
-    <button
+    <Button
       onClick={onClick}
       disabled={disabled}
-      style={{
+      sx={{
         height: "36px",
-        padding: "0 20px",
+        px: "20px",
         borderRadius: "8px",
-        background: "transparent",
+        bgcolor: "transparent",
         border: "1px solid #C4CDD8",
         color: "#C4CDD8",
         fontSize: "0.875rem",
         fontWeight: 500,
-        cursor: disabled ? "not-allowed" : "pointer",
-        boxSizing: "border-box",
+        textTransform: "none",
         whiteSpace: "nowrap",
-        opacity: disabled ? 0.6 : 1,
-        transition: "border-color 0.15s, color 0.15s",
-      }}
-      onMouseEnter={e => {
-        if (!disabled) {
-          (e.currentTarget as HTMLElement).style.borderColor = "#ffffff";
-          (e.currentTarget as HTMLElement).style.color = "#ffffff";
-        }
-      }}
-      onMouseLeave={e => {
-        if (!disabled) {
-          (e.currentTarget as HTMLElement).style.borderColor = "#C4CDD8";
-          (e.currentTarget as HTMLElement).style.color = "#C4CDD8";
-        }
+        transition: "all 0.15s ease",
+        "&.Mui-disabled": {
+          opacity: 0.6,
+          color: "#C4CDD8",
+          borderColor: "#C4CDD8",
+        },
+        "&:hover": {
+          borderColor: "#ffffff",
+          color: "#ffffff",
+          bgcolor: "transparent",
+        },
       }}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
 export function ProceedButton({ onClick, label = "Proceed to Quote Generation", disabled = false }: ProceedButtonProps) {
   return (
-    <button
+    <Button
       onClick={onClick}
       disabled={disabled}
-      style={{
+      sx={{
         height: "36px",
-        padding: "0 20px",
+        px: "20px",
         borderRadius: "8px",
-        background: disabled ? "#2a7a8f" : "#1FC3EB",
-        border: "none",
+        bgcolor: disabled ? "#2a7a8f" : "#1FC3EB",
         color: "#ffffff",
         fontSize: "0.875rem",
         fontWeight: 500,
-        cursor: disabled ? "not-allowed" : "pointer",
-        boxSizing: "border-box",
+        textTransform: "none",
         whiteSpace: "nowrap",
-        opacity: disabled ? 0.6 : 1,
         transition: "opacity 0.15s",
-      }}
-      onMouseEnter={e => {
-        if (!disabled) (e.currentTarget as HTMLElement).style.opacity = "0.85";
-      }}
-      onMouseLeave={e => {
-        if (!disabled) (e.currentTarget as HTMLElement).style.opacity = "1";
+        "&.Mui-disabled": {
+          opacity: 0.6,
+          bgcolor: "#2a7a8f",
+          color: "#ffffff",
+        },
+        "&:hover": {
+          opacity: 0.85,
+          bgcolor: disabled ? "#2a7a8f" : "#1FC3EB",
+        },
       }}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
 export function NextButton({ onClick, label = "Next Step", disabled = false }: NextButtonProps) {
   return (
-    <button
+    <Button
       onClick={onClick}
       disabled={disabled}
-      style={{
+      sx={{
         height: "36px",
-        padding: "0 20px",
+        px: "20px",
         borderRadius: "8px",
-        background: disabled ? "#2a7a8f" : "#1FC3EB",
-        border: "none",
+        bgcolor: disabled ? "#2a7a8f" : "#1FC3EB",
         color: "#ffffff",
         fontSize: "0.875rem",
         fontWeight: 500,
-        cursor: disabled ? "not-allowed" : "pointer",
-        boxSizing: "border-box",
+        textTransform: "none",
         whiteSpace: "nowrap",
         transition: "opacity 0.15s",
-        opacity: disabled ? 0.6 : 1,
-      }}
-      onMouseEnter={e => {
-        if (!disabled) (e.currentTarget as HTMLElement).style.opacity = "0.85";
-      }}
-      onMouseLeave={e => {
-        if (!disabled) (e.currentTarget as HTMLElement).style.opacity = "1";
+        "&.Mui-disabled": {
+          opacity: 0.6,
+          bgcolor: "#2a7a8f",
+          color: "#ffffff",
+        },
+        "&:hover": {
+          opacity: 0.85,
+          bgcolor: disabled ? "#2a7a8f" : "#1FC3EB",
+        },
       }}
     >
       {label}
-    </button>
+    </Button>
   );
 }

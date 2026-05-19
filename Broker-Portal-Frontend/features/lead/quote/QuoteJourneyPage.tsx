@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
 import { LayoutDashboard, FileText } from "lucide-react";
+
 import QuickQuoteInputs from "./QuickQuoteInputs";
 import AdjustCoverageStep from "./AdjustCoverageStep";
 import FullQuoteCapture from "./FullQuoteCapture";
@@ -25,7 +32,6 @@ type Step =
   | "QUICK_QUOTE"
   | "ADJUST_COVERAGE"
   | "FULL_QUOTE";
-
 
 interface FormData {
   employees: string;
@@ -75,31 +81,55 @@ export default function QuoteJourneyPage({
 
   if (step === "QUICK_QUOTE") {
     return (
-      <>
-        <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "31px", fontWeight: 500, lineHeight: "32px", color: "#ffffff", marginBottom: "24px" }}>Quick Cost Estimate</h1>
-        </div>
-        <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingBottom: "24px" }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <Box sx={{ px: "24px", pt: "24px" }}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: "31px",
+              fontWeight: 500,
+              lineHeight: 1.2,
+              color: "#ffffff",
+              mb: "24px",
+            }}
+          >
+            Quick Cost Estimate
+          </Typography>
+        </Box>
+        <Box sx={{ px: "24px", pb: "24px" }}>
           <QuickQuoteInputs
             formData={formData}
             onFormChange={setFormData}
             onBack={() => initialType === "quick" ? router.back() : setStep("SELECT_TYPE")}
             onGenerateQuote={() => setStep("ADJUST_COVERAGE")}
           />
-        </div>
-      </>
+        </Box>
+      </Box>
     );
   }
 
   if (step === "ADJUST_COVERAGE") {
     return (
-      <>
-        <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "31px", fontWeight: 500, lineHeight: "32px", color: "#ffffff", marginBottom: "24px" }}>Quick Cost Estimate</h1>
-        </div>
-        <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingBottom: "24px" }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <Box sx={{ px: "24px", pt: "24px" }}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: "31px",
+              fontWeight: 500,
+              lineHeight: 1.2,
+              color: "#ffffff",
+              mb: "24px",
+            }}
+          >
+            Quick Cost Estimate
+          </Typography>
+        </Box>
+        <Box sx={{ px: "24px", pb: "24px" }}>
           {quoteError && (
-            <p style={{ color: "#ef4444", fontSize: "0.875rem", marginBottom: "12px" }}>{quoteError}</p>
+            <Typography sx={{ color: "#ef4444", fontSize: "0.875rem", mb: "12px" }}>
+              {quoteError}
+            </Typography>
           )}
           <AdjustCoverageStep
             onBack={() => setStep("QUICK_QUOTE")}
@@ -108,6 +138,8 @@ export default function QuoteJourneyPage({
             averageIncome={parseFloat(formData.averageIncome) || 0}
             province={formData.province}
             industry={formData.industry}
+            companyName={companyName}
+            genderMix={formData.genderSplit}
             quoteReference={generatedQuote?.quoteReference || ""}
             onGenerateQuote={async (coverageData) => {
               setQuoteError(null);
@@ -127,7 +159,6 @@ export default function QuoteJourneyPage({
                   ],
                 });
                 setGeneratedQuote(normaliseQuote(res.data));
-                // Store quick quote data to pass to full quote
                 setQuickQuoteData({
                   employees: formData.employees,
                   genderSplit: formData.genderSplit,
@@ -141,7 +172,6 @@ export default function QuoteJourneyPage({
               }
             }}
             onContinueToFull={() => {
-              // Store quick quote data before moving to full quote
               setQuickQuoteData({
                 employees: formData.employees,
                 genderSplit: formData.genderSplit,
@@ -151,7 +181,6 @@ export default function QuoteJourneyPage({
                 industry: formData.industry,
               });
               
-              // Update URL to reflect Full Quote
               const params = new URLSearchParams(window.location.search);
               params.set("type", "full");
               window.history.pushState({}, "", `?${params.toString()}`);
@@ -159,26 +188,40 @@ export default function QuoteJourneyPage({
               setStep("FULL_QUOTE");
             }}
           />
-        </div>
-      </>
+        </Box>
+      </Box>
     );
   }
 
   if (step === "FULL_QUOTE") {
     return (
-      <>
-        <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "31px", fontWeight: 500, lineHeight: "32px", color: "#ffffff", marginBottom: "24px" }}>Full Quote</h1>
-        </div>
-        <div style={{ paddingLeft: "24px", paddingRight: "24px", paddingBottom: "24px" }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <Box sx={{ px: "24px", pt: "24px" }}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: "31px",
+              fontWeight: 500,
+              lineHeight: 1.2,
+              color: "#ffffff",
+              mb: "24px",
+            }}
+          >
+            Full Quote
+          </Typography>
+        </Box>
+        <Box sx={{ px: "24px", pb: "24px" }}>
           {quoteError && (
-            <p style={{ color: "#ef4444", fontSize: "0.875rem", marginBottom: "12px" }}>{quoteError}</p>
+            <Typography sx={{ color: "#ef4444", fontSize: "0.875rem", mb: "12px" }}>
+              {quoteError}
+            </Typography>
           )}
           <FullQuoteCapture
             companyName={companyName}
             leadReference={leadReference}
             quickQuoteData={quickQuoteData}
             quoteReference={generatedQuote?.quoteReference || ""}
+            leadId={leadId}
             onBack={() => initialType === "full" ? router.back() : setStep("SELECT_TYPE")}
             onGenerate={async (data) => {
               setQuoteError(null);
@@ -197,8 +240,6 @@ export default function QuoteJourneyPage({
                   industry: data.industry,
                   generate_options: data.generate_options,
                   benefits: data.benefits,
-                  employees: data.employees,
-                  employeeFile: data.employeeFile,
                 });
                 const quote = normaliseQuote(res.data);
                 setGeneratedQuote(quote);
@@ -209,18 +250,27 @@ export default function QuoteJourneyPage({
               }
             }}
           />
-        </div>
-      </>
+        </Box>
+      </Box>
     );
   }
 
-
   // SELECT_TYPE - Quote Type Selection UI
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", flexDirection: "column", paddingLeft: "24px", paddingRight: "24px", paddingTop: "16px", paddingBottom: "16px" }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        px: "24px",
+        py: "16px",
+      }}
+    >
       {/* Background blur effect */}
-      <div
-        style={{
+      <Box
+        sx={{
           position: "absolute",
           pointerEvents: "none",
           width: "608px",
@@ -235,116 +285,128 @@ export default function QuoteJourneyPage({
       />
 
       {/* Quote Type Cards */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexShrink: 0 }}>
+      <Stack direction="row" spacing={2} sx={{ mb: "20px", flexShrink: 0 }}>
         {/* Quick Cost Estimate Card */}
-        <button
-          onClick={() => {
-            const params = new URLSearchParams(window.location.search);
-            params.set("type", "quick");
-            window.history.pushState({}, "", `?${params.toString()}`);
-            setStep("QUICK_QUOTE");
-          }}
-          style={{
+        <Card
+          sx={{
             width: "271px",
             height: "180px",
-            background: "rgba(48,48,48,0.8)",
+            bgcolor: "rgba(48,48,48,0.8)",
             border: "1px solid #30363D",
             borderRadius: "16px",
-            padding: "24px",
-            textAlign: "left",
-            cursor: "pointer",
-            transition: "border-color 0.2s, background 0.2s",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            flexShrink: 0,
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.borderColor = "#1FC3EB";
-            (e.currentTarget as HTMLElement).style.background = "rgba(31,195,235,0.08)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.borderColor = "#30363D";
-            (e.currentTarget as HTMLElement).style.background = "rgba(48,48,48,0.8)";
+            boxShadow: "none",
+            "&:hover": {
+              borderColor: "#1FC3EB",
+              bgcolor: "rgba(31,195,235,0.08)",
+            }
           }}
         >
-          {/* Icon */}
-          <div style={{ width: "40px", height: "40px", background: "rgba(230,230,230,0.1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <LayoutDashboard size={20} style={{ color: "#E3E3E3" }} />
-          </div>
-
-          {/* Title */}
-          <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#E6EDF3", margin: 0 }}>
-            Quick Cost Estimate
-          </h2>
-
-          {/* Description */}
-          <p style={{ fontSize: "0.8125rem", color: "#8B949E", lineHeight: 1.5, margin: 0 }}>
-            Simple and Fast! In 30 sec or less
-          </p>
-        </button>
+          <CardActionArea
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search);
+              params.set("type", "quick");
+              window.history.pushState({}, "", `?${params.toString()}`);
+              setStep("QUICK_QUOTE");
+            }}
+            sx={{
+              height: "100%",
+              p: "24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              boxSizing: "border-box",
+            }}
+          >
+            <Box
+              sx={{
+                width: "40px",
+                height: "40px",
+                bgcolor: "rgba(230,230,230,0.1)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <LayoutDashboard size={20} style={{ color: "#E3E3E3" }} />
+            </Box>
+            <Typography variant="subtitle1" sx={{ fontSize: "1rem", fontWeight: 600, color: "#E6EDF3", m: 0 }}>
+              Quick Cost Estimate
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: "0.8125rem", color: "#8B949E", lineHeight: 1.5 }}>
+              Simple and Fast! In 30 sec or less
+            </Typography>
+          </CardActionArea>
+        </Card>
 
         {/* Full Quote Card */}
-        <button
-          onClick={() => {
-            const params = new URLSearchParams(window.location.search);
-            params.set("type", "full");
-            window.history.pushState({}, "", `?${params.toString()}`);
-            setStep("FULL_QUOTE");
-          }}
-          style={{
+        <Card
+          sx={{
             width: "271px",
             height: "180px",
-            background: "rgba(48,48,48,0.8)",
+            bgcolor: "rgba(48,48,48,0.8)",
             border: "1px solid #30363D",
             borderRadius: "16px",
-            padding: "24px",
-            textAlign: "left",
-            cursor: "pointer",
-            transition: "border-color 0.2s, background 0.2s",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            flexShrink: 0,
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.borderColor = "#1FC3EB";
-            (e.currentTarget as HTMLElement).style.background = "rgba(31,195,235,0.08)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.borderColor = "#30363D";
-            (e.currentTarget as HTMLElement).style.background = "rgba(48,48,48,0.8)";
+            boxShadow: "none",
+            "&:hover": {
+              borderColor: "#1FC3EB",
+              bgcolor: "rgba(31,195,235,0.08)",
+            }
           }}
         >
-          {/* Icon */}
-          <div style={{ width: "40px", height: "40px", background: "rgba(230,230,230,0.1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <FileText size={20} style={{ color: "#E3E3E3" }} />
-          </div>
-
-          {/* Title */}
-          <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#E6EDF3", margin: 0 }}>
-            Full Quote
-          </h2>
-
-          {/* Description */}
-          <p style={{ fontSize: "0.8125rem", color: "#8B949E", lineHeight: 1.5, margin: 0 }}>
-            Complete pricing using real names, the income, birthdate, and salary of each employee.
-          </p>
-        </button>
-      </div>
+          <CardActionArea
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search);
+              params.set("type", "full");
+              window.history.pushState({}, "", `?${params.toString()}`);
+              setStep("FULL_QUOTE");
+            }}
+            sx={{
+              height: "100%",
+              p: "24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              boxSizing: "border-box",
+            }}
+          >
+            <Box
+              sx={{
+                width: "40px",
+                height: "40px",
+                bgcolor: "rgba(230,230,230,0.1)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FileText size={20} style={{ color: "#E3E3E3" }} />
+            </Box>
+            <Typography variant="subtitle1" sx={{ fontSize: "1rem", fontWeight: 600, color: "#E6EDF3", m: 0 }}>
+              Full Quote
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: "0.8125rem", color: "#8B949E", lineHeight: 1.5 }}>
+              Complete pricing using real names, the income, birthdate, and salary of each employee.
+            </Typography>
+          </CardActionArea>
+        </Card>
+      </Stack>
 
       {/* Eligibility Criteria Section */}
-      <div style={{ flex: 1 }}>
-        <p style={{ fontSize: "0.875rem", color: "#8B949E", lineHeight: 1.6, margin: "0 0 8px 0" }}>
+      <Stack spacing={1} sx={{ flex: 1 }}>
+        <Typography sx={{ fontSize: "0.875rem", color: "#8B949E", lineHeight: 1.6 }}>
           • 18 to 64 years old
-        </p>
-        <p style={{ fontSize: "0.875rem", color: "#8B949E", lineHeight: 1.6, margin: "0 0 8px 0" }}>
+        </Typography>
+        <Typography sx={{ fontSize: "0.875rem", color: "#8B949E", lineHeight: 1.6 }}>
           • Permanently employed or on 6+ month contract
-        </p>
-        <p style={{ fontSize: "0.875rem", color: "#8B949E", lineHeight: 1.6, margin: 0 }}>
+        </Typography>
+        <Typography sx={{ fontSize: "0.875rem", color: "#8B949E", lineHeight: 1.6 }}>
           • Legally employed & actively working 20+ hours a week in SA
-        </p>
-      </div>
-    </div>
+        </Typography>
+      </Stack>
+    </Box>
   );
 }

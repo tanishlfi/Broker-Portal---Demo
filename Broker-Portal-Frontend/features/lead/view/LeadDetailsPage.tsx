@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, Plus } from "lucide-react";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Divider from "@mui/material/Divider";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import { Plus } from "lucide-react";
+
 import { getLeads, cancelLead, Lead } from "@/lib/api/leads";
 import { ROUTES } from "@/lib/constants";
 import { getRepresentativeId } from "@/lib/auth";
@@ -77,43 +88,36 @@ function QuoteBadge({ type, status }: { type: string; status?: string }) {
   const statusStyle = statusStyles[status || ""] || { color: "#A0A0A0" };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-      <span style={{
-        boxSizing: "border-box",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2px 8px",
-        background: typeStyle.bg,
-        border: "0.625px solid rgba(237, 237, 237, 0.2)",
-        borderRadius: "4px",
-        fontFamily: "'Inter', sans-serif",
-        fontSize: "12px",
-        fontWeight: 500,
-        lineHeight: "16px",
-        color: typeStyle.color,
-      }}>
-        {type}
-      </span>
-      {status && (
-        <span style={{
-          boxSizing: "border-box",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "2px 8px",
-          border: "0.625px solid #4A4A4A",
-          borderRadius: "8px",
-          fontFamily: "'Inter', sans-serif",
+    <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <Chip
+        label={type}
+        sx={{
+          bgcolor: typeStyle.bg,
+          color: typeStyle.color,
+          border: "0.625px solid rgba(237, 237, 237, 0.2)",
+          borderRadius: "4px",
+          height: "22px",
           fontSize: "12px",
           fontWeight: 500,
-          lineHeight: "16px",
-          color: statusStyle.color,
-        }}>
-          {status}
-        </span>
+          "& .MuiChip-label": { px: "8px" },
+        }}
+      />
+      {status && (
+        <Chip
+          label={status}
+          sx={{
+            bgcolor: "transparent",
+            color: statusStyle.color,
+            border: "0.625px solid #4A4A4A",
+            borderRadius: "8px",
+            height: "22px",
+            fontSize: "12px",
+            fontWeight: 500,
+            "& .MuiChip-label": { px: "8px" },
+          }}
+        />
       )}
-    </div>
+    </Box>
   );
 }
 
@@ -143,7 +147,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
 
   if (loading || !lead) {
     return (
-      <div style={{
+      <Box sx={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -151,24 +155,28 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
         color: "#A0A0A0",
       }}>
         Loading lead details...
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div style={{
-      position: "relative",
-      width: "100%",
-      minHeight: "calc(100vh - 120px)",
-      background: "rgba(24, 24, 24, 0.8)",
-      border: "1px solid rgba(29, 51, 68, 0.4)",
-      borderRadius: "16px",
-      padding: "24px",
-      boxSizing: "border-box",
-      fontFamily: "'Inter', sans-serif",
-    }}>
+    <Paper
+      elevation={0}
+      sx={{
+        position: "relative",
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
+        background: "rgba(24, 24, 24, 0.8)",
+        border: "1px solid rgba(29, 51, 68, 0.4)",
+        borderRadius: "16px",
+        padding: "24px",
+        boxSizing: "border-box",
+        fontFamily: "'Inter', sans-serif",
+        overflow: "hidden",
+      }}
+    >
       {/* Background blur */}
-      <div style={{
+      <Box sx={{
         position: "absolute",
         width: "608px",
         height: "608px",
@@ -182,16 +190,16 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
         zIndex: 0,
       }} />
 
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <Box sx={{ position: "relative", zIndex: 1 }}>
 
         {/* Lead Details Header with Action Buttons */}
-        <div style={{
+        <Box sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "20px",
         }}>
-          <h2 style={{
+          <Typography variant="h2" sx={{
             fontFamily: "'Inter', sans-serif",
             fontSize: "18px",
             fontWeight: 500,
@@ -201,14 +209,14 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
             margin: 0,
           }}>
             Lead Details
-          </h2>
+          </Typography>
           
-          <div style={{
+          <Box sx={{
             display: "flex",
             gap: "12px",
           }}>
             {/* Mark as Cancelled Button */}
-            <button
+            <Button
               onClick={async () => {
                 const reason = prompt("Please provide a reason for cancelling this lead (min 5 characters):");
                 if (reason !== null) {
@@ -226,86 +234,71 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
                   }
                 }
               }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "8px 13px",
-                gap: "10px",
-                width: "150px",
-                height: "40px",
-                background: "#FF6C6C",
-                border: "none",
+              variant="contained"
+              sx={{
+                bgcolor: "#FF6C6C",
+                color: "#0A0A0A",
                 borderRadius: "8px",
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
                 fontWeight: 700,
-                lineHeight: "20px",
-                letterSpacing: "-0.150391px",
-                color: "#0A0A0A",
-                cursor: "pointer",
-                transition: "background 0.2s ease",
+                textTransform: "none",
+                width: "150px",
+                height: "40px",
+                "&:hover": {
+                  bgcolor: "#FF5252",
+                },
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#FF5252")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#FF6C6C")}
             >
               Mark as Cancelled
-            </button>
+            </Button>
 
             {/* New Quote Button */}
-            <button
+            <Button
               onClick={() => {
                 router.push(`/quotes/new?leadId=${leadId}${lead ? `&ref=${lead.leadReference}&company=${encodeURIComponent(lead.employerName)}` : ""}`);
               }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "8px 13px",
-                gap: "10px",
-                width: "135px",
-                height: "40px",
-                background: "#1FC3EB",
-                border: "none",
+              variant="contained"
+              startIcon={<Plus size={20} />}
+              sx={{
+                bgcolor: "#1FC3EB",
+                color: "#0A0A0A",
                 borderRadius: "8px",
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
                 fontWeight: 700,
-                lineHeight: "20px",
-                letterSpacing: "-0.150391px",
-                color: "#0A0A0A",
-                cursor: "pointer",
-                transition: "background 0.2s ease",
+                textTransform: "none",
+                width: "135px",
+                height: "40px",
+                "&:hover": {
+                  bgcolor: "#0DB5D8",
+                },
+                "& .MuiButton-startIcon": {
+                  color: "#0A0A0A",
+                }
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#0DB5D8")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#1FC3EB")}
             >
-              <Plus size={20} color="#0A0A0A" />
               New Quote
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
         {/* Divider */}
-        <div style={{
-          width: "100%",
-          height: "0px",
-          border: "1px solid #101D28",
-          marginBottom: "31px",
-        }} />
+        <Divider sx={{ borderColor: "#101D28", marginBottom: "31px" }} />
 
         {/* Lead Details Card */}
-        <div style={{
+        <Card sx={{
           boxSizing: "border-box",
           background: "#1E1E1E",
           border: "1px solid #30363D",
           borderRadius: "12px",
-          padding: "25px",
+          p: "25px",
           marginBottom: "31px",
+          boxShadow: "none",
         }}>
           {/* Employer Details */}
-          <div style={{ marginBottom: "40px" }}>
-            <h3 style={{
+          <Box sx={{ marginBottom: "40px" }}>
+            <Typography variant="h3" sx={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "18px",
               fontWeight: 700,
@@ -315,143 +308,41 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
               margin: "0 0 12px 0",
             }}>
               Employer Details
-            </h3>
+            </Typography>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 32px" }}>
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Company Name
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {lead.employerName}
-                </p>
-              </div>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Company Name</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF", fontWeight: 500 }}>{lead.employerName}</Typography>
+              </Grid>
 
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Registration Number
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {lead.registrationNumber || "N/A"}
-                </p>
-              </div>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Registration Number</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF" }}>{lead.registrationNumber || "N/A"}</Typography>
+              </Grid>
 
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Industry
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                  textTransform: "capitalize",
-                }}>
-                  {(lead as any).industry || "N/A"}
-                </p>
-              </div>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Industry</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF", textTransform: "capitalize" }}>{(lead as any).industry || "N/A"}</Typography>
+              </Grid>
 
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Number of Employees
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {lead.numberOfEmployees}
-                </p>
-              </div>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Number of Employees</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF" }}>{lead.numberOfEmployees}</Typography>
+              </Grid>
 
-              <div style={{ gridColumn: "1 / -1" }}>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Address
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {(lead as any).address || "N/A"}
-                </p>
-              </div>
-            </div>
-          </div>
+              <Grid size={{ xs: 12 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Address</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF" }}>{(lead as any).address || "N/A"}</Typography>
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Divider sx={{ borderColor: "#4A4A4A", my: "25px" }} />
 
           {/* Contact Details */}
-          <div style={{
-            paddingTop: "25px",
-            borderTop: "0.625px solid #4A4A4A",
-          }}>
-            <h3 style={{
+          <Box>
+            <Typography variant="h3" sx={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "18px",
               fontWeight: 700,
@@ -461,114 +352,34 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
               margin: "0 0 12px 0",
             }}>
               Contact Details
-            </h3>
+            </Typography>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 32px" }}>
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Contact Person
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {lead.contactFirstName} {lead.contactLastName}
-                </p>
-              </div>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Contact Person</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF", fontWeight: 500 }}>{lead.contactFirstName} {lead.contactLastName}</Typography>
+              </Grid>
 
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Position
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {(lead as any).contactPosition || "N/A"}
-                </p>
-              </div>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Position</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF" }}>{(lead as any).contactPosition || "N/A"}</Typography>
+              </Grid>
 
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Email
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {lead.contactEmail}
-                </p>
-              </div>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Email</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF" }}>{lead.contactEmail}</Typography>
+              </Grid>
 
-              <div>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#A0A0A0",
-                  margin: "0 0 4px 0",
-                }}>
-                  Phone
-                </p>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  margin: 0,
-                }}>
-                  {(lead as any).contactPhone || "N/A"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Phone</Typography>
+                <Typography sx={{ fontSize: "14px", color: "#FFFFFF" }}>{(lead as any).contactPhone || "N/A"}</Typography>
+              </Grid>
+            </Grid>
+          </Box>
+        </Card>
 
         {/* Previous Quotes Section */}
-        <h2 style={{
+        <Typography variant="h2" sx={{
           fontFamily: "'Inter', sans-serif",
           fontSize: "18px",
           fontWeight: 500,
@@ -578,22 +389,23 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
           margin: "0 0 17px 0",
         }}>
           Previous Quotes
-        </h2>
+        </Typography>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "17px" }}>
+        <Stack spacing={2}>
           {quotes.map((quote) => (
-            <div key={quote.quoteId} style={{
+            <Card key={quote.quoteId} sx={{
               boxSizing: "border-box",
               background: "#1E1E1E",
               border: "0.625px solid #4A4A4A",
               borderRadius: "10px",
-              padding: "25px",
+              p: "25px",
+              boxShadow: "none",
             }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div style={{ flex: 1 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <Box sx={{ flex: 1 }}>
                   {/* Quote Header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                    <h3 style={{
+                  <Box sx={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                    <Typography variant="h3" sx={{
                       fontFamily: "'Inter', sans-serif",
                       fontSize: "18px",
                       fontWeight: 500,
@@ -603,141 +415,66 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
                       margin: 0,
                     }}>
                       {quote.companyName}
-                    </h3>
+                    </Typography>
                     <QuoteBadge type={quote.quoteType} status={quote.status} />
-                  </div>
+                  </Box>
 
                   {/* Quote Details */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
-                    <div>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 400,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#A0A0A0",
-                        margin: "0 0 4px 0",
-                      }}>
-                        Quote ID
-                      </p>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#FFFFFF",
-                        margin: 0,
-                      }}>
-                        {quote.quoteReference}
-                      </p>
-                    </div>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Quote ID</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "#FFFFFF", fontWeight: 500 }}>{quote.quoteReference}</Typography>
+                    </Grid>
 
-                    <div>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 400,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#A0A0A0",
-                        margin: "0 0 4px 0",
-                      }}>
-                        Monthly Premium
-                      </p>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#1FC3EB",
-                        margin: 0,
-                      }}>
-                        R {quote.monthlyPremium.toLocaleString()}
-                      </p>
-                    </div>
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Monthly Premium</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "#1FC3EB", fontWeight: 500 }}>R {quote.monthlyPremium.toLocaleString()}</Typography>
+                    </Grid>
 
-                    <div>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 400,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#A0A0A0",
-                        margin: "0 0 4px 0",
-                      }}>
-                        Coverage Amount
-                      </p>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#FFFFFF",
-                        margin: 0,
-                      }}>
-                        R {quote.coverageAmount.toLocaleString()}
-                      </p>
-                    </div>
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Coverage Amount</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "#FFFFFF", fontWeight: 500 }}>R {quote.coverageAmount.toLocaleString()}</Typography>
+                    </Grid>
 
-                    <div>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 400,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#A0A0A0",
-                        margin: "0 0 4px 0",
-                      }}>
-                        Created Date
-                      </p>
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        lineHeight: "20px",
-                        letterSpacing: "-0.150391px",
-                        color: "#FFFFFF",
-                        margin: 0,
-                      }}>
-                        {fmt(quote.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "#A0A0A0", mb: "4px" }}>Created Date</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "#FFFFFF", fontWeight: 500 }}>{fmt(quote.createdAt)}</Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
 
                 {/* Download Button */}
-                <button style={{
-                  boxSizing: "border-box",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "5px",
-                  width: "137px",
-                  height: "36px",
-                  background: "rgba(58, 58, 58, 0.3)",
-                  border: "0.625px solid #3A3A3A",
-                  borderRadius: "8px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  lineHeight: "20px",
-                  letterSpacing: "-0.150391px",
-                  color: "#FFFFFF",
-                  cursor: "pointer",
-                }}>
+                <Button
+                  variant="outlined"
+                  sx={{
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "5px",
+                    width: "137px",
+                    height: "36px",
+                    background: "rgba(58, 58, 58, 0.3)",
+                    border: "0.625px solid #3A3A3A",
+                    borderRadius: "8px",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    textTransform: "none",
+                    color: "#FFFFFF",
+                    "&:hover": {
+                      bgcolor: "rgba(80,80,80,0.5)",
+                      borderColor: "#4A4A4A",
+                    }
+                  }}
+                >
                   Download Quote
-                </button>
-              </div>
-            </div>
+                </Button>
+              </Box>
+            </Card>
           ))}
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Box>
+    </Paper>
   );
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
 interface StepProgressProps {
   steps: string[];
   currentStep: number;
@@ -11,84 +14,85 @@ export default function StepProgress({ steps, currentStep, variant = "segmented"
   const clampedStep = Math.min(Math.max(currentStep, 0), total - 1);
 
   return (
-    <div style={{ marginBottom: "24px" }}>
+    <Box sx={{ mb: "24px" }}>
       {variant === "continuous" ? (
         <>
           {/* Separate pill bars (per-step), like the mock */}
-          <div
-            style={{
+          <Box
+            sx={{
               display: "flex",
               gap: "14px",
-              padding: "10px",
+              p: "10px",
             }}
           >
             {steps.map((_, i) => (
-              <div
+              <Box
                 key={i}
-                style={{
+                sx={{
                   flex: 1,
                   height: "8px",
                   borderRadius: "12px",
-                  opacity: 1,
-                  background: i <= clampedStep ? "#00C0E8" : "#2A3340",
-                  transition: "background 200ms ease",
+                  bgcolor: i <= clampedStep ? "#00C0E8" : "#2A3340",
+                  transition: "background-color 200ms ease",
                 }}
               />
             ))}
-          </div>
+          </Box>
 
           {/* Step labels under each pill */}
-          <div style={{ display: "flex", gap: "14px", padding: "0 10px" }}>
+          <Box sx={{ display: "flex", gap: "14px", px: "10px" }}>
             {steps.map((label, i) => (
-              <div key={label} style={{ flex: 1 }}>
-                <span
-                  style={{
+              <Box key={label} sx={{ flex: 1 }}>
+                <Typography
+                  component="span"
+                  sx={{
                     fontSize: "13px",
                     color: i === clampedStep ? "#00C0E8" : "#6b7280",
                     fontWeight: i === clampedStep ? 500 : 400,
                   }}
                 >
                   {label}
-                </span>
-              </div>
+                </Typography>
+              </Box>
             ))}
-          </div>
+          </Box>
         </>
       ) : (
         <>
           {/* Segmented progress bars */}
-          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+          <Box sx={{ display: "flex", gap: "6px", mb: "8px" }}>
             {steps.map((_, i) => (
-              <div
+              <Box
                 key={i}
-                style={{
+                sx={{
                   flex: 1,
                   height: "3px",
                   borderRadius: "2px",
-                  background: i <= clampedStep ? "#1FC3EB" : "#2a2a2a",
-                  transition: "background 0.2s",
+                  bgcolor: i <= clampedStep ? "#1FC3EB" : "#2a2a2a",
+                  transition: "background-color 0.2s",
                 }}
               />
             ))}
-          </div>
+          </Box>
           {/* Step labels */}
-          <div style={{ display: "flex", gap: "6px" }}>
+          <Box sx={{ display: "flex", gap: "6px" }}>
             {steps.map((label, i) => (
-              <div key={i} style={{ flex: 1 }}>
-                <span
-                  style={{
+              <Box key={i} sx={{ flex: 1 }}>
+                <Typography
+                  component="span"
+                  sx={{
                     fontSize: "0.75rem",
                     color: i === clampedStep ? "#1FC3EB" : "#6b7280",
                     fontWeight: i === clampedStep ? 500 : 400,
                   }}
                 >
                   {label}
-                </span>
-              </div>
+                </Typography>
+              </Box>
             ))}
-          </div>
+          </Box>
         </>
       )}
-    </div>
+    </Box>
   );
 }

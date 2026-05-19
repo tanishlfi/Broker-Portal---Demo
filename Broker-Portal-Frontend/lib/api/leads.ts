@@ -46,9 +46,38 @@ export async function createLead(payload: CreateLeadPayload) {
   );
 }
 
-export async function getLeads(representativeId?: string): Promise<Lead[]> {
+export interface LeadFilterParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
+  search?: string;
+  searchFields?: string | string[];
+  lead_status?: string;
+  clientName?: string;
+}
+
+export async function getLeads(
+  representativeId?: string,
+  filters?: LeadFilterParams
+): Promise<Lead[] & { pagination?: any }> {
   const repId = representativeId || "00000000-0000-0000-0000-000000000000";
-  const params = new URLSearchParams({ representativeId: repId, limit: "10000" });
+  const params = new URLSearchParams({ representativeId: repId });
+
+  if (filters) {
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== "") {
+        if (Array.isArray(val)) {
+          params.append(key, val.join(","));
+        } else {
+          params.append(key, String(val));
+        }
+      }
+    });
+  } else {
+    // If no filters are provided, set limit to "10000" for backward compatibility
+    params.set("limit", "10000");
+  }
 
   const json = await apiClient<{ success: boolean; data: any }>(
     `/broker/leads?${params.toString()}`,
@@ -57,7 +86,7 @@ export async function getLeads(representativeId?: string): Promise<Lead[]> {
 
   const list = Array.isArray(json.data) ? json.data : (json.data?.leads ?? []);
 
-  return list.map((l: any) => ({
+  const resultList: Lead[] & { pagination?: any } = list.map((l: any) => ({
     leadId:             l.lead_id,
     leadReference:      l.lead_reference,
     employerName:       l.employer?.employer_name ?? "",
@@ -77,6 +106,17 @@ export async function getLeads(representativeId?: string): Promise<Lead[]> {
     })),
     createdAt:          l.lead_created_at ?? l.createdAt,
   }));
+
+  if (json.data?.pagination) {
+    Object.defineProperty(resultList, "pagination", {
+      value: json.data.pagination,
+      writable: true,
+      enumerable: false,
+      configurable: true,
+    });
+  }
+
+  return resultList;
 }
 
 export async function cancelLead(leadId: string, reason: string): Promise<void> {
@@ -86,3 +126,50 @@ export async function cancelLead(leadId: string, reason: string): Promise<void> 
     body: JSON.stringify({ reason, representativeId })
   });
 }
+export async function getLead(leadId: string): Promise<any> {
+  const json = await apiClient<{ success: boolean; data: any }>(
+    `/broker/leads/${leadId}`,
+    { cache: "no-store" }
+  );
+  return json.data;
+}
+
+export interface ImportEmployeeItem {
+  firstName: string;
+  surname: string;
+  gender: "M" | "F" | "Other";
+  income: number;
+  dateOfBirth: string;
+  email: string;
+  cellNumber: string;
+  employmentStartDate: string;
+  idNumber: string;
+  nationality: string;
+}
+
+export interface ImportEmployeesResponse {
+  success: boolean;
+  totalEmployees: number;
+  insertedEmployees: number;
+  duplicateEmployees: number;
+  message?: string;
+  errors?: Array<{
+    row: string;
+    field: string;
+    message: string;
+  }>;
+}
+
+export async function importEmployees(
+  leadId: string,
+  employees: ImportEmployeeItem[]
+): Promise<ImportEmployeesResponse> {
+  return apiClient<ImportEmployeesResponse>("/broker/employees/import", {
+    method: "POST",
+    body: JSON.stringify({
+      lead_id: leadId,
+      employees,
+    }),
+  });
+}
+
