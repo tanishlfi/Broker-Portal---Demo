@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
-const { BrokerQuote, BrokerLead, BrokerQuoteBenefit, BrokerQuickQuoteData, BrokerEmployee, BrokerQuoteOnboardingDetail, sequelize } = require("../models");
-const { Op } = require("sequelize");
-import { sequelizeErrorHandler } from "../middleware/sequelize_error";
-import { v4 as uuidv4 } from "uuid";
-import { PricingService } from "../services/pricingService";
-import { quickQuoteSchema, fullQuoteSchema, employerOnboardingSchema } from "../utils/brokerValidation";
-import { applyFilters } from "../utils/filterHelper";
+import { BrokerQuoteService } from "../services/brokerQuote.service";
+
+const quoteService = new BrokerQuoteService();
 
 /**
  * @swagger
@@ -40,6 +36,8 @@ import { applyFilters } from "../utils/filterHelper";
  *                 type: string
  *               industry:
  *                 type: string
+ *               gender_split:
+ *                 type: string
  *               generate_options:
  *                 type: boolean
  *               benefits:
@@ -51,70 +49,11 @@ import { applyFilters } from "../utils/filterHelper";
  *         description: Quick quote generated successfully
  */
 export const generateQuickQuote = async (req: Request, res: Response) => {
-    const t = await sequelize.transaction();
   try {
-    const validatedBody = await quickQuoteSchema.validate(req.body, { abortEarly: false });
-    const { lead_id } = validatedBody;
-
-    const lead = await BrokerLead.findByPk(lead_id);
-    if (!lead) {
-      await t.rollback();
-      return res.status(404).json({ success: false, message: "Lead not found" });
-    }
-
-    const quote_reference = `QT-Q-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
-
-    const quote = await BrokerQuote.create({
-      quote_id: uuidv4(),
-      lead_id,
-      quote_reference,
-      quote_type: "Quick",
-      quote_status: "Draft",
-      quote_version: 1,
-      province: validatedBody.province,
-    }, { transaction: t });
-
-
-    // Calculate pricing
-    const pricingResult = await PricingService.calculateQuotePricing({
-      quote_id: quote.quote_id,
-      quote_type: "Quick",
-      quick_quote_data: {
-        workforce_count: validatedBody.workforce_count,
-        average_age: validatedBody.average_age,
-        average_salary: validatedBody.average_salary,
-        province: validatedBody.province,
-        industry: validatedBody.industry,
-        gender_split: validatedBody.gender_split,
-      },
-      benefits: validatedBody.benefits,
-    }, t);
-
-    await t.commit();
-
-    return res.status(201).json({
-      success: true,
-      message: "Quick quote generated successfully",
-      data: {
-        quoteId: quote.quote_id,
-        quoteReference: quote.quote_reference,
-        pricing: pricingResult,
-      },
-    });
-  } catch (err: any) {
-    if (t) {
-        try {
-            await t.rollback();
-        } catch (rollbackErr) {
-            // Transaction might have already been rolled back by the database on severe error
-            console.error("Rollback failed or not needed:", rollbackErr);
-        }
-    }
-    return res.status(err.name === "ValidationError" ? 400 : 500).json({
-      success: false,
-      message: err.message || "An error occurred while generating quick quote",
-      errors: err.inner?.map((e: any) => ({ field: e.path, message: e.message })) || [],
-    });
+    const result = await quoteService.generateQuickQuote(req.body);
+    return res.status(201).json({ success: true, message: "Quick quote generated", data: result });
+  } catch (error: any) {
+    return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
   }
 };
 
@@ -161,491 +100,11 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
  *         description: Full quote generated successfully
  */
 export const generateFullQuote = async (req: Request, res: Response) => {
-  const t = await sequelize.transaction();
   try {
-    // If benefits is a string (happens in multipart/form-data), parse it
-    if (typeof req.body.benefits === "string") {
-      try {
-        req.body.benefits = JSON.parse(req.body.benefits);
-      } catch (e) {}
-    }
-    if (typeof req.body.employees === "string") {
-      try {
-        req.body.employees = JSON.parse(req.body.employees);
-      } catch (e) {}
-    }
-
-    const validatedBody = await fullQuoteSchema.validate(req.body, { abortEarly: false });
-    const { lead_id, product_id, benefits } = validatedBody;
-
-    const lead = await BrokerLead.findByPk(lead_id, {
-      include: [{ model: require("../models").BrokerEmployer, as: "employer" }]
-    });
-    if (!lead) {
-      await t.rollback();
-      return res.status(404).json({ success: false, message: "Lead not found" });
-    }
-
-    // Employees are now handled by a separate /broker/employees/import API
-    // We fetch existing employees for this lead to pass to the pricing service
-    const employees_list = await BrokerEmployee.findAll({
-      where: { lead_id: lead.lead_id },
-      transaction: t
-    });
-
-    const quote_reference = `QT-F-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
-
-    const quote = await BrokerQuote.create({
-      quote_id: uuidv4(),
-      lead_id,
-      product_id,
-      quote_reference,
-      quote_type: "Full",
-      quote_status: "Draft",
-      quote_version: 1,
-      rma_member_number: validatedBody.rma_member_number,
-      is_permanent_employees: validatedBody.is_permanent_employees,
-      is_actively_at_work: validatedBody.is_actively_at_work,
-      is_replacing_policy: validatedBody.is_replacing_policy,
-      replaced_policy_includes_disability: validatedBody.replaced_policy_includes_disability,
-      is_policy_older_than_6_months: validatedBody.is_policy_older_than_6_months,
-      replaced_policy_start_date: validatedBody.replaced_policy_start_date,
-      province: validatedBody.province,
-    }, { transaction: t });
-
-    // Calculate pricing
-    const pricingResult = await PricingService.calculateQuotePricing({
-      quote_id: quote.quote_id,
-      quote_type: "Full",
-      product_id,
-      benefits,
-      employees_list: employees_list.length > 0 ? employees_list : undefined
-    }, t);
-
-    await t.commit();
-
-    return res.status(201).json({
-      success: true,
-      message: "Full quote generated successfully",
-      data: {
-        quoteId: quote.quote_id,
-        quoteReference: quote.quote_reference,
-        pricing: pricingResult,
-        employeeCount: employees_list.length
-      },
-    });
-  } catch (err: any) {
-    if (t) await t.rollback();
-    console.error("FULL QUOTE ERROR:", err);
-    return res.status(err.name === "ValidationError" ? 400 : 500).json({
-      success: false,
-      message: err.message || "An error occurred while generating full quote",
-    });
-  }
-};
-
-/**
- * @swagger
- * /broker/quotes/{quoteId}/reprice:
- *   post:
- *     summary: Reprice an existing quote with new benefits
- *     tags: [Broker Quotes]
- *     parameters:
- *       - in: path
- *         name: quoteId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               benefits:
- *                 type: array
- *                 items:
- *                   type: object
- *     responses:
- *       200:
- *         description: Quote repriced successfully
- */
-export const repriceQuote = async (req: Request, res: Response) => {
-  try {
-    const { quoteId } = req.params;
-    const quote = await BrokerQuote.findOne({
-      where: { quote_id: quoteId },
-      include: [
-        { model: BrokerQuoteBenefit, as: "benefits" },
-        { model: BrokerQuickQuoteData, as: "quick_quote_data" }
-      ]
-    });
-
-    if (!quote) {
-      return res.status(404).json({ success: false, message: "Quote not found" });
-    }
-
-    const pricingResult = await PricingService.calculateQuotePricing({
-      quote_id: quote.quote_id,
-      quote_type: quote.quote_type,
-      quick_quote_data: quote.quick_quote_data,
-      benefits: req.body.benefits || quote.benefits,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Quote repriced successfully",
-      data: pricingResult,
-    });
-  } catch (err: any) {
-    return res.status(500).json(sequelizeErrorHandler(err));
-  }
-};
-
-export const downloadQuoteDocument = async (req: Request, res: Response) => {
-  try {
-    const { quoteId } = req.params;
-    // In a real system, this would generate a PDF or return a signed URL from S3/Azure Blob
-    const downloadUrl = `https://api.rma.co.za/documents/quotes/${quoteId}.pdf`;
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        url: downloadUrl,
-        expiresAt: new Date(Date.now() + 3600 * 1000), // 1 hour expiry
-      },
-    });
-  } catch (err: any) {
-    return res.status(500).json(sequelizeErrorHandler(err));
-  }
-};
-
-export const saveQuoteToLead = async (req: Request, res: Response) => {
-  const t = await sequelize.transaction();
-  try {
-    const { leadReference } = req.params;
-    const { quoteId } = req.body;
-
-    const lead = await BrokerLead.findOne({
-      where: { [sequelize.Op.or]: [{ lead_id: leadReference }, { lead_reference: leadReference }] }
-    });
-
-    if (!lead) {
-      await t.rollback();
-      return res.status(404).json({ success: false, message: "Lead not found" });
-    }
-
-    const quote = await BrokerQuote.findByPk(quoteId);
-    if (!quote) {
-      await t.rollback();
-      return res.status(404).json({ success: false, message: "Quote not found" });
-    }
-
-    await lead.update({ lead_status: "Quote Generated" }, { transaction: t });
-    await quote.update({ quote_status: "Generated" }, { transaction: t });
-
-    await t.commit();
-    return res.status(200).json({
-      success: true,
-      message: "Quote saved to lead and status updated",
-    });
-  } catch (err: any) {
-    if (t) {
-        try {
-            await t.rollback();
-        } catch (rollbackErr) {
-            console.error("Rollback failed or not needed:", rollbackErr);
-        }
-    }
-    return res.status(500).json(sequelizeErrorHandler(err));
-  }
-};
-
-export const createQuoteController = async (req: Request, res: Response) => {
-  // Legacy or generic create quote
-  return generateQuickQuote(req, res);
-};
-
-/**
- * @swagger
- * /broker/quotes/lead/{leadId}:
- *   get:
- *     summary: Get all quotes for a specific lead with filtering and pagination
- *     tags: [Broker Quotes]
- *     parameters:
- *       - in: path
- *         name: leadId
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: quote_status
- *         schema:
- *           type: string
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *       - in: query
- *         name: sortOrder
- *         schema:
- *           type: string
- *           enum: [ASC, DESC]
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *       - in: query
- *         name: searchFields
- *         schema:
- *           type: array
- *           items:
- *             type: string
- *     responses:
- *       200:
- *         description: List of quotes
- */
-export const getQuotesByLeadController = async (req: Request, res: Response) => {
-  try {
-    const { leadId } = req.params;
-
-    const { where, limit, offset, order, pagination } = applyFilters(
-      req.query,
-      ["quote_status", "quote_type", "quote_reference"]
-    );
-
-    // Force lead_id filter
-    where.lead_id = leadId;
-
-    const { count, rows: quotes } = await BrokerQuote.findAndCountAll({
-      where,
-      limit,
-      offset,
-      order,
-      include: [
-        { model: BrokerQuoteBenefit, as: "benefits" },
-        { model: BrokerQuickQuoteData, as: "quick_quote_data" }
-      ]
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Quotes fetched successfully for lead",
-      data: {
-        quotes,
-        pagination: {
-          total: count,
-          ...pagination,
-          totalPages: Math.ceil(count / limit)
-        }
-      },
-    });
-  } catch (err: any) {
-    return res.status(500).json(sequelizeErrorHandler(err));
-  }
-};
-
-/**
- * @swagger
- * /broker/quotes/representative/{representativeId}:
- *   get:
- *     summary: Get all quotes for a specific broker representative with filtering and pagination
- *     tags: [Broker Quotes]
- *     parameters:
- *       - in: path
- *         name: representativeId
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: quote_status
- *         schema:
- *           type: string
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *       - in: query
- *         name: sortOrder
- *         schema:
- *           type: string
- *           enum: [ASC, DESC]
- *       - in: query
- *         name: clientName
- *         schema:
- *           type: string
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *       - in: query
- *         name: searchFields
- *         schema:
- *           type: array
- *           items:
- *             type: string
- *     responses:
- *       200:
- *         description: List of quotes
- */
-export const getQuotesByRepresentativeController = async (req: Request, res: Response) => {
-  try {
-    const { representativeId } = req.params;
-    const { clientName } = req.query;
-
-    const { where, limit, offset, order, pagination } = applyFilters(
-      req.query,
-      ["quote_status", "quote_type", "quote_reference"]
-    );
-
-    const { count, rows: quotes } = await BrokerQuote.findAndCountAll({
-      where,
-      limit,
-      offset,
-      order,
-      include: [
-        {
-          model: BrokerLead,
-          as: "lead",
-          where: { representative_id: representativeId },
-          attributes: ["lead_id", "lead_reference", "representative_id"],
-          include: [
-            {
-              model: require("../models").BrokerEmployer,
-              as: "employer",
-              where: clientName ? { employer_name: { [Op.like]: `%${clientName}%` } } : undefined,
-              required: !!clientName
-            }
-          ]
-        },
-        { model: BrokerQuoteBenefit, as: "benefits" },
-        { model: BrokerQuickQuoteData, as: "quick_quote_data" }
-      ],
-      distinct: true
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Quotes fetched successfully for representative",
-      data: {
-        quotes,
-        pagination: {
-          total: count,
-          ...pagination,
-          totalPages: Math.ceil(count / limit)
-        }
-      },
-    });
-  } catch (err: any) {
-    return res.status(500).json(sequelizeErrorHandler(err));
-  }
-};
-
-/**
- * @swagger
- * /broker/quotes/{quoteId}:
- *   get:
- *     summary: Get a specific quote by its UUID (quote_id)
- *     tags: [Broker Quotes]
- *     parameters:
- *       - in: path
- *         name: quoteId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Quote details
- */
-export const getQuoteByIdController = async (req: Request, res: Response) => {
-  try {
-    const { quoteId } = req.params;
-    const quote = await BrokerQuote.findOne({
-      where: { quote_id: quoteId },
-      include: [
-        { model: BrokerQuoteBenefit, as: "benefits" },
-        { model: BrokerQuickQuoteData, as: "quick_quote_data" },
-        { model: BrokerLead, as: "lead" }
-      ]
-    });
-
-    if (!quote) {
-      return res.status(404).json({ success: false, message: "Quote not found" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Quote fetched successfully",
-      data: quote,
-    });
-  } catch (err: any) {
-    return res.status(500).json(sequelizeErrorHandler(err));
-  }
-};
-
-/**
- * @swagger
- * /broker/quotes/{quoteId}/status:
- *   patch:
- *     summary: Update the status of a quote
- *     tags: [Broker Quotes]
- *     parameters:
- *       - in: path
- *         name: quoteId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - status
- *             properties:
- *               status:
- *                 type: string
- *     responses:
- *       200:
- *         description: Quote status updated
- */
-export const updateQuoteStatusController = async (req: Request, res: Response) => {
-  try {
-    const { quoteId } = req.params;
-    const { status } = req.body;
-
-    const quote = await BrokerQuote.findByPk(quoteId);
-    if (!quote) {
-      return res.status(404).json({ success: false, message: "Quote not found" });
-    }
-
-    await quote.update({ quote_status: status });
-
-    return res.status(200).json({
-      success: true,
-      message: "Quote status updated",
-      data: quote,
-    });
-  } catch (err: any) {
-    return res.status(400).json(sequelizeErrorHandler(err));
+    const result = await quoteService.generateFullQuote(req.body);
+    return res.status(201).json({ success: true, message: "Full quote generated", data: result });
+  } catch (error: any) {
+    return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
   }
 };
 
@@ -781,52 +240,276 @@ export const updateQuoteStatusController = async (req: Request, res: Response) =
  *               debit_order_authorised:
  *                 type: boolean
  *     responses:
- *       201:
+ *       200:
  *         description: Onboarding details saved successfully
  */
 export const saveEmployerOnboardingDetails = async (req: Request, res: Response) => {
-  const t = await sequelize.transaction();
   try {
     const { quoteId } = req.params;
-    const validatedBody = await employerOnboardingSchema.validate(req.body, { abortEarly: false });
-
-    const quote = await BrokerQuote.findByPk(quoteId);
-    if (!quote) {
-      await t.rollback();
-      return res.status(404).json({ success: false, message: "Quote not found" });
-    }
-
-    // Save or update onboarding details
-    const [details, created] = await BrokerQuoteOnboardingDetail.findOrCreate({
-      where: { quote_id: quoteId },
-      defaults: {
-        ...validatedBody,
-        lead_id: quote.lead_id,
-      },
-      transaction: t,
-    });
-
-    if (!created) {
-      await details.update(validatedBody, { transaction: t });
-    }
-
-    // Update quote status to reflect that onboarding details are captured
-    await quote.update({ quote_status: "Awaiting Employer Acceptance" }, { transaction: t });
-
-    await t.commit();
-
-    return res.status(created ? 201 : 200).json({
-      success: true,
-      message: "Employer onboarding details saved successfully",
-      data: details,
-    });
-  } catch (err: any) {
-    if (t) await t.rollback();
-    return res.status(err.name === "ValidationError" ? 400 : 500).json({
-      success: false,
-      message: err.message || "An error occurred while saving onboarding details",
-      errors: err.inner?.map((e: any) => ({ field: e.path, message: e.message })) || [],
-    });
+    const result = await quoteService.saveEmployerOnboardingDetails(quoteId, req.body);
+    return res.status(200).json({ success: true, message: "Onboarding details saved", data: result });
+  } catch (error: any) {
+    return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
   }
 };
 
+/**
+ * @swagger
+ * /broker/quotes/lead/{leadId}:
+ *   get:
+ *     summary: Get all quotes for a specific lead with filtering and pagination
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: quote_status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: searchFields
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *     responses:
+ *       200:
+ *         description: List of quotes
+ */
+export const getQuotesByLeadController = async (req: Request, res: Response) => {
+  try {
+    const { leadId } = req.params;
+    const { count, rows } = await quoteService.getQuotesByLead(leadId, req.query);
+    return res.status(200).json({ success: true, data: { quotes: rows, total: count } });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/{quoteId}:
+ *   get:
+ *     summary: Get quote by ID
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: quoteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Quote fetched successfully
+ */
+export const getQuoteByIdController = async (req: Request, res: Response) => {
+  try {
+    const { quoteId } = req.params;
+    const quote = await quoteService.getQuoteById(quoteId);
+    if (!quote) return res.status(404).json({ success: false, message: "Quote not found" });
+    return res.status(200).json({ success: true, data: quote });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/lead/{leadReference}:
+ *   post:
+ *     summary: Save a quote to a lead
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: leadReference
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quoteId
+ *             properties:
+ *               quoteId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Quote saved to lead
+ */
+export const saveQuoteToLead = async (req: Request, res: Response) => {
+  try {
+    const { leadReference } = req.params;
+    const { quoteId } = req.body;
+    await quoteService.saveQuoteToLead(leadReference, quoteId);
+    return res.status(200).json({ success: true, message: "Quote saved to lead and status updated" });
+  } catch (error: any) {
+    return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/{quoteId}/reprice:
+ *   post:
+ *     summary: Reprice an existing quote with new benefits
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: quoteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               benefits:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Quote repriced successfully
+ */
+export const repriceQuote = async (req: Request, res: Response) => {
+  try {
+    const { quoteId } = req.params;
+    const result = await quoteService.repriceQuote(quoteId, req.body.benefits);
+    return res.status(200).json({ success: true, message: "Quote repriced successfully", data: result });
+  } catch (error: any) {
+    return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/{quoteId}/download:
+ *   get:
+ *     summary: Download quote document
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: quoteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Download URL returned
+ */
+export const downloadQuoteDocument = async (req: Request, res: Response) => {
+  try {
+    const { quoteId } = req.params;
+    const downloadUrl = `https://api.rma.co.za/documents/quotes/${quoteId}.pdf`;
+    return res.status(200).json({
+      success: true,
+      data: { url: downloadUrl, expiresAt: new Date(Date.now() + 3600 * 1000) }
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/{quoteId}/status:
+ *   patch:
+ *     summary: Update the status of a quote
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: quoteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Quote status updated
+ */
+export const updateQuoteStatusController = async (req: Request, res: Response) => {
+  try {
+    const { quoteId } = req.params;
+    const { status } = req.body;
+    const result = await quoteService.updateQuoteStatus(quoteId, status);
+    return res.status(200).json({ success: true, message: "Quote status updated", data: result });
+  } catch (error: any) {
+    return res.status(error.message.includes("not found") ? 404 : 400).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /broker/quotes/representative/{representativeId}:
+ *   get:
+ *     summary: Get all quotes for a specific broker representative
+ *     tags: [Broker Quotes]
+ *     parameters:
+ *       - in: path
+ *         name: representativeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: clientName
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of quotes
+ */
+export const getQuotesByRepresentativeController = async (req: Request, res: Response) => {
+  try {
+    const { representativeId } = req.params;
+    const { clientName } = req.query;
+    const { count, rows } = await quoteService.getQuotesByRepresentative(representativeId, req.query, clientName as string);
+    return res.status(200).json({
+      success: true,
+      message: "Quotes fetched successfully for representative",
+      data: { quotes: rows, total: count }
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

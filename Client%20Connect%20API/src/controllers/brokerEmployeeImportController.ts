@@ -86,24 +86,10 @@ export const brokerImportEmployeesController = async (req: Request, res: Respons
   try {
     const { lead_id, employees } = req.body;
 
-    if (!lead_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Lead ID is required",
-      });
-    }
-
-    if (!employees || !Array.isArray(employees)) {
-      return res.status(400).json({
-        success: false,
-        message: "Employees array is required",
-      });
-    }
-
     const result = await brokerImportEmployeesService(lead_id, employees);
 
     if (!result.success) {
-      return res.status(400).json(result);
+      return res.status(result.message?.includes("not found") ? 404 : 400).json(result);
     }
 
     return res.status(200).json(result);

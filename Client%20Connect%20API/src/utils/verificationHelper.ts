@@ -2,7 +2,7 @@ import { RMAQuickTransact, rmaVOPDErrorCount } from "../utils/rmaVOPD";
 import { logger } from "../middleware/logger";
 import { v4 as uuidv4 } from "uuid";
 
-const { BrokerEmployee, BrokerVerificationResult, onboardingData, onboardingPolicy } = require("../models");
+const { BrokerEmployee, BrokerVerificationResult } = require("../models");
 
 const performAMLCheck = async (employeeData: any) => {
   try {
@@ -17,7 +17,7 @@ const performAMLCheck = async (employeeData: any) => {
   }
 };
 
-export const performBulkVerification = async (leadId: string, policyId?: number) => {
+export const performBulkVerification = async (leadId: string) => {
   try {
     const employees = await BrokerEmployee.findAll({
       where: { lead_id: leadId },
@@ -74,19 +74,6 @@ export const performBulkVerification = async (leadId: string, policyId?: number)
             aml_response: amlResult.result ? amlResult.data : { error: amlResult.error },
           });
 
-          if (policyId) {
-            const isVopdValid = vopdStatus === "Completed";
-            await onboardingData.update(
-              {
-                isVopdVerified: isVopdValid,
-                dateVopdVerified: isVopdValid ? new Date() : null,
-                vopdResponse: vopdResult.result ? vopdResult.data : null,
-                notes: `VOPD: ${vopdStatus} | AML: ${amlStatus}`
-              },
-              { where: { policyId, idNumber: employee.id_number } }
-            );
-          }
-
           processedCount++;
         } catch (empError: any) {
           logger.error(`Critical error verifying employee ${employee.id_number}:`, empError);
@@ -101,28 +88,11 @@ export const performBulkVerification = async (leadId: string, policyId?: number)
         }
       }
 
-      if (policyId) {
-        await onboardingPolicy.update(
-          { statusNote: `VOPD/AML Verification: ${processedCount}/${totalEmployees} employees completed` },
-          { where: { id: policyId } }
-        );
-      }
-
       logger.info(`Completed batch ${batchNum}/${totalBatches}`);
       
       if (i + CHUNK_SIZE < totalEmployees) {
         await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_CHUNKS_MS));
       }
-    }
-
-    if (policyId) {
-      await onboardingPolicy.update(
-        { 
-          status: "Pending Approval",
-          statusNote: `VOPD/AML Verification Completed for all ${totalEmployees} employees.` 
-        },
-        { where: { id: policyId } }
-      );
     }
 
     logger.info(`Successfully completed verification for ${processedCount}/${totalEmployees} employees on lead ${leadId}`);

@@ -1,6 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
-const { REFERENCE_TYPE_OPTIONS , SENT_METHOD} = require("../enums/brokerPortalEnums");
+const { REFERENCE_TYPE_OPTIONS, SENT_METHOD, OTP_STATUS_OPTIONS } = require("../enums/brokerPortalEnums");
 
 module.exports = (sequelize, DataTypes) => {
   class BrokerOTP extends Model {
@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
       expires_at: {
         type: DataTypes.DATE,
         allowNull: false,
+      },
+      status: {
+        type: DataTypes.ENUM(...OTP_STATUS_OPTIONS),
+        defaultValue: "Generated",
       },
       is_verified: {
         type: DataTypes.BOOLEAN,

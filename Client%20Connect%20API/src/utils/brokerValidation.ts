@@ -2,23 +2,26 @@ import * as Yup from "yup";
 import { 
   PREFERRED_COMMUNICATION_METHOD_OPTIONS, 
   REFERENCE_TYPE_OPTIONS, 
-  BANK_ACCOUNT_TYPE_OPTIONS 
+  BANK_ACCOUNT_TYPE_OPTIONS,
+  INDUSTRY_TYPE_OPTIONS,
+  PROVINCE_OPTIONS,
+  GENDER_OPTIONS
 } from "../enums/brokerPortalEnums";
 
 // Lead Management Validations
 export const createLeadSchema = Yup.object().shape({
   employerName: Yup.string().required("Employer name cannot be empty"),
   registrationNumber: Yup.string().nullable(),
-  industryType: Yup.string().required("Industry classification cannot be empty"),
+  industryType: Yup.string().oneOf(INDUSTRY_TYPE_OPTIONS, "Invalid industry type").required("Industry classification cannot be empty"),
   numberOfEmployees: Yup.number().integer("Must be an integer").min(1, "Workforce size must be > 0").required("Employees count is required"),
   averageSalary: Yup.number().min(0, "Average salary must be >= 0").nullable(),
-  province: Yup.string().required("Province cannot be empty"),
-  contactFirstName: Yup.string().required("Contact first name cannot be empty"),
-  contactLastName: Yup.string().required("Contact surname cannot be empty"),
-  contactEmail: Yup.string().email("Must be a valid email format").required("Email cannot be empty"),
+  province: Yup.string().oneOf(PROVINCE_OPTIONS, "Invalid province").required("Province cannot be empty"),
+  contactFirstName: Yup.string().nullable().optional(),
+  contactLastName: Yup.string().nullable().optional(),
+  contactEmail: Yup.string().email("Must be a valid email format").nullable().optional(),
   contactMobile: Yup.string()
     .matches(/^0[6-8]\d{8}$/, "Must be a valid South African mobile number (e.g., 0821234567)")
-    .required("Mobile cannot be empty"),
+    .nullable().optional(),
   preferredCommunicationMethod: Yup.string().oneOf(PREFERRED_COMMUNICATION_METHOD_OPTIONS, "Must be valid communication preference").nullable(),
   representativeId: Yup.string().uuid("Must be valid ID format").required("Representative ID is required"),
   brokerId: Yup.string().uuid("Must be valid ID format").required("Broker ID is required"),
@@ -28,17 +31,16 @@ export const updateLeadSchema = Yup.object().shape({
   employer: Yup.object().shape({
     employer_name: Yup.string().min(1, "Employer name cannot be empty"),
     registration_number: Yup.string().nullable(),
-    industry_type: Yup.string().min(1, "Industry classification cannot be empty"),
+    industry_type: Yup.string().oneOf(INDUSTRY_TYPE_OPTIONS, "Invalid industry type"),
     number_of_employees: Yup.number().integer("Must be an integer").min(1, "Workforce size must be > 0"),
     average_salary: Yup.number().min(0, "Average salary must be >= 0").nullable(),
-    province: Yup.string().min(1, "Province cannot be empty"),
+    province: Yup.string().oneOf(PROVINCE_OPTIONS, "Invalid province"),
   }).nullable(),
   contact: Yup.object().shape({
-    contact_first_name: Yup.string().min(1, "Contact first name cannot be empty"),
-    contact_last_name: Yup.string().min(1, "Contact surname cannot be empty"),
-    contact_email: Yup.string().email("Must be a valid email format"),
-    contact_mobile: Yup.string().matches(/^0[6-8]\d{8}$/, "Must be a valid South African mobile number"),
-    preferred_communication_method: Yup.string().oneOf(PREFERRED_COMMUNICATION_METHOD_OPTIONS, "Must be valid communication preference"),
+    contact_first_name: Yup.string().min(1, "Contact first name cannot be empty").required("First name is required"),
+    contact_last_name: Yup.string().min(1, "Contact surname cannot be empty").required("Last name is required"),
+    contact_email: Yup.string().email("Must be a valid email format").required("Email is required"),
+    contact_mobile: Yup.string().matches(/^0[6-8]\d{8}$/, "Must be a valid South African mobile number").required("Mobile number is required"),
   }).nullable(),
   lastSavedStep: Yup.number().integer().min(1).nullable(),
 });
@@ -54,8 +56,8 @@ export const quickQuoteSchema = Yup.object().shape({
   workforce_count: Yup.number().integer().min(1).required(),
   average_age: Yup.number().min(18).max(70).required(),
   average_salary: Yup.number().min(0).required(),
-  province: Yup.string().required(),
-  industry: Yup.string().required(),
+  province: Yup.string().oneOf(PROVINCE_OPTIONS, "Invalid province").required(),
+  industry: Yup.string().oneOf(INDUSTRY_TYPE_OPTIONS, "Invalid industry type").required(),
   gender_split: Yup.string().required(),
   benefits: Yup.array().of(
     Yup.object().shape({
@@ -75,7 +77,7 @@ export const fullQuoteSchema = Yup.object().shape({
   replaced_policy_includes_disability: Yup.boolean().nullable(),
   is_policy_older_than_6_months: Yup.boolean().nullable(),
   replaced_policy_start_date: Yup.date().nullable(),
-  province: Yup.string().nullable(),
+  province: Yup.string().oneOf(PROVINCE_OPTIONS, "Invalid province").nullable(),
   benefits: Yup.array().of(
     Yup.object().shape({
       benefit_type: Yup.string().required(),
@@ -86,12 +88,11 @@ export const fullQuoteSchema = Yup.object().shape({
 });
 
 export const sendOtpSchema = Yup.object().shape({
-  referenceId: Yup.string().uuid("Invalid reference ID").required(),
-  referenceType: Yup.string().oneOf(REFERENCE_TYPE_OPTIONS).required(),
+  quoteId: Yup.string().uuid("Invalid quote ID").required("Quote ID is required"),
 });
 
 export const verifyOtpSchema = Yup.object().shape({
-  referenceId: Yup.string().uuid("Invalid reference ID").required(),
+  quoteId: Yup.string().uuid("Invalid quote ID").required("Quote ID is required"),
   otpCode: Yup.string().matches(/^\d{6}$/, "Must be exactly 6 digits").required(),
 });
 
@@ -151,7 +152,7 @@ export const employerOnboardingSchema = Yup.object().shape({
 export const brokerEmployeeSchema = Yup.object().shape({
   firstName: Yup.string().required("First name is required"),
   surname: Yup.string().required("Surname is required"),
-  gender: Yup.string().oneOf(["M", "F", "Other"], "Invalid gender").required("Gender is required"),
+  gender: Yup.string().oneOf(GENDER_OPTIONS, "Invalid gender").required("Gender is required"),
   income: Yup.number().positive("Income must be a positive number").required("Income is required"),
   dateOfBirth: Yup.date().required("Date of birth is required"),
   email: Yup.string().email("Invalid email format").required("Email is required"),

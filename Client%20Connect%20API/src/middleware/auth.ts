@@ -46,3 +46,43 @@ export const confirmToken = async (
     });
   }
 };
+
+export const requireBrokerRep = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authReq = req as any;
+    let rmaAppRoles = Array.isArray(authReq?.auth?.payload?.rmaAppRoles)
+      ? authReq?.auth?.payload?.rmaAppRoles
+      : [];
+
+    // Fallback: decode directly from header if rmaAppRoles is not populated
+    if (rmaAppRoles.length === 0) {
+      const header = req.header("authorization");
+      if (header) {
+        const split = header.split(" ");
+        if (split[1]) {
+          const decoded: any = jwtDecode(split[1]);
+          const extractedRoles = decoded?.rmaAppRoles || decoded?.roles || decoded?.role || [];
+          rmaAppRoles = Array.isArray(extractedRoles) ? extractedRoles : [extractedRoles];
+        }
+      }
+    }
+
+    if (!rmaAppRoles.includes("BP_BROKER_REP")) {
+      return res.status(403).json({
+        success: false,
+        message: "User not authorized to make request to this API: Missing BP_BROKER_REP role",
+      });
+    }
+
+    next();
+  } catch (err) {
+    return res.status(403).json({
+      success: false,
+      message: "User not authorized to make request to this API: Role verification failed",
+    });
+  }
+};

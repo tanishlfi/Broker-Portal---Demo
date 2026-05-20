@@ -1,6 +1,10 @@
-const { BrokerEmployee, BrokerLead, sequelize } = require("../models");
-import { brokerImportEmployeesSchema } from "../utils/brokerValidation";
+const { sequelize } = require("../models");
+import { BrokerEmployeeRepository } from "../repositories/brokerEmployee.repository";
+import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { v4 as uuidv4 } from "uuid";
+
+const employeeRepo = new BrokerEmployeeRepository();
+const leadRepo = new BrokerLeadRepository();
 
 export interface BrokerImportResult {
   success: boolean;
@@ -8,27 +12,14 @@ export interface BrokerImportResult {
   insertedEmployees: number;
   duplicateEmployees: number;
   message?: string;
-  errors?: any[];
 }
 
 export const brokerImportEmployeesService = async (leadId: string, employees: any[]): Promise<BrokerImportResult> => {
   const t = await sequelize.transaction();
 
   try {
-    // 1. Validation
-    try {
-      await brokerImportEmployeesSchema.validate({ lead_id: leadId, employees }, { abortEarly: false });
-    } catch (validationError: any) {
-      const formattedErrors = validationError.inner.map((err: any) => ({
-        row: err.path,
-        field: err.path.split(".").pop(),
-        message: err.message,
-      }));
-      return { success: false, totalEmployees: employees.length, insertedEmployees: 0, duplicateEmployees: 0, errors: formattedErrors };
-    }
-
-    // 2. Verify Lead Exists
-    const lead = await BrokerLead.findByPk(leadId, { transaction: t });
+    // 1. Verify Lead Exists via Repository
+    const lead = await leadRepo.findById(leadId, { transaction: t });
     if (!lead) {
       await t.rollback();
       return {
@@ -40,13 +31,8 @@ export const brokerImportEmployeesService = async (leadId: string, employees: an
       };
     }
 
-    // 3. Duplicate Detection (within the lead)
-    const existingEmployees = await BrokerEmployee.findAll({
-      where: { lead_id: leadId },
-      attributes: ["id_number"],
-      transaction: t,
-    });
-
+    // 2. Duplicate Detection via Repository
+    const existingEmployees = await employeeRepo.findByIdNumbers(leadId, t);
     const existingIdNumbers = new Set(existingEmployees.map((emp: any) => emp.id_number));
     
     const employeesToInsert: any[] = [];
@@ -72,9 +58,9 @@ export const brokerImportEmployeesService = async (leadId: string, employees: an
       }
     });
 
-    // 3. Bulk Insert
+    // 3. Bulk Insert via Repository
     if (employeesToInsert.length > 0) {
-      await BrokerEmployee.bulkCreate(employeesToInsert, { transaction: t });
+      await employeeRepo.bulkCreate(employeesToInsert, t);
     }
 
     await t.commit();

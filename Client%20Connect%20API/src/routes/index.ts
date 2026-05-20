@@ -20,15 +20,16 @@ import rules from "./rules";
 import premiumCalculator from "./premiumCalculator";
 import user from "./user";
 // import mailerTest from "./mailerTest";
+import { requireBrokerRep } from "../middleware/auth";
 
 const router = Router();
 
 // load all routes
-router.use("/broker/leads", brokerLeadsRoutes);
-router.use("/broker/quotes", brokerQuotesRoutes);
-router.use("/broker/otp", brokerOtpRoutes);
-router.use("/broker/employees", brokerEmployeeRoutes);
-router.use("/product", productCatalog);
+router.use("/broker/leads", requireBrokerRep, brokerLeadsRoutes);
+router.use("/broker/quotes", requireBrokerRep, brokerQuotesRoutes);
+router.use("/broker/otp", requireBrokerRep, brokerOtpRoutes);
+router.use("/broker/employees", requireBrokerRep, brokerEmployeeRoutes);
+router.use("/product",requireBrokerRep, productCatalog);
 
 router.use([
   vopd,

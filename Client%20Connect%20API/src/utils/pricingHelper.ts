@@ -1,7 +1,7 @@
 const { sequelize, BrokerQuote, BrokerQuoteBenefit, BrokerEmployee, BrokerLead, BrokerEmployer } = require("../models");
 import { v4 as uuidv4 } from "uuid";
 
-export class PricingService {
+export class PricingHelper {
   private static readonly MAX_BENEFIT = 2000000;
   private static readonly BASE_AGE = 35;
   private static readonly AGE_LOADING_RATE = 0.012;

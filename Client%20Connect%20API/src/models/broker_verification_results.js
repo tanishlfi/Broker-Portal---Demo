@@ -46,6 +46,22 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.JSON,
         allowNull: true,
       },
+      aml_reference: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      aml_timestamp: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      vopd_reference: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      verified_party_type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       sequelize,
