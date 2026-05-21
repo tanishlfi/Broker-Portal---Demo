@@ -150,3 +150,45 @@ input::-webkit-inner-spin-button {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* Table and page layout fixes for static 100% zoom */
+table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+table th,
+table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Ensure pages don't scroll unnecessarily */
+main {
+  overflow: hidden;
+}
+
+/* Hide scrollbars when content fits */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}

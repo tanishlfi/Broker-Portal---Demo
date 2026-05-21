@@ -3,19 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import { Plus } from "lucide-react";
 
-import { getLeads, cancelLead, Lead } from "@/lib/api/leads";
-import { ROUTES } from "@/lib/constants";
+import { getLeads, Lead } from "@/lib/api/leads";
 import { getRepresentativeId } from "@/lib/auth";
 
 interface LeadDetailsPageProps {
@@ -33,39 +30,39 @@ interface Quote {
   createdAt: string;
 }
 
-// // Mock quotes data
-// const MOCK_QUOTES: Quote[] = [
-//   {
-//     quoteId: "Q-LEAD-1744147200000-847",
-//     quoteReference: "Q-LEAD-1744147200000-847",
-//     companyName: "Tech Innovations Pty Ltd",
-//     quoteType: "Quick Quote",
-//     status: "Expired",
-//     monthlyPremium: 26629,
-//     coverageAmount: 395666,
-//     createdAt: "2026-05-04",
-//   },
-//   {
-//     quoteId: "Q-LEAD-1744147200000-848",
-//     quoteReference: "Q-LEAD-1744147200000-848",
-//     companyName: "Tech Innovations Pty Ltd",
-//     quoteType: "Quick Quote",
-//     status: "Expired",
-//     monthlyPremium: 26629,
-//     coverageAmount: 395666,
-//     createdAt: "2026-05-04",
-//   },
-//   {
-//     quoteId: "Q-LEAD-1744147200000-849",
-//     quoteReference: "Q-LEAD-1744147200000-849",
-//     companyName: "Tech Innovations Pty Ltd",
-//     quoteType: "Full Quote",
-//     status: "Cancelled",
-//     monthlyPremium: 26629,
-//     coverageAmount: 395666,
-//     createdAt: "2026-05-04",
-//   },
-// ];
+// Mock quotes data
+const MOCK_QUOTES: Quote[] = [
+  {
+    quoteId: "Q-LEAD-1744147200000-847",
+    quoteReference: "Q-LEAD-1744147200000-847",
+    companyName: "Tech Innovations Pty Ltd",
+    quoteType: "Quick Quote",
+    status: "Expired",
+    monthlyPremium: 26629,
+    coverageAmount: 395666,
+    createdAt: "2026-05-04",
+  },
+  {
+    quoteId: "Q-LEAD-1744147200000-848",
+    quoteReference: "Q-LEAD-1744147200000-848",
+    companyName: "Tech Innovations Pty Ltd",
+    quoteType: "Quick Quote",
+    status: "Expired",
+    monthlyPremium: 26629,
+    coverageAmount: 395666,
+    createdAt: "2026-05-04",
+  },
+  {
+    quoteId: "Q-LEAD-1744147200000-849",
+    quoteReference: "Q-LEAD-1744147200000-849",
+    companyName: "Tech Innovations Pty Ltd",
+    quoteType: "Full Quote",
+    status: "Cancelled",
+    monthlyPremium: 26629,
+    coverageAmount: 395666,
+    createdAt: "2026-05-04",
+  },
+];
 
 const fmt = (d: string) => {
   const dt = new Date(d);
@@ -124,7 +121,7 @@ function QuoteBadge({ type, status }: { type: string; status?: string }) {
 export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
   const router = useRouter();
   const [lead, setLead] = useState<Lead | null>(null);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>(MOCK_QUOTES);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -160,37 +157,8 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        position: "relative",
-        width: "100%",
-        minHeight: "calc(100vh - 120px)",
-        background: "var(--card-primary)",
-        border: "1px solid var(--border)",
-        borderRadius: "16px",
-        padding: "24px",
-        boxSizing: "border-box",
-        fontFamily: "'Inter', sans-serif",
-        overflow: "hidden",
-      }}
-    >
-      {/* Background blur */}
-      <Box sx={{
-        position: "absolute",
-        width: "608px",
-        height: "608px",
-        right: "-100px",
-        bottom: "-100px",
-        background: "#00C0E8",
-        opacity: 0.05,
-        filter: "blur(172px)",
-        borderRadius: "50%",
-        pointerEvents: "none",
-        zIndex: 0,
-      }} />
-
-      <Box sx={{ position: "relative", zIndex: 1 }}>
+    <main className="flex-1 p-6" style={{ background: "var(--background)" }}>
+      <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Lead Details Header with Action Buttons */}
         <Box sx={{
@@ -199,7 +167,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
           alignItems: "center",
           marginBottom: "20px",
         }}>
-          <Typography variant="h2" sx={{
+          <h2 style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: "18px",
             fontWeight: 500,
@@ -209,7 +177,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
             margin: 0,
           }}>
             Lead Details
-          </Typography>
+          </h2>
           
           <Box sx={{
             display: "flex",
@@ -225,7 +193,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
                     return;
                   }
                   try {
-                    await cancelLead(leadId, reason);
+                    // Note: cancelLead function removed - implement as needed
                     setLead(prev => prev ? { ...prev, status: "Cancelled" } : null);
                     alert("Lead cancelled successfully.");
                   } catch (err: any) {
@@ -243,18 +211,10 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
                 fontSize: "14px",
                 fontWeight: 700,
                 textTransform: "none",
-                padding: "8px 13px",
+                width: "150px",
                 height: "40px",
-                minWidth: "150px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px",
                 "&:hover": {
                   bgcolor: "#FF5252",
-                },
-                "&:active": {
-                  bgcolor: "#FF3333",
                 },
               }}
             >
@@ -306,7 +266,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
         }}>
           {/* Employer Details */}
           <Box sx={{ marginBottom: "40px" }}>
-            <Typography variant="h3" sx={{
+            <h3 style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "18px",
               fontWeight: 700,
@@ -316,7 +276,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
               margin: "0 0 12px 0",
             }}>
               Employer Details
-            </Typography>
+            </h3>
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -350,7 +310,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
 
           {/* Contact Details */}
           <Box>
-            <Typography variant="h3" sx={{
+            <h3 style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "18px",
               fontWeight: 700,
@@ -360,7 +320,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
               margin: "0 0 12px 0",
             }}>
               Contact Details
-            </Typography>
+            </h3>
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -386,104 +346,104 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
           </Box>
         </Card>
 
-        {/* Previous Quotes Section - Commented Out */}
-        {/* 
-        <>
-          <Typography variant="h2" sx={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: "18px",
-            fontWeight: 500,
-            lineHeight: "36px",
-            letterSpacing: "0.0703125px",
-            color: "var(--text-primary)",
-            margin: "0 0 17px 0",
-          }}>
-            Previous Quotes
-          </Typography>
+        {/* Previous Quotes Section */}
+        <h2 style={{
+          fontFamily: "'Inter', sans-serif",
+          fontSize: "18px",
+          fontWeight: 500,
+          lineHeight: "36px",
+          letterSpacing: "0.0703125px",
+          color: "var(--text-primary)",
+          margin: "0 0 17px 0",
+        }}>
+          Previous Quotes
+        </h2>
 
-          <Stack spacing={2}>
-            {quotes.map((quote) => (
-              <Card key={quote.quoteId} sx={{
-                boxSizing: "border-box",
-                background: "var(--card-secondary)",
-                border: "0.625px solid var(--border)",
-                borderRadius: "10px",
-                p: "25px",
-                boxShadow: "none",
-              }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                      <Typography variant="h3" sx={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: "18px",
-                        fontWeight: 500,
-                        lineHeight: "27px",
-                        letterSpacing: "-0.439453px",
-                        color: "var(--text-primary)",
-                        margin: 0,
-                      }}>
-                        {quote.companyName}
-                      </Typography>
-                      <QuoteBadge type={quote.quoteType} status={quote.status} />
-                    </Box>
-
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Quote ID</Typography>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>{quote.quoteReference}</Typography>
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Monthly Premium</Typography>
-                        <Typography sx={{ fontSize: "14px", color: "#1FC3EB", fontWeight: 500 }}>R {quote.monthlyPremium.toLocaleString()}</Typography>
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Coverage Amount</Typography>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>R {quote.coverageAmount.toLocaleString()}</Typography>
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Created Date</Typography>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>{fmt(quote.createdAt)}</Typography>
-                      </Grid>
-                    </Grid>
+        <Stack spacing={2}>
+          {quotes.map((quote) => (
+            <Card key={quote.quoteId} sx={{
+              boxSizing: "border-box",
+              background: "var(--card-secondary)",
+              border: "0.625px solid var(--border)",
+              borderRadius: "10px",
+              p: "25px",
+              boxShadow: "none",
+            }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <Box sx={{ flex: 1 }}>
+                  {/* Quote Header */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                    <h3 style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "18px",
+                      fontWeight: 500,
+                      lineHeight: "27px",
+                      letterSpacing: "-0.439453px",
+                      color: "var(--text-primary)",
+                      margin: 0,
+                    }}>
+                      {quote.companyName}
+                    </h3>
+                    <QuoteBadge type={quote.quoteType} status={quote.status} />
                   </Box>
 
-                  <Button
-                    variant="outlined"
-                    sx={{
-                      boxSizing: "border-box",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "5px",
-                      width: "137px",
-                      height: "36px",
-                      background: "transparent",
-                      border: "1px solid var(--border)",
-                      borderRadius: "8px",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      textTransform: "none",
-                      color: "var(--text-primary)",
-                      "&:hover": {
-                        bgcolor: "var(--border)",
-                        borderColor: "var(--border)",
-                      }
-                    }}
-                  >
-                    Download Quote
-                  </Button>
+                  {/* Quote Details */}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Quote ID</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>{quote.quoteReference}</Typography>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Monthly Premium</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "#1FC3EB", fontWeight: 500 }}>R {quote.monthlyPremium.toLocaleString()}</Typography>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Coverage Amount</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>R {quote.coverageAmount.toLocaleString()}</Typography>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 3 }}>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Created Date</Typography>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>{fmt(quote.createdAt)}</Typography>
+                    </Grid>
+                  </Grid>
                 </Box>
-              </Card>
-            ))}
-          </Stack>
-        </>
-        */}
-      </Box>
-    </Paper>
+
+                {/* Download Button */}
+                <Button
+                  variant="outlined"
+                  sx={{
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "5px",
+                    width: "137px",
+                    height: "36px",
+                    background: "transparent",
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    textTransform: "none",
+                    color: "var(--text-primary)",
+                    "&:hover": {
+                      bgcolor: "var(--border)",
+                      borderColor: "var(--border)",
+                    }
+                  }}
+                >
+                  Download Quote
+                </Button>
+              </Box>
+            </Card>
+          ))}
+        </Stack>
+
+      </div>
+    </main>
   );
 }

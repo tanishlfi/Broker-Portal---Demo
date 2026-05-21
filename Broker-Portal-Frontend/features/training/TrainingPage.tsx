@@ -127,7 +127,7 @@ export default function TrainingPage() {
 
   return (
     <main
-      className="flex-1 overflow-y-auto p-5 min-h-screen"
+      className="flex-1 p-5 min-h-screen"
       style={{ background: "var(--background)" }}
     >
       {/* Header */}

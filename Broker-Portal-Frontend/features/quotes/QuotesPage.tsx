@@ -1,26 +1,25 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-
 import { useRouter, useSearchParams } from "next/navigation";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
-import Chip from "@mui/material/Chip";
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
-import { Plus, Search, ChevronDown, X } from "lucide-react";
+import { Plus, Search, ChevronDown, X, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Box,
+  Typography,
+  Button,
+  Stack,
+  Card,
+  Chip,
+  Grid,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+} from "@mui/material";
 
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import CancelQuoteModal from "@/components/quotes/CancelQuoteModal";
@@ -56,6 +55,8 @@ interface Lead {
   leadReference: string;
 }
 
+const fmt = (n: number) => `R ${n.toLocaleString("en-ZA")}`;
+
 export default function QuotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,9 +66,6 @@ export default function QuotesPage() {
   const [activeTab, setActiveTab] = useState<"new" | "onboarding" | "approved" | "pending" | "cancelled">("new");
   const [searchQuery, setSearchQuery] = useState("");
   
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [activeMenuQuote, setActiveMenuQuote] = useState<Quote | null>(null);
-
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -75,6 +73,27 @@ export default function QuotesPage() {
   const [selectedQuoteForApproval, setSelectedQuoteForApproval] = useState<Quote | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedQuoteForCancel, setSelectedQuoteForCancel] = useState<Quote | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [activeMenuQuote, setActiveMenuQuote] = useState<Quote | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>, quote: Quote) => {
+    setAnchorEl(event.currentTarget);
+    setActiveMenuQuote(quote);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+    setActiveMenuQuote(null);
+  };
+
+  const tabs = [
+    { key: "new" as const, label: "New" },
+    { key: "onboarding" as const, label: "Onboarding" },
+    { key: "approved" as const, label: "Approved" },
+    { key: "pending" as const, label: "Pending" },
+    { key: "cancelled" as const, label: "Cancelled" },
+  ];
 
   // Check for tab query parameter on mount
   useEffect(() => {
@@ -167,32 +186,13 @@ export default function QuotesPage() {
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
-
     load(true);
     intervalId = setInterval(() => load(false), 10000);
 
     return () => clearInterval(intervalId);
   }, [load]);
 
-  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>, quote: Quote) => {
-    setAnchorEl(event.currentTarget);
-    setActiveMenuQuote(quote);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-    setActiveMenuQuote(null);
-  };
-
   const filteredQuotes = quotes.filter((quote) => quote.status === activeTab);
-
-  const tabs = [
-    { key: "new" as const, label: `New Quotes (${quotes.filter(q => q.status === "new").length})` },
-    { key: "pending" as const, label: `Awaiting Acceptance (${quotes.filter(q => q.status === "pending").length})` },
-    { key: "onboarding" as const, label: `In Onboarding (${quotes.filter(q => q.status === "onboarding").length})` },
-    { key: "cancelled" as const, label: `Cancelled (${quotes.filter(q => q.status === "cancelled").length})` },
-    { key: "approved" as const, label: `Expired (${quotes.filter(q => q.status === "approved").length})` },
-  ];
 
   const handleProceedWithQuote = () => {
     if (selectedLead) {
@@ -256,8 +256,14 @@ export default function QuotesPage() {
     load(false); // Trigger immediate non-blocking refresh of quotes list!
   };
 
+  const card: React.CSSProperties = {
+    background: "var(--card)",
+    border: "1px solid var(--border)",
+    borderRadius: "10px",
+  };
+
   return (
-    <Box sx={{ position: "relative", width: "100%", h: "100%" }}>
+    <Box sx={{ position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Background blur effect */}
       <Box
         sx={{
@@ -273,6 +279,9 @@ export default function QuotesPage() {
           borderRadius: "50%",
         }}
       />
+
+      {/* Scrollable Content Container */}
+      <Box sx={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1 }}>
 
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: "24px", px: "24px", pt: "24px" }}>
@@ -306,31 +315,21 @@ export default function QuotesPage() {
 
       {/* Main Content */}
       <Box sx={{ px: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        {/* Search Section */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>Search Quotes</Typography>
-          <TextField
-            fullWidth
-            placeholder="Search by company name or quote ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search size={20} color="#A0A0A0" />
-                  </InputAdornment>
-                ),
-              }
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                height: "44px",
-                bgcolor: "var(--card-secondary)",
-              }
-            }}
-          />
-        </Box>
+        {/* Search + Tabs row */}
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: "480px" }}>
+            <Search size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--muted-foreground)", pointerEvents: "none" }} />
+            <input
+              type="text"
+              placeholder="Search by company name or quote ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: "100%", height: "38px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--input)", padding: "0 12px 0 36px", fontSize: "13px", color: "var(--foreground)", outline: "none", boxSizing: "border-box" }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+            />
+          </div>
+        </div>
 
         {/* Tabs */}
         <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: "8px 0px" }}>
@@ -463,6 +462,7 @@ export default function QuotesPage() {
           )}
         </Stack>
       </Box>
+      </Box>
 
       {/* Global Actions Menu */}
       <Menu
@@ -545,7 +545,7 @@ export default function QuotesPage() {
         }}
       >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", p: "24px" }}>
-          <Typography variant="h6" sx={{ fontWeight: 500, color: "var(--text-primary)" }}>Generate New Quote</Typography>
+          <Box component="span" sx={{ fontWeight: 500, fontSize: "1.25rem", color: "var(--text-primary)" }}>Generate New Quote</Box>
           <IconButton onClick={() => { setShowLeadModal(false); setSelectedLead(null); }} sx={{ color: "var(--text-secondary)" }}>
             <X size={24} />
           </IconButton>

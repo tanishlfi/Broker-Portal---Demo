@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Eye, Users, DollarSign, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import StickyScrollbar from "@/components/ui/StickyScrollbar";
 
 interface Policy {
   policyNumber: string;
@@ -31,6 +32,7 @@ export default function PoliciesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const filtered = MOCK_POLICIES.filter((p) => {
     const q = search.toLowerCase();
@@ -46,8 +48,20 @@ export default function PoliciesPage() {
     borderRadius: "10px",
   };
 
+  const tableStyle: React.CSSProperties = {
+    ...card,
+    overflowX: "auto",
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+  };
+
   return (
     <>
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <main className="flex-1 overflow-y-auto p-6" style={{ background: "var(--background)" }}>
         <div className="max-w-7xl mx-auto space-y-6">
 
@@ -90,7 +104,7 @@ export default function PoliciesPage() {
           </div>
 
           {/* Table */}
-          <div style={{ ...card, overflowX: "auto" }}>
+          <div ref={tableRef} className="hide-scrollbar" style={{ ...tableStyle }}>
             <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
               <thead>
                 <tr>
@@ -129,6 +143,8 @@ export default function PoliciesPage() {
               </tbody>
             </table>
           </div>
+
+          <StickyScrollbar scrollRef={tableRef} />
 
         </div>
       </main>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Eye, RotateCcw, Search } from "lucide-react";
 import InvoiceDetailsModal from "./InvoiceDetailsModal";
+import StickyScrollbar from "@/components/ui/StickyScrollbar";
 
 interface FailedInvoice {
   id: string;
@@ -56,6 +57,7 @@ export default function FailedInvoicesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedInvoice, setSelectedInvoice] = useState<FailedInvoice | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 10;
 
   const filteredInvoices = staticInvoices.filter(
@@ -73,9 +75,14 @@ export default function FailedInvoicesPage() {
 
   return (
     <main
-      className="flex-1 overflow-y-auto p-5 min-h-screen"
+      className="flex-1 overflow-y-auto p-5"
       style={{ background: "var(--background)" }}
     >
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-medium mb-6" style={{ color: "var(--text-primary)" }}>
@@ -133,15 +140,20 @@ export default function FailedInvoicesPage() {
 
       {/* Table Container */}
       <div
-        className="rounded-lg overflow-hidden"
+        ref={tableRef}
+        className="rounded-lg hide-scrollbar"
         style={{
           background: "var(--card-secondary)",
           border: "0.625px solid var(--border)",
+          overflowX: "auto",
+          // Hide the native scrollbar
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div>
+          <table className="w-full text-sm" style={{ minWidth: "800px" }}>
             {/* Table Header */}
             <thead>
               <tr
@@ -301,87 +313,92 @@ export default function FailedInvoicesPage() {
 
         {/* Table Footer - Pagination */}
         <div
-          className="flex items-center justify-between px-4 py-3"
           style={{
             background: "var(--table-header-bg)",
             borderTop: "0.625px solid var(--border)",
+            minWidth: "1163px",
+            width: "100%",
           }}
         >
-          <span style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
-            Showing {startIdx + 1} to {Math.min(startIdx + itemsPerPage, filteredInvoices.length)} of{" "}
-            {filteredInvoices.length} entries
-          </span>
+          <div className="px-4 py-3" style={{ display: "flex", alignItems: "center", minWidth: "1163px" }}>
+            <span style={{ color: "var(--text-secondary)", fontSize: "14px", whiteSpace: "nowrap" }}>
+              Showing {startIdx + 1} to {Math.min(startIdx + itemsPerPage, filteredInvoices.length)} of{" "}
+              {filteredInvoices.length} entries
+            </span>
 
-          {/* Pagination Controls */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-colors"
-              style={{
-                background: "transparent",
-                border: "1px solid var(--border)",
-                color: "var(--text-primary)",
-                opacity: currentPage === 1 ? 0.5 : 1,
-                cursor: currentPage === 1 ? "not-allowed" : "pointer",
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span>Previous</span>
-            </button>
-
-            {/* Page Numbers */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-1" style={{ marginLeft: "auto" }}>
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className="px-3 py-2 rounded text-sm font-medium transition-colors"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-colors"
                 style={{
-                  background: currentPage === page ? "#1FC3EB" : "transparent",
-                  border: currentPage === page ? "none" : "1px solid var(--border)",
+                  background: "transparent",
+                  border: "1px solid var(--border)",
                   color: "var(--text-primary)",
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
                 }}
               >
-                {page}
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span>Previous</span>
               </button>
-            ))}
 
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-colors"
-              style={{
-                background: "transparent",
-                border: "1px solid var(--border)",
-                color: "var(--text-primary)",
-                opacity: currentPage === totalPages ? 0.5 : 1,
-                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-              }}
-            >
-              <span>Next</span>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+              {/* Page Numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className="px-3 py-2 rounded text-sm font-medium transition-colors"
+                  style={{
+                    background: currentPage === page ? "#1FC3EB" : "transparent",
+                    border: currentPage === page ? "none" : "1px solid var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-colors"
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-primary)",
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                }}
               >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+                <span>Next</span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <StickyScrollbar scrollRef={tableRef} />
 
       {/* Invoice Details Modal */}
       {selectedInvoice && (

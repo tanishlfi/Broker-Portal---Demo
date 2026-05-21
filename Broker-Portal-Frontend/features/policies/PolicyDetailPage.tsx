@@ -309,7 +309,7 @@ export default function PolicyDetailPage({ policyId }: { policyId: string }) {
 
   if (!policy) {
     return (
-      <main className="flex-1 overflow-y-auto p-6" style={{ background: "var(--background)" }}>
+      <main className="flex-1 p-6" style={{ background: "var(--background)" }}>
         <div style={{ maxWidth: "900px", margin: "0 auto", paddingTop: "40px", textAlign: "center", color: "#6b7280", fontSize: "14px" }}>
           Policy not found.
         </div>
@@ -319,7 +319,7 @@ export default function PolicyDetailPage({ policyId }: { policyId: string }) {
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto p-6" style={{ background: "var(--background)" }}>
+      <main className="flex-1 p-6" style={{ background: "var(--background)" }}>
         <div style={{ maxWidth: "900px", margin: "0 auto" }}>
 
           {/* Back + title */}

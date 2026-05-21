@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import Typography from "@mui/material/Typography";
 import {
   Plus,
   ClipboardList,
@@ -15,9 +15,9 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
-import DashboardCard from "@/components/ui/DashboardCard";
 import { getLeads } from "@/lib/api/leads";
 import { getRepresentativeId } from "@/lib/auth";
+import DashboardCard from "@/components/ui/DashboardCard";
 
 const quickActions = [
   {
@@ -120,9 +120,6 @@ export default function DashboardPage() {
     <Box
       component="main"
       sx={{
-        flex: 1,
-        overflowY: "auto",
-        overflowX: "auto",
         p: "20px",
         bgcolor: "var(--background)",
       }}
@@ -139,7 +136,7 @@ export default function DashboardPage() {
         Dashboard
       </Typography>
 
-      <Box sx={{ minWidth: "1200px" }}>
+      <Box sx={{ maxWidth: "100%" }}>
         <Grid container spacing={3} sx={{ mb: "32px" }}>
           {statCards.map(({ value, label, icon: Icon }) => (
             <Grid size={3} key={label}>

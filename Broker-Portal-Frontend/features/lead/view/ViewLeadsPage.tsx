@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
-import { Plus, Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Eye, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
-import { getLeads, cancelLead, Lead } from "@/lib/api/leads";
+import { getLeads, Lead } from "@/lib/api/leads";
 import { ROUTES } from "@/lib/constants";
 import { getRepresentativeId } from "@/lib/auth";
 import Badge from "@/components/ui/badge";
+import StickyScrollbar from "@/components/ui/StickyScrollbar";
 import {
   Table,
   TableHeader,
@@ -23,7 +22,6 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { LeadStatus } from "@/lib/enums";
 
 const PAGE_SIZE = 10;
 
@@ -42,6 +40,7 @@ export default function ViewLeadsPage() {
   const [statusFilter, setStatus] = useState("All");
   const [quoteFilter, setQuote]   = useState("All");
   const [page, setPage]           = useState(1);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -83,45 +82,18 @@ export default function ViewLeadsPage() {
   const quoteOptions = ["All", ...Array.from(new Set(leads.map(l => l.quoteStatus))).filter((s): s is string => Boolean(s))];
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        position: "relative",
-        width: "100%",
-        minHeight: "calc(100vh - 120px)",
-        background: "var(--card-primary)",
-        border: "1px solid var(--border)",
-        borderRadius: "16px",
-        padding: "24px",
-        boxSizing: "border-box",
-        fontFamily: "'Inter', sans-serif",
-        overflow: "auto",
-      }}
-    >
-      {/* Background blur */}
-      <Box
-        sx={{
-          position: "absolute",
-          width: "608px",
-          height: "608px",
-          right: "-100px",
-          bottom: "-100px",
-          background: "#00C0E8",
-          opacity: 0.05,
-          filter: "blur(172px)",
-          borderRadius: "50%",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-
-      <Box sx={{ position: "relative", zIndex: 1 }}>
-        
+    <main className="flex-1 overflow-y-auto p-6" style={{ background: "var(--background)" }}>
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-          <Typography variant="h1" sx={{ fontSize: "22px", fontWeight: 600, color: "var(--foreground)", margin: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <h1 style={{ fontSize: "22px", fontWeight: 600, color: "var(--foreground)", margin: 0 }}>
             Leads
-          </Typography>
+          </h1>
           <Button
             onClick={() => router.push(ROUTES.newLead)}
             variant="contained"
@@ -142,7 +114,7 @@ export default function ViewLeadsPage() {
           >
             Add New Lead
           </Button>
-        </Box>
+        </div>
 
         {/* Stats Cards */}
         <Grid container spacing={3} sx={{ marginBottom: "26px" }}>
@@ -191,101 +163,53 @@ export default function ViewLeadsPage() {
         </Grid>
 
         {/* Search & Filters */}
-        <div className="flex gap-4 mb-6">
-          {/* Search Input */}
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg flex-1"
-            style={{
-              background: "var(--card-secondary)",
-              border: "1.875px solid var(--border)",
-            }}
-          >
-            <Search size={20} style={{ color: "var(--text-secondary)" }} />
+        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "26px" }}>
+          {/* Search */}
+          <div style={{ position: "relative", flex: 1, maxWidth: "480px" }}>
+            <Search size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--muted-foreground)", pointerEvents: "none" }} />
             <input
               type="text"
               placeholder="Search by company name or lead ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-sm"
-              style={{ color: "var(--text-primary)" }}
+              style={{ width: "100%", height: "38px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--input)", padding: "0 12px 0 36px", fontSize: "13px", color: "var(--foreground)", outline: "none", boxSizing: "border-box" }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
             />
           </div>
 
           {/* Status Filter */}
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg"
-            style={{
-              background: "var(--card-secondary)",
-              border: "1.875px solid var(--border)",
-              minWidth: "220px",
-            }}
-          >
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatus(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-sm"
-              style={{ color: "var(--text-primary)" }}
-            >
-              <option value="All">All Statuses</option>
-              {statusOptions.filter(opt => opt !== "All").map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </div>
+          <StatusDropdown
+            value={statusFilter}
+            onChange={setStatus}
+            options={statusOptions}
+            placeholder="All Statuses"
+          />
 
           {/* Quote Status Filter */}
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg"
-            style={{
-              background: "var(--card-secondary)",
-              border: "1.875px solid var(--border)",
-              minWidth: "220px",
-            }}
-          >
-            <select
-              value={quoteFilter}
-              onChange={(e) => setQuote(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-sm"
-              style={{ color: "var(--text-primary)" }}
-            >
-              <option value="All">All Quote Statuses</option>
-              {quoteOptions.filter(opt => opt !== "All").map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </div>
+          <StatusDropdown
+            value={quoteFilter}
+            onChange={setQuote}
+            options={quoteOptions}
+            placeholder="All Quote Statuses"
+          />
         </div>
 
         {/* Table */}
-        <Box sx={{
-          boxSizing: "border-box",
-          background: "var(--card-secondary)",
-          border: "0.625px solid var(--border)",
-          borderRadius: "10px",
-          overflow: "hidden",
-        }}>
+        <Box
+          ref={tableRef}
+          sx={{
+            boxSizing: "border-box",
+            background: "var(--card-secondary)",
+            border: "0.625px solid var(--border)",
+            borderRadius: "10px",
+            overflowX: "auto",
+            // Hide the native scrollbar
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+        >
           {loading ? (
             <Typography sx={{ padding: "48px", textAlign: "center", color: "#A0A0A0" }}>Loading leads…</Typography>
           ) : filtered.length === 0 ? (
@@ -311,7 +235,7 @@ export default function ViewLeadsPage() {
               </Button>
             </Box>
           ) : (
-            <Box sx={{ overflowX: "auto", minWidth: "1400px" }}>
+            <Box ref={tableRef}>
               <Table>
                 {/* Header */}
                 <TableHeader>
@@ -539,9 +463,41 @@ export default function ViewLeadsPage() {
               </Stack>
             </Box>
           )}
+          <StickyScrollbar scrollRef={tableRef} />
         </Box>
 
-      </Box>
-    </Paper>
+      </div>
+    </main>
+  );
+}
+
+function StatusDropdown({ value, onChange, options, placeholder }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const displayLabel = value === "All" ? placeholder : value;
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{ display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 14px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--input)", color: "var(--foreground)", fontSize: "13px", cursor: "pointer", minWidth: "160px", justifyContent: "space-between" }}
+      >
+        <span>{displayLabel}</span>
+        <ChevronDown size={14} style={{ opacity: 0.5, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+      </button>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, minWidth: "160px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px", zIndex: 50, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
+          {options.map((opt) => (
+            <button key={opt} onMouseDown={() => { onChange(opt); setOpen(false); }}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 14px", fontSize: "13px", color: opt === value ? "var(--primary)" : "var(--foreground)", background: opt === value ? "rgba(31,195,235,0.08)" : "transparent", border: "none", cursor: "pointer" }}>
+              {opt === "All" ? placeholder : opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

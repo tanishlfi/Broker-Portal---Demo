@@ -58,16 +58,18 @@ export default function DashboardLayout({ children, title = "", subtitle, header
           display: "flex",
           flexDirection: "column",
           flex: 1,
-          overflowY: "auto",
           height: "100vh",
           marginLeft: isCollapsed ? "60px" : "240px",
           background: "var(--background)",
           fontFamily: "'Inter', sans-serif",
           transition: "margin-left 0.3s ease",
+          overflow: "hidden",
         }}
       >
         <DashboardHeader title={title} subtitle={subtitle} showUser={true} />
-        {children}
+        <Box sx={{ flex: 1, overflowY: "auto", overflowX: "auto" }}>
+          {children}
+        </Box>
       </Box>
     </>
   );
