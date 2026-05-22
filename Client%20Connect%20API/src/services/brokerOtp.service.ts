@@ -3,6 +3,8 @@ import { BrokerQuoteRepository } from "../repositories/brokerQuote.repository";
 import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { BrokerOtpRepository } from "../repositories/brokerOtp.repository";
 import { sendBrokerEmail } from "../utils/brokerSendEmail";
+import { AuditService } from "./auditService";
+import { AuditEventType, ActionOutcome } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const quoteRepo = new BrokerQuoteRepository();
@@ -64,9 +66,27 @@ export class BrokerOtpService {
       await quoteRepo.update(quoteId, { quote_status: "Awaiting Employer Acceptance" }, t);
 
       await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.NOTIFICATION_SENT,
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId,
+        metadata: { quoteId, type: "OTP", method: "Email" },
+        ipAddress: data.ipAddress
+      });
+
       return { expiresAt };
-    } catch (error) {
+    } catch (error: any) {
       await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.NOTIFICATION_SENT,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { quoteId: data.quoteId, error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
@@ -101,15 +121,34 @@ export class BrokerOtpService {
         await leadRepo.update(quote.lead_id, { lead_status: "Accepted" }, t);
         
         await t.commit();
+
+        await AuditService.logEvent({
+          eventType: AuditEventType.OTP_VERIFIED,
+          outcome: ActionOutcome.SUCCESS,
+          userId: data.representativeId,
+          metadata: { quoteId, leadId: quote.lead_id },
+          ipAddress: data.ipAddress
+        });
+
       } else {
         await t.rollback();
         throw new Error("Quote not found during verification.");
       }
 
       return true;
-    } catch (error) {
-      await t.rollback();
+    } catch (error: any) {
+      if (t) await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.OTP_VERIFIED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { quoteId: data.quoteId, error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
 }
+

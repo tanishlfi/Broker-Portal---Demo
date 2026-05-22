@@ -30,8 +30,12 @@ const otpService = new BrokerOtpService();
  *         description: Internal server error
  */
 export const sendOTP = async (req: Request, res: Response) => {
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
-    const result = await otpService.sendOTP(req.body);
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
+    const result = await otpService.sendOTP(payload);
     return res.status(200).json({
       success: true,
       message: "Verification code sent.",
@@ -78,8 +82,12 @@ export const sendOTP = async (req: Request, res: Response) => {
  *         description: Internal server error
  */
 export const verifyOTP = async (req: Request, res: Response) => {
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
-    await otpService.verifyOTP(req.body);
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
+    await otpService.verifyOTP(payload);
     return res.status(200).json({
       success: true,
       message: "Verification successful."

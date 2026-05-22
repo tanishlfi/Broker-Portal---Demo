@@ -6,7 +6,6 @@ import {
   getLeadById,
   updateLead,
   cancelLead,
-  getLeadHistory,
 } from "../controllers/brokerLeadsController";
 import { saveQuoteToLead } from "../controllers/brokerQuotesController";
 import { 
@@ -22,7 +21,6 @@ router.get("/", getLeads);
 router.get("/:leadId", getLeadById);
 router.patch("/:leadId", validateUpdateLead, updateLead);
 router.post("/:leadId/cancel", validateCancelLead, cancelLead);
-router.get("/:leadId/history", getLeadHistory);
 router.post("/:leadId/quote", saveQuoteToLead);
 
 export default router;

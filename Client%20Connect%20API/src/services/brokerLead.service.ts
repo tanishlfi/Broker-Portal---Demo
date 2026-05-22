@@ -1,5 +1,7 @@
 const { sequelize } = require("../models");
 import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
+import { AuditService } from "./auditService";
+import { AuditEventType, ActionOutcome } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const leadRepo = new BrokerLeadRepository();
@@ -37,19 +39,28 @@ export class BrokerLeadService {
         preferred_communication_method: data.preferredCommunicationMethod || "Email",
       }, t);
 
-      await leadRepo.logHistory({
-        table_name: "BrokerLead",
-        record_id: String(lead.lead_id),
-        change_type: "CREATE",
-        before_value: null,
-        after_value: lead.toJSON(),
-        changed_by: data.representativeId,
-      }, t);
-
       await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.LEAD_CREATED,
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId,
+        metadata: { leadId: lead.lead_id, leadReference: lead.lead_reference },
+        ipAddress: data.ipAddress
+      });
+
       return { leadId: lead.lead_id, leadReference: lead.lead_reference };
-    } catch (error) {
+    } catch (error: any) {
       await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.LEAD_CREATED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
@@ -128,19 +139,28 @@ export class BrokerLeadService {
         await leadRepo.update(leadId, updates, t);
       }
 
-      await leadRepo.logHistory({
-        table_name: "BrokerLead",
-        record_id: String(lead.lead_id),
-        change_type: "UPDATE",
-        before_value: beforeLead,
-        after_value: lead.toJSON(),
-        changed_by: data.representativeId || lead.representative_id,
-      }, t);
-
       await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.LEAD_UPDATED,
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId || lead.representative_id,
+        metadata: { leadId, updates },
+        ipAddress: data.ipAddress
+      });
+
       return lead;
-    } catch (error) {
+    } catch (error: any) {
       await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.LEAD_UPDATED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { leadId, error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
@@ -156,8 +176,6 @@ export class BrokerLeadService {
         throw new Error(`Cannot cancel an ineligible lead with status: ${lead.lead_status}`);
       }
 
-      const beforeLead = lead.toJSON();
-
       await leadRepo.update(leadId, {
         lead_status: "Cancelled",
         cancelled_at: new Date(),
@@ -166,27 +184,30 @@ export class BrokerLeadService {
         is_active: false,
       }, t);
 
-      await leadRepo.logHistory({
-        table_name: "BrokerLead",
-        record_id: String(lead.lead_id),
-        change_type: "UPDATE",
-        before_value: beforeLead,
-        after_value: lead.toJSON(),
-        changed_by: data.representativeId || lead.representative_id,
-      }, t);
-
       await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.LEAD_UPDATED,
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId || lead.representative_id,
+        metadata: { leadId, action: "CANCEL", reason: data.reason },
+        ipAddress: data.ipAddress
+      });
+
       return true;
-    } catch (error) {
+    } catch (error: any) {
       await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.LEAD_UPDATED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { leadId, action: "CANCEL", error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
-
-  async getLeadHistory(leadId: string) {
-    const lead = await this.getLeadById(leadId);
-    if (!lead) throw new Error("Lead not found");
-
-    return await leadRepo.findHistoryByLeadId(lead.lead_id);
-  }
 }
+

@@ -17,6 +17,7 @@ import brokerEmployeeRoutes from "./brokerEmployeeRoutes";
 import brokerDashboardRoutes from "./brokerDashboardRoutes";
 import productCatalog from "./productCatalogRoutes";
 import tasks from "./tasksRoutes";
+import auditRoutes from "./auditRoutes";
 import rules from "./rules";
 import premiumCalculator from "./premiumCalculator";
 import user from "./user";
@@ -32,6 +33,7 @@ router.use("/broker/otp", requireBrokerRep, brokerOtpRoutes);
 router.use("/broker/employees", requireBrokerRep, brokerEmployeeRoutes);
 router.use("/broker/dashboard", requireBrokerRep, brokerDashboardRoutes);
 router.use("/product",requireBrokerRep, productCatalog);
+router.use("/audit", requireBrokerRep, auditRoutes);
 
 router.use([
   vopd,

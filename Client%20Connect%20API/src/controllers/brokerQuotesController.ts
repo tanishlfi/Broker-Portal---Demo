@@ -49,8 +49,12 @@ const quoteService = new BrokerQuoteService();
  *         description: Quick quote generated successfully
  */
 export const generateQuickQuote = async (req: Request, res: Response) => {
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
-    const result = await quoteService.generateQuickQuote(req.body);
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
+    const result = await quoteService.generateQuickQuote(payload);
     return res.status(201).json({ success: true, message: "Quick quote generated", data: result });
   } catch (error: any) {
     return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
@@ -100,8 +104,12 @@ export const generateQuickQuote = async (req: Request, res: Response) => {
  *         description: Full quote generated successfully
  */
 export const generateFullQuote = async (req: Request, res: Response) => {
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
-    const result = await quoteService.generateFullQuote(req.body);
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
+    const result = await quoteService.generateFullQuote(payload);
     return res.status(201).json({ success: true, message: "Full quote generated", data: result });
   } catch (error: any) {
     return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
@@ -244,9 +252,13 @@ export const generateFullQuote = async (req: Request, res: Response) => {
  *         description: Onboarding details saved successfully
  */
 export const saveEmployerOnboardingDetails = async (req: Request, res: Response) => {
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
     const { quoteId } = req.params;
-    const result = await quoteService.saveEmployerOnboardingDetails(quoteId, req.body);
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
+    const result = await quoteService.saveEmployerOnboardingDetails(quoteId, payload);
     return res.status(200).json({ success: true, message: "Onboarding details saved", data: result });
   } catch (error: any) {
     return res.status(error.message.includes("not found") ? 404 : 500).json({ success: false, message: error.message });
@@ -443,9 +455,9 @@ export const downloadQuoteDocument = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /broker/quotes/{quoteId}/status:
+ * /broker/quotes/{quoteId}:
  *   patch:
- *     summary: Update the status of a quote
+ *     summary: Update quote details (header, quick quote, and full quote data)
  *     tags: [Broker Quotes]
  *     parameters:
  *       - in: path
@@ -459,21 +471,52 @@ export const downloadQuoteDocument = async (req: Request, res: Response) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - status
  *             properties:
- *               status:
+ *               quote_type:
+ *                 type: string
+ *                 enum: [Quick, Full]
+ *               quote_status:
+ *                 type: string
+ *               workforce_count:
+ *                 type: integer
+ *               average_age:
+ *                 type: integer
+ *               average_salary:
+ *                 type: number
+ *               rma_member_number:
+ *                 type: string
+ *               is_permanent_employees:
+ *                 type: boolean
+ *               is_actively_at_work:
+ *                 type: boolean
+ *               is_replacing_policy:
+ *                 type: boolean
+ *               replaced_policy_includes_disability:
+ *                 type: boolean
+ *               is_policy_older_than_6_months:
+ *                 type: boolean
+ *               replaced_policy_start_date:
+ *                 type: string
+ *                 format: date
+ *               province:
  *                 type: string
  *     responses:
  *       200:
- *         description: Quote status updated
+ *         description: Quote updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Quote not found
  */
-export const updateQuoteStatusController = async (req: Request, res: Response) => {
+export const updateQuote = async (req: Request, res: Response) => {
+  const { quoteId } = req.params;
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
-    const { quoteId } = req.params;
-    const { status } = req.body;
-    const result = await quoteService.updateQuoteStatus(quoteId, status);
-    return res.status(200).json({ success: true, message: "Quote status updated", data: result });
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
+    const result = await quoteService.updateQuote(quoteId, payload);
+    return res.status(200).json({ success: true, message: "Quote updated successfully", data: result });
   } catch (error: any) {
     return res.status(error.message.includes("not found") ? 404 : 400).json({ success: false, message: error.message });
   }

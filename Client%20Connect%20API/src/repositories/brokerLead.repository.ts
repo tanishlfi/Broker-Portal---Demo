@@ -45,18 +45,4 @@ export class BrokerLeadRepository {
       transaction
     });
   }
-
-  async logHistory(data: any, transaction: any) {
-    return await BrokerHistory.create(data, { transaction });
-  }
-
-  async findHistoryByLeadId(leadId: string) {
-    return await BrokerHistory.findAll({
-      where: {
-        table_name: "BrokerLead",
-        record_id: leadId
-      },
-      order: [["created_at", "DESC"]]
-    });
-  }
 }

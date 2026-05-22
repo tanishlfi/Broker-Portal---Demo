@@ -2,6 +2,8 @@ const { sequelize, BrokerEmployee } = require("../models");
 import { BrokerQuoteRepository } from "../repositories/brokerQuote.repository";
 import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { PricingHelper } from "../utils/pricingHelper";
+import { AuditService } from "./auditService";
+import { AuditEventType, ActionOutcome } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const quoteRepo = new BrokerQuoteRepository();
@@ -41,9 +43,27 @@ export class BrokerQuoteService {
       }, t);
 
       await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.QUOTE_GENERATED,
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId,
+        metadata: { quoteType: "QUICK", leadId: data.lead_id, quoteId: quote.quote_id },
+        ipAddress: data.ipAddress
+      });
+
       return { quoteId: quote.quote_id, quoteReference: quote.quote_reference, pricing: pricingResult };
-    } catch (error) {
+    } catch (error: any) {
       await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.QUOTE_GENERATED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { quoteType: "QUICK", error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
@@ -92,9 +112,27 @@ export class BrokerQuoteService {
       await quoteRepo.update(quote.quote_id, { quote_status: "Generated" }, t);
 
       await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.QUOTE_GENERATED,
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId,
+        metadata: { quoteType: "FULL", leadId: data.lead_id, quoteId: quote.quote_id, employeeCount: employees_list.length },
+        ipAddress: data.ipAddress
+      });
+
       return { quoteId: quote.quote_id, quoteReference: quote.quote_reference, pricing: pricingResult, employeeCount: employees_list.length };
-    } catch (error) {
+    } catch (error: any) {
       await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.QUOTE_GENERATED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { quoteType: "FULL", error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
@@ -113,9 +151,27 @@ export class BrokerQuoteService {
       if (!created) await details.update(data, { transaction: t });
 
       await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.ONBOARDING_SUBMITTED,
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId || "SYSTEM",
+        metadata: { quoteId, leadId: quote.lead_id },
+        ipAddress: data.ipAddress
+      });
+
       return details;
-    } catch (error) {
+    } catch (error: any) {
       await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.ONBOARDING_SUBMITTED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { quoteId, error: error.message },
+        ipAddress: data.ipAddress
+      });
+
       throw error;
     }
   }
@@ -187,12 +243,104 @@ export class BrokerQuoteService {
     });
   }
 
-  async updateQuoteStatus(quoteId: string, status: string) {
-    const quote = await quoteRepo.findById(quoteId);
-    if (!quote) throw new Error("Quote not found");
+  async updateQuote(quoteId: string, data: any) {
+    const t = await sequelize.transaction();
+    try {
+      const quote = await quoteRepo.findById(quoteId, {
+        include: [{ model: require("../models").BrokerQuickQuoteData, as: "quick_quote_data" }]
+      });
+      if (!quote) throw new Error("Quote not found");
 
-    await quoteRepo.update(quoteId, { quote_status: status });
-    return await quoteRepo.findById(quoteId);
+      const {
+        quote_type,
+        quote_status,
+        workforce_count,
+        average_age,
+        average_salary,
+        rma_member_number,
+        is_permanent_employees,
+        is_actively_at_work,
+        is_replacing_policy,
+        replaced_policy_includes_disability,
+        is_policy_older_than_6_months,
+        replaced_policy_start_date,
+        province
+      } = data;
+
+      // 1. Update Header / Full Quote Data
+      const headerUpdates: any = {};
+      if (quote_type !== undefined) headerUpdates.quote_type = quote_type;
+      if (quote_status !== undefined) headerUpdates.quote_status = quote_status;
+      if (rma_member_number !== undefined) headerUpdates.rma_member_number = rma_member_number;
+      if (is_permanent_employees !== undefined) headerUpdates.is_permanent_employees = is_permanent_employees;
+      if (is_actively_at_work !== undefined) headerUpdates.is_actively_at_work = is_actively_at_work;
+      if (is_replacing_policy !== undefined) headerUpdates.is_replacing_policy = is_replacing_policy;
+      if (replaced_policy_includes_disability !== undefined) headerUpdates.replaced_policy_includes_disability = replaced_policy_includes_disability;
+      if (is_policy_older_than_6_months !== undefined) headerUpdates.is_policy_older_than_6_months = is_policy_older_than_6_months;
+      if (replaced_policy_start_date !== undefined) headerUpdates.replaced_policy_start_date = replaced_policy_start_date;
+      if (province !== undefined) headerUpdates.province = province;
+
+      if (Object.keys(headerUpdates).length > 0) {
+        await quoteRepo.update(quoteId, headerUpdates, t);
+      }
+
+      // 2. Update Quick Quote Data (if applicable)
+      if (workforce_count !== undefined || average_age !== undefined || average_salary !== undefined) {
+        if (!quote.quick_quote_data) {
+          // If it doesn't exist, we might need to create it if we are switching to Quick Quote
+          // But usually QuoteType change is handled separately.
+          // For now, assume it must exist for updates.
+          throw new Error("Cannot update Quick Quote fields for a non-Quick Quote");
+        }
+
+        const qqUpdates: any = {};
+        if (workforce_count !== undefined) {
+          if (workforce_count <= 0) throw new Error("WorkforceCount must be greater than 0");
+          qqUpdates.workforce_count = workforce_count;
+        }
+        if (average_age !== undefined) {
+          if (average_age <= 0) throw new Error("AverageAge must be greater than 0");
+          qqUpdates.average_age = average_age;
+        }
+        if (average_salary !== undefined) {
+          if (average_salary < 0) throw new Error("AverageSalary must be greater than or equal to 0");
+          qqUpdates.average_salary = average_salary;
+        }
+
+        if (Object.keys(qqUpdates).length > 0) {
+          await quote.quick_quote_data.update(qqUpdates, { transaction: t });
+        }
+      }
+
+      await t.commit();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.QUOTE_GENERATED, 
+        outcome: ActionOutcome.SUCCESS,
+        userId: data.representativeId,
+        metadata: { quoteId, updates: data },
+        ipAddress: data.ipAddress
+      });
+
+      return await quoteRepo.findById(quoteId, {
+        include: [
+          { model: require("../models").BrokerQuickQuoteData, as: "quick_quote_data" },
+          { model: require("../models").BrokerQuoteBenefit, as: "benefits" }
+        ]
+      });
+    } catch (error: any) {
+      await t.rollback();
+
+      await AuditService.logEvent({
+        eventType: AuditEventType.QUOTE_GENERATED,
+        outcome: ActionOutcome.FAILURE,
+        userId: data.representativeId || "UNKNOWN",
+        metadata: { quoteId, error: error.message },
+        ipAddress: data.ipAddress
+      });
+
+      throw error;
+    }
   }
 
   async getQuotesByRepresentative(representativeId: string, query: any, clientName?: string) {

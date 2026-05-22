@@ -83,10 +83,17 @@ import { brokerImportEmployeesService } from "../services/brokerEmployeeImport.s
  *         description: Internal server error
  */
 export const brokerImportEmployeesController = async (req: Request, res: Response) => {
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
     const { lead_id, employees } = req.body;
 
-    const result = await brokerImportEmployeesService(lead_id, employees);
+    if (!representativeId) {
+      return res.status(401).json({ success: false, message: "Representative ID not found in token." });
+    }
+
+    const result = await brokerImportEmployeesService(lead_id, employees, representativeId, req.ip);
 
     if (!result.success) {
       return res.status(result.message?.includes("not found") ? 404 : 400).json(result);

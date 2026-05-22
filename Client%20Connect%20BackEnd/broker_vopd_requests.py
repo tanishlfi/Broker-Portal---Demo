@@ -2,13 +2,15 @@ import os
 import schedule
 import time
 import json
-import utils
 import logging
-import controllers
 import dotenv
 from sqlalchemy import text
 from datetime import datetime
 import uuid
+
+# Import utilities
+import utils
+from utils.broker_audit import log_broker_audit
 
 dotenv.load_dotenv(verbose=True)
 
@@ -75,6 +77,7 @@ def parsedRMAResponse(id_no: str):
 def processBrokerPortalVerifications():
     """
     Main loop to process Broker Portal verifications using broker schema tables.
+    Includes Audit Logging for AML and VOPD.
     """
     try:
         logging.info("Checking for pending Broker Portal verifications (Accepted Leads)...")
@@ -83,7 +86,7 @@ def processBrokerPortalVerifications():
             s = text("""
                 SELECT 
                     e.employee_id, e.lead_id, e.id_number, e.first_name, e.last_name,
-                    l.lead_reference, l.lead_status, v.id as existing_v_id
+                    l.lead_reference, l.lead_status, l.representative_id, v.id as existing_v_id
                 FROM broker.bp_employees e
                 JOIN broker.bp_leads l ON e.lead_id = l.lead_id
                 LEFT JOIN broker.bp_verification_results v ON e.employee_id = v.employee_id
@@ -105,6 +108,7 @@ def processBrokerPortalVerifications():
                 emp_id = emp["employee_id"]
                 lead_id = emp["lead_id"]
                 lead_ref = emp["lead_reference"]
+                rep_id = emp["representative_id"]
                 
                 logging.info(f"Verifying Employee {emp['first_name']} {emp['last_name']} (ID: {id_no}) for Lead {lead_ref}")
                 
@@ -144,10 +148,25 @@ def processBrokerPortalVerifications():
                     "party_type": "Employee",
                     "now": datetime.now()
                 })
+
+                log_broker_audit(
+                    conn, 
+                    event_type="VOPD Stored", 
+                    outcome="Success" if vopd_res else "Failure",
+                    user_id=rep_id or "SYSTEM",
+                    metadata={"leadId": lead_id, "employeeId": emp_id, "vopdReference": vopd_ref}
+                )
+
+                log_broker_audit(
+                    conn, 
+                    event_type="AML Stored", 
+                    outcome="Success" if aml_status == "Pass" else "Failure",
+                    user_id=rep_id or "SYSTEM",
+                    metadata={"leadId": lead_id, "employeeId": emp_id, "amlReference": aml_ref}
+                )
             
             conn.commit()
             
-            # 4. Check if any Leads are now fully verified (ALL PASS/VERIFIED) and update status
             s_leads = text("SELECT lead_id, lead_reference FROM broker.bp_leads WHERE lead_status = 'Accepted'")
             active_leads = conn.execute(s_leads).mappings().all()
             
@@ -172,10 +191,19 @@ def processBrokerPortalVerifications():
                 if total_emp > 0 and total_emp == success_count:
                     logging.info(f"All {total_emp} employees for Lead {lead_ref} successfully verified. Updating status to 'Onboarding Submitted'...")
                     
-                    # Update Lead status ONLY
+                    # Update Lead status
                     u_lead = text("UPDATE broker.bp_leads SET lead_status = 'Onboarding Submitted' WHERE lead_id = :l_id")
                     conn.execute(u_lead, {"l_id": lead_id})
                     
+                    # AUDIT LOGGING (Specification 6.28)
+                    log_broker_audit(
+                        conn, 
+                        event_type="Onboarding Submitted", 
+                        outcome="Success",
+                        user_id="SYSTEM",
+                        metadata={"leadId": lead_id, "reason": "All employee verifications passed"}
+                    )
+
                     conn.commit()
                 elif total_emp > 0:
                     # Check if any have failed
@@ -193,7 +221,7 @@ def processBrokerPortalVerifications():
         logging.error(f"Error in Broker Portal verification service: {error}")
 
 if __name__ == "__main__":
-    logging.info("Broker Portal Verification Service Started (Accepted Leads Only)")
+    logging.info("Broker Portal Verification Service with Audit Logging Started")
     processBrokerPortalVerifications() # Run immediately on start
     
     schedule.every(1).minutes.do(processBrokerPortalVerifications)

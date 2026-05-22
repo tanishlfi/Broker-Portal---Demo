@@ -1,6 +1,8 @@
 const { sequelize } = require("../models");
 import { BrokerEmployeeRepository } from "../repositories/brokerEmployee.repository";
 import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
+import { AuditService } from "./auditService";
+import { AuditEventType, ActionOutcome } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const employeeRepo = new BrokerEmployeeRepository();
@@ -14,7 +16,12 @@ export interface BrokerImportResult {
   message?: string;
 }
 
-export const brokerImportEmployeesService = async (leadId: string, employees: any[]): Promise<BrokerImportResult> => {
+export const brokerImportEmployeesService = async (
+  leadId: string, 
+  employees: any[], 
+  representativeId: string, 
+  ipAddress?: string
+): Promise<BrokerImportResult> => {
   const t = await sequelize.transaction();
 
   try {
@@ -22,6 +29,15 @@ export const brokerImportEmployeesService = async (leadId: string, employees: an
     const lead = await leadRepo.findById(leadId, { transaction: t });
     if (!lead) {
       await t.rollback();
+      
+      await AuditService.logEvent({
+        eventType: AuditEventType.EMPLOYEE_IMPORT,
+        outcome: ActionOutcome.FAILURE,
+        userId: representativeId,
+        metadata: { leadId, error: "Lead not found" },
+        ipAddress
+      });
+
       return {
         success: false,
         totalEmployees: employees.length,
@@ -65,6 +81,19 @@ export const brokerImportEmployeesService = async (leadId: string, employees: an
 
     await t.commit();
 
+    await AuditService.logEvent({
+      eventType: AuditEventType.EMPLOYEE_IMPORT,
+      outcome: duplicateCount > 0 ? ActionOutcome.WARNING : ActionOutcome.SUCCESS,
+      userId: representativeId,
+      metadata: { 
+        leadId, 
+        total: employees.length, 
+        inserted: employeesToInsert.length, 
+        duplicates: duplicateCount 
+      },
+      ipAddress
+    });
+
     return {
       success: true,
       totalEmployees: employees.length,
@@ -74,6 +103,16 @@ export const brokerImportEmployeesService = async (leadId: string, employees: an
   } catch (error: any) {
     if (t) await t.rollback();
     console.error("BROKER IMPORT EMPLOYEES SERVICE ERROR:", error);
+
+    await AuditService.logEvent({
+      eventType: AuditEventType.EMPLOYEE_IMPORT,
+      outcome: ActionOutcome.FAILURE,
+      userId: representativeId,
+      metadata: { leadId, error: error.message },
+      ipAddress
+    });
+
     throw error;
   }
 };
+

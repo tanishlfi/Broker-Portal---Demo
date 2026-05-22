@@ -7,7 +7,7 @@ import {
   getQuotesByLeadController,
   getQuotesByRepresentativeController,
   getQuoteByIdController,
-  updateQuoteStatusController,
+  updateQuote,
   saveEmployerOnboardingDetails,
 } from "../controllers/brokerQuotesController";
 import {
@@ -25,7 +25,7 @@ router.get("/:quoteId/download", downloadQuoteDocument);
 router.get("/lead/:leadId", getQuotesByLeadController);
 router.get("/representative", getQuotesByRepresentativeController);
 router.get("/:quoteId", getQuoteByIdController);
-router.patch("/:quoteId/status", updateQuoteStatusController);
+router.patch("/:quoteId", updateQuote);
 router.post("/:quoteId/employer-details", validateEmployerOnboarding, saveEmployerOnboardingDetails);
 
 export default router;

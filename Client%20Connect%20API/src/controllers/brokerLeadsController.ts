@@ -48,11 +48,11 @@ const leadService = new BrokerLeadService();
  *         description: Lead created successfully
  */
 export const createLead = async (req: Request, res: Response) => {
-  try {
-    const authReq = req as any;
-    const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
-    const brokerId = authReq?.auth?.payload?.rmaAppAppMetadata?.brokerId;
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+  const brokerId = authReq?.auth?.payload?.rmaAppAppMetadata?.brokerId;
 
+  try {
     if (!representativeId || !brokerId) {
       return res.status(401).json({
         success: false,
@@ -60,8 +60,9 @@ export const createLead = async (req: Request, res: Response) => {
       });
     }
 
-    const payload = { ...req.body, representativeId, brokerId };
+    const payload = { ...req.body, representativeId, brokerId, ipAddress: req.ip };
     const result = await leadService.createLead(payload);
+
     return res.status(201).json({
       success: true,
       message: "Lead created successfully",
@@ -243,11 +244,11 @@ export const getLeadById = async (req: Request, res: Response) => {
  *         description: Lead updated successfully
  */
 export const updateLead = async (req: Request, res: Response) => {
-  try {
-    const { leadId } = req.params;
-    const authReq = req as any;
-    const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+  const { leadId } = req.params;
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
 
+  try {
     if (!representativeId) {
       return res.status(401).json({
         success: false,
@@ -255,8 +256,9 @@ export const updateLead = async (req: Request, res: Response) => {
       });
     }
 
-    const payload = { ...req.body, representativeId };
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
     const lead = await leadService.updateLead(leadId, payload);
+
     return res.status(200).json({
       success: true,
       message: "Lead updated successfully",
@@ -300,9 +302,14 @@ export const updateLead = async (req: Request, res: Response) => {
  *         description: Lead cancelled successfully
  */
 export const cancelLead = async (req: Request, res: Response) => {
+  const { leadId } = req.params;
+  const authReq = req as any;
+  const representativeId = authReq?.auth?.payload?.rmaAppAppMetadata?.representativeId;
+
   try {
-    const { leadId } = req.params;
-    await leadService.cancelLead(leadId, req.body);
+    const payload = { ...req.body, representativeId, ipAddress: req.ip };
+    await leadService.cancelLead(leadId, payload);
+
     return res.status(200).json({
       success: true,
       message: "Lead cancelled successfully",
@@ -311,40 +318,6 @@ export const cancelLead = async (req: Request, res: Response) => {
     return res.status(error.message.includes("not found") ? 404 : 400).json({
       success: false,
       message: error.message,
-    });
-  }
-};
-
-/**
- * @swagger
- * /broker/leads/{leadId}/history:
- *   get:
- *     summary: Get audit history of a lead
- *     tags: [Broker Leads]
- *     parameters:
- *       - in: path
- *         name: leadId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Lead history
- */
-export const getLeadHistory = async (req: Request, res: Response) => {
-  try {
-    const { leadId } = req.params;
-    const history = await leadService.getLeadHistory(leadId);
-
-    return res.status(200).json({
-      success: true,
-      message: "Lead history retrieved",
-      data: history
-    });
-  } catch (error: any) {
-    return res.status(error.message.includes("not found") ? 404 : 500).json({
-      success: false,
-      message: error.message
     });
   }
 };

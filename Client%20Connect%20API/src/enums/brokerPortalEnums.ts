@@ -111,6 +111,28 @@ export enum Gender {
   PREFER_NOT_TO_SAY = "Prefer Not to Say",
 }
 
+export enum AuditEventType {
+  LEAD_CREATED = "Lead Created",
+  LEAD_UPDATED = "Lead Updated",
+  QUOTE_GENERATED = "Quote Generated",
+  QUOTE_DOWNLOADED = "Quote Downloaded",
+  OTP_VERIFIED = "OTP Verified",
+  ONBOARDING_SUBMITTED = "Onboarding Submitted",
+  AML_STORED = "AML Stored",
+  VOPD_STORED = "VOPD Stored",
+  POLICY_CREATED = "Policy Created",
+  DOCUMENT_GENERATED = "Document Generated",
+  DOCUMENT_DOWNLOADED = "Document Downloaded",
+  NOTIFICATION_SENT = "Notification Sent",
+  EMPLOYEE_IMPORT = "Employee Import",
+}
+
+export enum ActionOutcome {
+  SUCCESS = "Success",
+  FAILURE = "Failure",
+  WARNING = "Warning",
+}
+
 export const LEAD_STATUS_OPTIONS = Object.values(LeadStatus);
 export const QUOTE_TYPE_OPTIONS = Object.values(QuoteType);
 export const QUOTE_STATUS_OPTIONS = Object.values(QuoteStatus);
@@ -125,3 +147,5 @@ export const OTP_STATUS_OPTIONS = Object.values(OTPStatus);
 export const INDUSTRY_TYPE_OPTIONS = Object.values(IndustryType);
 export const PROVINCE_OPTIONS = Object.values(Province);
 export const GENDER_OPTIONS = Object.values(Gender);
+export const AUDIT_EVENT_TYPE = Object.values(AuditEventType);
+export const ACTION_OUTCOME = Object.values(ActionOutcome);
