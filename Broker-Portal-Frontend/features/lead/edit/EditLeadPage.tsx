@@ -6,14 +6,8 @@ import { getLead, updateLead } from "@/lib/api/leads";
 import {
   validateSAMobileNumber,
   validateEmail,
-  validatePostalCode,
-  validateCompanyName,
   validateRequired,
   validatePositiveNumber,
-  validateCity,
-  validateAddressLine,
-  validateRegistrationNumber,
-  validateContactPersonName,
 } from "@/utils/validators";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -57,16 +51,16 @@ export default function EditLeadPage({ leadId }: EditLeadPageProps) {
       try {
         const lead = await getLead(leadId);
         if (lead) {
-          setCompanyName(lead.employer?.employer_name || lead.employerName || "");
-          setRegistrationNumber(lead.employer?.registration_number || lead.registrationNumber || "");
-          setIndustry(lead.employer?.industry_type || lead.industryType || "");
-          setNumberOfEmployees(String(lead.employer?.number_of_employees || lead.numberOfEmployees || ""));
-          setProvince(lead.employer?.province || lead.province || "");
-
-          const name = [lead.contact?.contact_first_name || lead.contactFirstName, lead.contact?.contact_last_name || lead.contactLastName].filter(Boolean).join(" ");
+          setCompanyName(lead.employerName || "");
+          setRegistrationNumber(lead.registrationNumber || "");
+          setIndustry(lead.industry || "");
+          setNumberOfEmployees(String(lead.numberOfEmployees || ""));
+          setProvince(lead.province || "");
+          
+          const name = [lead.contactFirstName, lead.contactLastName].filter(Boolean).join(" ");
           setContactName(name);
-          setContactEmail(lead.contact?.contact_email || lead.contactEmail || "");
-          setContactPhone(lead.contact?.contact_mobile || lead.contactMobile || "");
+          setContactEmail(lead.contactEmail || "");
+          setContactPhone(lead.contactPhone || "");
         }
       } catch (err: any) {
         setError(err.message || "Failed to load lead details");

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, ChevronDown, X, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import {
   Box,
   Typography,
@@ -381,11 +381,7 @@ export default function QuotesPage() {
                   {/* Left Section */}
                   <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
                     {/* Company Name & Badges */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                      <Typography variant="h3" sx={{ fontSize: "18px", fontWeight: 500, color: "var(--text-primary)", m: 0 }}>
-                        {quote.companyName}
-                      </Typography>
-                      
+                    <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}> 
                       <Chip
                         label={quote.quoteType}
                         sx={{
