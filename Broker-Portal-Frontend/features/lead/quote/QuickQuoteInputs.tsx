@@ -6,8 +6,6 @@ import {
 } from "@/utils/validators";
 import { BackButton, NextButton } from "@/components/ui/StepButtons";
 import StepProgress from "@/components/ui/StepProgress";
-import CustomInput from "@/components/ui/CustomInput";
-import CustomSelect from "@/components/ui/CustomSelect";
 import OptionToggleGroup from "@/components/ui/OptionToggleGroup";
 
 const QUICK_STEPS = ["Quote Details", "Adjust Cover Amounts"];
@@ -46,6 +44,60 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   marginBottom: "6px",
 };
+
+const getInputStyle = (hasError: boolean): React.CSSProperties => ({
+  width: "100%",
+  height: "40px",
+  background: "#1E1E1E",
+  border: `1px solid ${hasError ? "#ef4444" : "#30363D"}`,
+  borderRadius: "6px",
+  padding: "0 12px",
+  color: "#ffffff",
+  fontSize: "0.875rem",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.15s, box-shadow 0.15s",
+});
+
+const getSelectStyle = (hasError: boolean): React.CSSProperties => ({
+  width: "100%",
+  height: "40px",
+  background: "#1E1E1E",
+  border: `1px solid ${hasError ? "#ef4444" : "#30363D"}`,
+  borderRadius: "6px",
+  padding: "0 12px",
+  color: "#ffffff",
+  fontSize: "0.875rem",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.15s, box-shadow 0.15s",
+  appearance: "auto",
+});
+
+const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = "#1FC3EB";
+  e.currentTarget.style.boxShadow = "0 0 0 1px #1FC3EB";
+};
+
+const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>, hasError: boolean) => {
+  e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#30363D";
+  e.currentTarget.style.boxShadow = "none";
+};
+
+const onMouseEnter = (e: React.MouseEvent<HTMLInputElement | HTMLSelectElement>) => {
+  if (document.activeElement !== e.currentTarget) {
+    e.currentTarget.style.borderColor = "rgba(31,195,235,0.5)";
+  }
+};
+
+const onMouseLeave = (e: React.MouseEvent<HTMLInputElement | HTMLSelectElement>, hasError: boolean) => {
+  if (document.activeElement !== e.currentTarget) {
+    e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#30363D";
+  }
+};
+
+const errMsg = (msg?: string) =>
+  msg ? <p style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: "4px" }}>{msg}</p> : null;
 
 export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGenerateQuote }: QuickQuoteInputsProps) {
   const { employees, genderSplit, averageAge, averageIncome, province, industry } = formData;
@@ -94,13 +146,18 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
         {/* Employees — full width */}
         <div>
           <label style={labelStyle}>How many employees do you plan to cover?</label>
-          <CustomInput
+          <input
             type="text" inputMode="numeric"
+            style={getInputStyle(!!errors.employees)}
             value={employees}
             placeholder="85"
             onChange={e => { onFormChange({ ...formData, employees: e.target.value.replace(/\D/g, "") }); setErrors({ ...errors, employees: "" }); }}
-            error={errors.employees}
+            onFocus={onFocus}
+            onBlur={e => onBlur(e, !!errors.employees)}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={e => onMouseLeave(e, !!errors.employees)}
           />
+          {errMsg(errors.employees)}
         </div>
 
         {/* Gender split — horizontal pill toggles */}
@@ -118,18 +175,24 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={labelStyle}>What is their average age?</label>
-            <CustomInput
+            <input
               type="text" inputMode="numeric"
+              style={getInputStyle(!!errors.averageAge)}
               value={averageAge}
               placeholder="Enter average age"
               onChange={e => { onFormChange({ ...formData, averageAge: e.target.value.replace(/\D/g, "") }); setErrors({ ...errors, averageAge: "" }); }}
-              error={errors.averageAge}
+              onFocus={onFocus}
+              onBlur={e => onBlur(e, !!errors.averageAge)}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={e => onMouseLeave(e, !!errors.averageAge)}
             />
+            {errMsg(errors.averageAge)}
           </div>
           <div>
             <label style={labelStyle}>What is their average monthly income (before tax)?</label>
-            <CustomInput
+            <input
               type="text" inputMode="decimal"
+              style={getInputStyle(!!errors.averageIncome)}
               value={averageIncome}
               placeholder="R Enter average salary"
               onChange={e => {
@@ -138,8 +201,12 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
                 onFormChange({ ...formData, averageIncome: v });
                 setErrors({ ...errors, averageIncome: "" });
               }}
-              error={errors.averageIncome}
+              onFocus={onFocus}
+              onBlur={e => onBlur(e, !!errors.averageIncome)}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={e => onMouseLeave(e, !!errors.averageIncome)}
             />
+            {errMsg(errors.averageIncome)}
           </div>
         </div>
 
@@ -147,25 +214,35 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={labelStyle}>In which province are most of the employees based?</label>
-            <CustomSelect
+            <select
+              style={getSelectStyle(!!errors.province)}
               value={province}
               onChange={e => { onFormChange({ ...formData, province: e.target.value }); setErrors({ ...errors, province: "" }); }}
-              error={errors.province}
+              onFocus={onFocus}
+              onBlur={e => onBlur(e, !!errors.province)}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={e => onMouseLeave(e, !!errors.province)}
             >
               <option value="">Select province</option>
               {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
-            </CustomSelect>
+            </select>
+            {errMsg(errors.province)}
           </div>
           <div>
             <label style={labelStyle}>Which industry is your organisation primarily in?</label>
-            <CustomSelect
+            <select
+              style={getSelectStyle(!!errors.industry)}
               value={industry}
               onChange={e => { onFormChange({ ...formData, industry: e.target.value }); setErrors({ ...errors, industry: "" }); }}
-              error={errors.industry}
+              onFocus={onFocus}
+              onBlur={e => onBlur(e, !!errors.industry)}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={e => onMouseLeave(e, !!errors.industry)}
             >
               <option value="">Select industry</option>
               {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
-            </CustomSelect>
+            </select>
+            {errMsg(errors.industry)}
           </div>
         </div>
 
@@ -179,3 +256,4 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
     </>
   );
 }
+

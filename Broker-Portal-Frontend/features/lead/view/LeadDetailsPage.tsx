@@ -12,8 +12,8 @@ import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import { Plus } from "lucide-react";
 
-import { getLeads, Lead } from "@/lib/api/leads";
-import { getRepresentativeId } from "@/lib/auth";
+import { getLead, LeadDetail } from "@/lib/api/leads";
+import QuoteCard from "@/components/ui/QuoteCard";
 
 interface LeadDetailsPageProps {
   leadId: string;
@@ -22,7 +22,6 @@ interface LeadDetailsPageProps {
 interface Quote {
   quoteId: string;
   quoteReference: string;
-  companyName: string;
   quoteType: "Quick Quote" | "Full Quote";
   status: string;
   monthlyPremium: number;
@@ -30,119 +29,37 @@ interface Quote {
   createdAt: string;
 }
 
-// Mock quotes data
-const MOCK_QUOTES: Quote[] = [
-  {
-    quoteId: "Q-LEAD-1744147200000-847",
-    quoteReference: "Q-LEAD-1744147200000-847",
-    companyName: "Tech Innovations Pty Ltd",
-    quoteType: "Quick Quote",
-    status: "Expired",
-    monthlyPremium: 26629,
-    coverageAmount: 395666,
-    createdAt: "2026-05-04",
-  },
-  {
-    quoteId: "Q-LEAD-1744147200000-848",
-    quoteReference: "Q-LEAD-1744147200000-848",
-    companyName: "Tech Innovations Pty Ltd",
-    quoteType: "Quick Quote",
-    status: "Expired",
-    monthlyPremium: 26629,
-    coverageAmount: 395666,
-    createdAt: "2026-05-04",
-  },
-  {
-    quoteId: "Q-LEAD-1744147200000-849",
-    quoteReference: "Q-LEAD-1744147200000-849",
-    companyName: "Tech Innovations Pty Ltd",
-    quoteType: "Full Quote",
-    status: "Cancelled",
-    monthlyPremium: 26629,
-    coverageAmount: 395666,
-    createdAt: "2026-05-04",
-  },
-];
-
 const fmt = (d: string) => {
   const dt = new Date(d);
   return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
 };
 
-function QuoteBadge({ type, status }: { type: string; status?: string }) {
-  const typeStyles: Record<string, { bg: string; color: string }> = {
-    "Quick Quote": { bg: "#4A4A4A", color: "#FFFFFF" },
-    "Full Quote": { bg: "#767676", color: "#FFFFFF" },
-  };
-  
-  const statusStyles: Record<string, { color: string }> = {
-    "Expired": { color: "#FE7F7F" },
-    "Cancelled": { color: "#FE7F7F" },
-    "Active": { color: "#1FC3EB" },
-  };
 
-  const typeStyle = typeStyles[type] || { bg: "#4A4A4A", color: "#FFFFFF" };
-  const statusStyle = statusStyles[status || ""] || { color: "#A0A0A0" };
-
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
-      <Chip
-        label={type}
-        sx={{
-          bgcolor: typeStyle.bg,
-          color: typeStyle.color,
-          border: "0.625px solid rgba(237, 237, 237, 0.2)",
-          borderRadius: "4px",
-          height: "22px",
-          fontSize: "12px",
-          fontWeight: 500,
-          "& .MuiChip-label": { px: "8px" },
-        }}
-      />
-      {status && (
-        <Chip
-          label={status}
-          sx={{
-            bgcolor: "transparent",
-            color: statusStyle.color,
-            border: "0.625px solid #4A4A4A",
-            borderRadius: "8px",
-            height: "22px",
-            fontSize: "12px",
-            fontWeight: 500,
-            "& .MuiChip-label": { px: "8px" },
-          }}
-        />
-      )}
-    </Box>
-  );
-}
 
 export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
   const router = useRouter();
-  const [lead, setLead] = useState<Lead | null>(null);
-  const [quotes, setQuotes] = useState<Quote[]>(MOCK_QUOTES);
+  const [lead, setLead] = useState<LeadDetail | null>(null);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const representativeId = getRepresentativeId() ?? undefined;
-        const data = await getLeads(representativeId);
-        const foundLead = data.find((l: Lead) => l.leadId === leadId);
-        
-        if (foundLead) {
-          setLead(foundLead);
-        }
+        setLoading(true);
+        const data = await getLead(leadId);
+        setLead(data);
+        setQuotes(data.quotes || []);
       } catch (error) {
         console.error("Could not fetch lead from API:", error);
+        setError("Failed to load lead details. Please try again.");
       } finally {
         setLoading(false);
       }
     })();
   }, [leadId]);
 
-  if (loading || !lead) {
+  if (loading) {
     return (
       <Box sx={{
         display: "flex",
@@ -152,6 +69,20 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
         color: "#A0A0A0",
       }}>
         Loading lead details...
+      </Box>
+    );
+  }
+
+  if (error || !lead) {
+    return (
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "400px",
+        color: "#A0A0A0",
+      }}>
+        {error || "Lead not found"}
       </Box>
     );
   }
@@ -179,10 +110,33 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
             Lead Details
           </h2>
           
-          <Box sx={{
-            display: "flex",
-            gap: "12px",
-          }}>
+          <Box sx={{ display: "flex", gap: "12px" }}>
+            {!["Accepted", "Onboarding Submitted", "Approved", "Rejected", "Cancelled"].includes(lead.leadStatus) && (
+              <Button
+                onClick={() => router.push(`/lead/${leadId}/edit`)}
+                variant="outlined"
+                sx={{
+                  bgcolor: "var(--table-header-bg)",
+                  border: "1px solid var(--text-secondary)",
+                  color: "var(--text-primary)",
+                  borderRadius: "8px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: "22px",
+                  height: "40px",
+                  "&:hover": {
+                    bgcolor: "var(--border)",
+                    borderColor: "var(--text-primary)",
+                    borderWidth: "1px",
+                  },
+                }}
+              >
+                Edit
+              </Button>
+            )}
+
             {/* Mark as Cancelled Button */}
             <Button
               onClick={async () => {
@@ -204,17 +158,19 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
               }}
               variant="contained"
               sx={{
-                bgcolor: "#FF6C6C",
-                color: "#0A0A0A",
+                bgcolor: "#FE7F7F",
+                color: "#000000",
                 borderRadius: "8px",
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
-                fontWeight: 700,
+                fontWeight: 600,
                 textTransform: "none",
-                width: "150px",
+                px: "22px",
                 height: "40px",
+                boxShadow: "none",
                 "&:hover": {
-                  bgcolor: "#FF5252",
+                  bgcolor: "#FF6C6C",
+                  boxShadow: "none",
                 },
               }}
             >
@@ -251,7 +207,6 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
           </Box>
         </Box>
 
-        {/* Divider */}
         <Divider sx={{ borderColor: "var(--border)", marginBottom: "31px" }} />
 
         {/* Lead Details Card */}
@@ -359,89 +314,24 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
           Previous Quotes
         </h2>
 
-        <Stack spacing={2}>
-          {quotes.map((quote) => (
-            <Card key={quote.quoteId} sx={{
-              boxSizing: "border-box",
-              background: "var(--card-secondary)",
-              border: "0.625px solid var(--border)",
-              borderRadius: "10px",
-              p: "25px",
-              boxShadow: "none",
-            }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <Box sx={{ flex: 1 }}>
-                  {/* Quote Header */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                    <h3 style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "18px",
-                      fontWeight: 500,
-                      lineHeight: "27px",
-                      letterSpacing: "-0.439453px",
-                      color: "var(--text-primary)",
-                      margin: 0,
-                    }}>
-                      {quote.companyName}
-                    </h3>
-                    <QuoteBadge type={quote.quoteType} status={quote.status} />
-                  </Box>
-
-                  {/* Quote Details */}
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 3 }}>
-                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Quote ID</Typography>
-                      <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>{quote.quoteReference}</Typography>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 3 }}>
-                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Monthly Premium</Typography>
-                      <Typography sx={{ fontSize: "14px", color: "#1FC3EB", fontWeight: 500 }}>R {quote.monthlyPremium.toLocaleString()}</Typography>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 3 }}>
-                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Coverage Amount</Typography>
-                      <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>R {quote.coverageAmount.toLocaleString()}</Typography>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 3 }}>
-                      <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Created Date</Typography>
-                      <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 500 }}>{fmt(quote.createdAt)}</Typography>
-                    </Grid>
-                  </Grid>
-                </Box>
-
-                {/* Download Button */}
-                <Button
-                  variant="outlined"
-                  sx={{
-                    boxSizing: "border-box",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "5px",
-                    width: "137px",
-                    height: "36px",
-                    background: "transparent",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    textTransform: "none",
-                    color: "var(--text-primary)",
-                    "&:hover": {
-                      bgcolor: "var(--border)",
-                      borderColor: "var(--border)",
-                    }
-                  }}
-                >
-                  Download Quote
-                </Button>
-              </Box>
-            </Card>
-          ))}
-        </Stack>
+        {quotes.length === 0 ? (
+          <Box sx={{
+            background: "var(--card-secondary)",
+            border: "1px solid var(--border)",
+            borderRadius: "12px",
+            p: "40px",
+            textAlign: "center",
+            color: "var(--text-secondary)",
+          }}>
+            No quotes available for this lead yet.
+          </Box>
+        ) : (
+          <Stack spacing={2}>
+            {quotes.map((quote) => (
+              <QuoteCard key={quote.quoteId} quote={quote} />
+            ))}
+          </Stack>
+        )}
 
       </div>
     </main>

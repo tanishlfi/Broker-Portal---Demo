@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, ChevronDown, X, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import {
   Box,
   Typography,
@@ -377,15 +377,11 @@ export default function QuotesPage() {
                   boxShadow: "none",
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   {/* Left Section */}
                   <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
                     {/* Company Name & Badges */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                      <Typography variant="h3" sx={{ fontSize: "18px", fontWeight: 500, color: "var(--text-primary)", m: 0 }}>
-                        {quote.companyName}
-                      </Typography>
-                      
+                    <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}> 
                       <Chip
                         label={quote.quoteType}
                         sx={{
@@ -442,14 +438,15 @@ export default function QuotesPage() {
                       onClick={(e) => handleOpenMenu(e, quote)}
                       sx={{
                         height: "36px",
-                        bgcolor: "transparent",
-                        borderColor: "var(--border)",
+                        bgcolor: "var(--table-header-bg)",
+                        border: "1px solid var(--text-secondary)",
                         borderRadius: "8px",
                         color: "var(--text-primary)",
                         textTransform: "none",
                         "&:hover": {
                           bgcolor: "var(--border)",
-                          borderColor: "var(--border)",
+                          borderColor: "var(--text-primary)",
+                          borderWidth: "1px",
                         }
                       }}
                     >

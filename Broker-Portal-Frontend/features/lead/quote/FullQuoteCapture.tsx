@@ -12,8 +12,6 @@ import {
   validatePositiveNumber,
   validatePositiveDecimal,
 } from "@/utils/validators";
-import CustomInput from "@/components/ui/CustomInput";
-import CustomSelect from "@/components/ui/CustomSelect";
 import OptionToggleGroup from "@/components/ui/OptionToggleGroup";
 import AdjustFullCoverStep from "./components/AdjustFullCoverStep";
 import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
@@ -55,6 +53,60 @@ const PROVINCES = [
 const STEPS = ["Quote Details", "Employee Information", "Cover Adjustments"];
 
 const EMPTY_FORM = { firstName: "", surname: "", dob: "", salary: "", idType: "SA ID", identification: "" };
+
+const getInputStyle = (hasError: boolean): React.CSSProperties => ({
+  width: "100%",
+  height: "40px",
+  background: "#1E1E1E",
+  border: `1px solid ${hasError ? "#ef4444" : "#30363D"}`,
+  borderRadius: "6px",
+  padding: "0 12px",
+  color: "#ffffff",
+  fontSize: "0.875rem",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.15s, box-shadow 0.15s",
+});
+
+const getSelectStyle = (hasError: boolean): React.CSSProperties => ({
+  width: "100%",
+  height: "40px",
+  background: "#1E1E1E",
+  border: `1px solid ${hasError ? "#ef4444" : "#30363D"}`,
+  borderRadius: "6px",
+  padding: "0 12px",
+  color: "#ffffff",
+  fontSize: "0.875rem",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.15s, box-shadow 0.15s",
+  appearance: "auto",
+});
+
+const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = "#1FC3EB";
+  e.currentTarget.style.boxShadow = "0 0 0 1px #1FC3EB";
+};
+
+const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>, hasError: boolean) => {
+  e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#30363D";
+  e.currentTarget.style.boxShadow = "none";
+};
+
+const onMouseEnter = (e: React.MouseEvent<HTMLInputElement | HTMLSelectElement>) => {
+  if (document.activeElement !== e.currentTarget) {
+    e.currentTarget.style.borderColor = "rgba(31,195,235,0.5)";
+  }
+};
+
+const onMouseLeave = (e: React.MouseEvent<HTMLInputElement | HTMLSelectElement>, hasError: boolean) => {
+  if (document.activeElement !== e.currentTarget) {
+    e.currentTarget.style.borderColor = hasError ? "#ef4444" : "#30363D";
+  }
+};
+
+const errMsg = (msg?: string) =>
+  msg ? <p style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: "4px" }}>{msg}</p> : null;
 
 // ── component ──────────────────────────────────────────────────────────────────
 
@@ -328,11 +380,16 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                   Please enter your RMA member number so we can pre fill your application and offer you additional products.{" "}
                   <strong style={{ color: "var(--text-primary)" }}>If you're not an RMA member</strong>, please skip to the next section and complete the form.
                 </p>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="Enter RMA number"
                   value={rmaNumber}
                   onChange={e => setRmaNumber(e.target.value)}
+                  style={getInputStyle(false)}
+                  onFocus={onFocus}
+                  onBlur={e => onBlur(e, false)}
+                  onMouseEnter={onMouseEnter}
+                  onMouseLeave={e => onMouseLeave(e, false)}
                 />
               </div>
 
@@ -341,13 +398,18 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                 <label style={{ ...labelStyle, color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "10px" }}>
                   In which province are most of the employees based?
                 </label>
-                <CustomSelect
+                <select
                   value={province}
                   onChange={e => setProvince(e.target.value)}
+                  style={getSelectStyle(false)}
+                  onFocus={onFocus}
+                  onBlur={e => onBlur(e, false)}
+                  onMouseEnter={onMouseEnter}
+                  onMouseLeave={e => onMouseLeave(e, false)}
                 >
                   <option value="">Select Province</option>
                   {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
-                </CustomSelect>
+                </select>
               </div>
 
               {/* Permanently employed */}
@@ -422,10 +484,15 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                     <label style={{ ...labelStyle, color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "10px" }}>
                       What was the start date of the replaced policy?
                     </label>
-                    <CustomInput
+                    <input
                       type="date"
                       value={replacedPolicyStartDate}
                       onChange={e => setReplacedPolicyStartDate(e.target.value)}
+                      style={getInputStyle(false)}
+                      onFocus={onFocus}
+                      onBlur={e => onBlur(e, false)}
+                      onMouseEnter={onMouseEnter}
+                      onMouseLeave={e => onMouseLeave(e, false)}
                     />
                   </div>
                 </div>
@@ -574,22 +641,40 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
                     <div>
                       <label style={labelStyle}>First Name</label>
-                      <CustomInput type="text" placeholder="Enter first name" value={form.firstName}
-                        onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
+                      <input type="text" placeholder="Enter first name" value={form.firstName}
+                        onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
+                        style={getInputStyle(false)}
+                        onFocus={onFocus}
+                        onBlur={e => onBlur(e, false)}
+                        onMouseEnter={onMouseEnter}
+                        onMouseLeave={e => onMouseLeave(e, false)}
+                      />
                     </div>
                     <div>
                       <label style={labelStyle}>Last Name</label>
-                      <CustomInput type="text" placeholder="Enter last name" value={form.surname}
-                        onChange={e => setForm(f => ({ ...f, surname: e.target.value }))} />
+                      <input type="text" placeholder="Enter last name" value={form.surname}
+                        onChange={e => setForm(f => ({ ...f, surname: e.target.value }))}
+                        style={getInputStyle(false)}
+                        onFocus={onFocus}
+                        onBlur={e => onBlur(e, false)}
+                        onMouseEnter={onMouseEnter}
+                        onMouseLeave={e => onMouseLeave(e, false)}
+                      />
                     </div>
                     <div>
                       <label style={labelStyle}>Gender</label>
-                      <CustomSelect value={manualGender} onChange={e => setManualGender(e.target.value)}>
+                      <select value={manualGender} onChange={e => setManualGender(e.target.value)}
+                        style={getSelectStyle(false)}
+                        onFocus={onFocus}
+                        onBlur={e => onBlur(e, false)}
+                        onMouseEnter={onMouseEnter}
+                        onMouseLeave={e => onMouseLeave(e, false)}
+                      >
                         <option value="">Select</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
-                      </CustomSelect>
+                      </select>
                     </div>
                   </div>
 
@@ -597,13 +682,25 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     <div>
                       <label style={labelStyle}>Monthly income (before tax)</label>
-                      <CustomInput type="text" inputMode="decimal" placeholder="R Enter monthly income" value={form.salary}
-                        onChange={e => setForm(f => ({ ...f, salary: e.target.value.replace(/[^\d.]/g, "") }))} />
+                      <input type="text" inputMode="decimal" placeholder="R Enter monthly income" value={form.salary}
+                        onChange={e => setForm(f => ({ ...f, salary: e.target.value.replace(/[^\d.]/g, "") }))}
+                        style={getInputStyle(false)}
+                        onFocus={onFocus}
+                        onBlur={e => onBlur(e, false)}
+                        onMouseEnter={onMouseEnter}
+                        onMouseLeave={e => onMouseLeave(e, false)}
+                      />
                     </div>
                     <div>
                       <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
-                      <CustomInput type="date" value={form.dob}
-                        onChange={e => setForm(f => ({ ...f, dob: e.target.value }))} />
+                      <input type="date" value={form.dob}
+                        onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
+                        style={getInputStyle(false)}
+                        onFocus={onFocus}
+                        onBlur={e => onBlur(e, false)}
+                        onMouseEnter={onMouseEnter}
+                        onMouseLeave={e => onMouseLeave(e, false)}
+                      />
                     </div>
                   </div>
 

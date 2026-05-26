@@ -16,14 +16,11 @@ import Badge from "@/components/ui/badge";
 import StickyScrollbar from "@/components/ui/StickyScrollbar";
 import MetricCard from "@/components/ui/MetricCard";
 import FilterToolbar from "@/components/ui/FilterToolbar";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
+import MuiTable from "@mui/material/Table";
+import MuiTableHead from "@mui/material/TableHead";
+import MuiTableBody from "@mui/material/TableBody";
+import MuiTableRow from "@mui/material/TableRow";
+import MuiTableCell from "@mui/material/TableCell";
 
 const PAGE_SIZE = 10;
 
@@ -194,145 +191,178 @@ export default function ViewLeadsPage() {
               </Button>
             </Box>
           ) : (
-            <Box ref={tableRef}>
-              <Table>
-                {/* Header */}
-                <TableHeader>
-                  <TableRow>
-                    {["Lead ID", "Company Name", "Contact Person", "Employees", "Status", "Quote", "Quote Status", "Created Date", "Actions"].map((h) => (
-                      <TableHead key={h}>
-                        {h}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
+            <MuiTable sx={{ minWidth: 1200 }}>
+              {/* Header */}
+              <MuiTableHead>
+                <MuiTableRow>
+                  {["Lead ID", "Company Name", "Contact Person", "Employees", "Status", "Quote", "Quote Status", "Created Date", "Actions"].map((h) => (
+                    <MuiTableCell
+                      key={h}
+                      variant="head"
+                      sx={{
+                        color: "var(--text-secondary)",
+                        padding: h === "Actions" ? "10px 16px 10px 8px" : "10px 8px",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        lineHeight: "20px",
+                        borderBottom: "0.625px solid var(--border)",
+                        whiteSpace: "nowrap",
+                        bgcolor: "var(--card-secondary)",
+                        ...(h === "Actions" && { width: "190px", minWidth: "190px" }),
+                      }}
+                    >
+                      {h}
+                    </MuiTableCell>
+                  ))}
+                </MuiTableRow>
+              </MuiTableHead>
 
-                {/* Body */}
-                <TableBody>
-                  {rows.map((lead) => (
-                    <TableRow key={lead.leadId}>
-                      {/* Lead ID */}
-                      <TableCell sx={{ fontFamily: "'Menlo', monospace" }}>
-                        {lead.leadReference}
-                      </TableCell>
+              {/* Body */}
+              <MuiTableBody>
+                {rows.map((lead) => (
+                  <MuiTableRow
+                    key={lead.leadId}
+                    sx={{
+                      borderBottom: "0.625px solid var(--border)",
+                      transition: "background-color 0.15s ease",
+                      "&:hover": { bgcolor: "var(--table-header-bg)" },
+                      "&:last-child td": { borderBottom: 0 },
+                    }}
+                  >
+                    {/* Lead ID */}
+                    <MuiTableCell sx={{ padding: "16px 8px", fontSize: "14px", color: "var(--text-primary)", whiteSpace: "nowrap", fontFamily: "'Menlo', monospace", borderBottom: "0.625px solid var(--border)" }}>
+                      {lead.leadReference}
+                    </MuiTableCell>
 
-                      {/* Company Name */}
-                      <TableCell>
-                        <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)", m: 0 }}>
-                          {lead.employerName}
-                        </Typography>
-                        {lead.registrationNumber && (
-                          <Typography sx={{ fontSize: "12px", color: "var(--text-secondary)", mt: "2px", m: 0 }}>
-                            {lead.registrationNumber}
-                          </Typography>
-                        )}
-                      </TableCell>
-
-                      {/* Contact Person */}
-                      <TableCell>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", m: 0 }}>
-                          {lead.contactFirstName} {lead.contactLastName}
-                        </Typography>
+                    {/* Company Name */}
+                    <MuiTableCell sx={{ padding: "16px 8px", fontSize: "14px", color: "var(--text-primary)", whiteSpace: "nowrap", borderBottom: "0.625px solid var(--border)" }}>
+                      <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)", m: 0 }}>
+                        {lead.employerName}
+                      </Typography>
+                      {lead.registrationNumber && (
                         <Typography sx={{ fontSize: "12px", color: "var(--text-secondary)", mt: "2px", m: 0 }}>
-                          {lead.contactEmail}
+                          {lead.registrationNumber}
                         </Typography>
-                      </TableCell>
+                      )}
+                    </MuiTableCell>
 
-                      {/* Employees */}
-                      <TableCell sx={{ textAlign: "center" }}>
-                        {lead.numberOfEmployees.toLocaleString()}
-                      </TableCell>
+                    {/* Contact Person */}
+                    <MuiTableCell sx={{ padding: "16px 8px", fontSize: "14px", whiteSpace: "nowrap", borderBottom: "0.625px solid var(--border)" }}>
+                      <Typography sx={{ fontSize: "14px", color: "var(--text-primary)", m: 0 }}>
+                        {lead.contactFirstName} {lead.contactLastName}
+                      </Typography>
+                      <Typography sx={{ fontSize: "12px", color: "var(--text-secondary)", mt: "2px", m: 0 }}>
+                        {lead.contactEmail}
+                      </Typography>
+                    </MuiTableCell>
 
-                      {/* Status */}
-                      <TableCell>
-                        <Badge label={lead.status} type="status" />
-                      </TableCell>
+                    {/* Employees */}
+                    <MuiTableCell sx={{ padding: "16px 8px", fontSize: "14px", color: "var(--text-primary)", textAlign: "center", whiteSpace: "nowrap", borderBottom: "0.625px solid var(--border)" }}>
+                      {lead.numberOfEmployees.toLocaleString()}
+                    </MuiTableCell>
 
-                      {/* Quote type */}
-                      <TableCell>
-                        {lead.quoteStatus && (lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote")
-                          ? <Badge label={lead.quoteStatus} type="quote" />
-                          : <Typography sx={{ color: "#A0A0A0", fontSize: "14px" }}>—</Typography>
-                        }
-                      </TableCell>
+                    {/* Status */}
+                    <MuiTableCell sx={{ padding: "16px 8px", whiteSpace: "nowrap", borderBottom: "0.625px solid var(--border)" }}>
+                      <Badge label={lead.status} type="status" />
+                    </MuiTableCell>
 
-                      {/* Quote Status */}
-                      <TableCell>
-                        {lead.quoteStatus && lead.quoteStatus !== "Quick Quote" && lead.quoteStatus !== "Full Quote"
-                          ? <Badge label={lead.quoteStatus} type="quote" />
-                          : <Typography sx={{ color: "#A0A0A0", fontSize: "14px" }}>—</Typography>
-                        }
-                      </TableCell>
+                    {/* Quote type */}
+                    <MuiTableCell sx={{ padding: "16px 8px", whiteSpace: "nowrap", borderBottom: "0.625px solid var(--border)" }}>
+                      {lead.quoteStatus && (lead.quoteStatus === "Quick Quote" || lead.quoteStatus === "Full Quote")
+                        ? <Badge label={lead.quoteStatus} type="quote" />
+                        : <Typography sx={{ color: "#A0A0A0", fontSize: "14px" }}>—</Typography>
+                      }
+                    </MuiTableCell>
 
-                      {/* Created Date */}
-                      <TableCell>
-                        {fmt(lead.createdAt)}
-                      </TableCell>
+                    {/* Quote Status */}
+                    <MuiTableCell sx={{ padding: "16px 8px", whiteSpace: "nowrap", borderBottom: "0.625px solid var(--border)" }}>
+                      {lead.quoteStatus && lead.quoteStatus !== "Quick Quote" && lead.quoteStatus !== "Full Quote"
+                        ? <Badge label={lead.quoteStatus} type="quote" />
+                        : <Typography sx={{ color: "#A0A0A0", fontSize: "14px" }}>—</Typography>
+                      }
+                    </MuiTableCell>
 
-                      {/* Actions */}
-                      <TableCell>
-                        <Box sx={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    {/* Created Date */}
+                    <MuiTableCell sx={{ padding: "16px 8px", fontSize: "14px", color: "var(--text-primary)", whiteSpace: "nowrap", borderBottom: "0.625px solid var(--border)" }}>
+                      {fmt(lead.createdAt)}
+                    </MuiTableCell>
+
+                    {/* Actions */}
+                    <MuiTableCell
+                      sx={{
+                        padding: "16px 16px 16px 8px",
+                        whiteSpace: "nowrap",
+                        borderBottom: "0.625px solid var(--border)",
+                        width: "190px",
+                        minWidth: "190px",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <Button
+                          onClick={() => router.push(`/lead/${lead.leadId}`)}
+                          variant="outlined"
+                          startIcon={<Eye size={14} />}
+                          sx={{
+                            padding: "4px 10px",
+                            height: "32px",
+                            bgcolor: "var(--table-header-bg)",
+                            borderColor: "var(--border)",
+                            borderRadius: "8px",
+                            color: "var(--text-primary)",
+                            textTransform: "none",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            "&:hover": {
+                              bgcolor: "var(--border)",
+                              borderColor: "var(--border)",
+                            }
+                          }}
+                        >
+                          View
+                        </Button>
+                        {lead.status !== "Cancelled" && lead.status !== "Completed" && (
                           <Button
-                            onClick={() => router.push(`/lead/${lead.leadId}`)}
-                            variant="outlined"
-                            startIcon={<Eye size={14} />}
+                            onClick={() => router.push(`/quotes/new?leadId=${lead.leadId}&ref=${lead.leadReference}&company=${encodeURIComponent(lead.employerName)}`)}
+                            variant="contained"
                             sx={{
                               padding: "4px 10px",
                               height: "32px",
-                              bgcolor: "var(--table-header-bg)",
-                              borderColor: "var(--border)",
+                              bgcolor: "#1FC3EB",
+                              color: "#0A0A0A",
+                              border: "none",
                               borderRadius: "8px",
-                              color: "var(--text-primary)",
-                              textTransform: "none",
                               fontSize: "14px",
                               fontWeight: 500,
+                              textTransform: "none",
                               "&:hover": {
-                                bgcolor: "var(--border)",
-                                borderColor: "var(--border)",
+                                bgcolor: "#0DB5D8",
                               }
                             }}
                           >
-                            View
+                            Continue
                           </Button>
-                          {lead.status !== "Cancelled" && lead.status !== "Completed" && (
-                            <Button
-                              onClick={() => router.push(`/quotes/new?leadId=${lead.leadId}&ref=${lead.leadReference}&company=${encodeURIComponent(lead.employerName)}`)}
-                              variant="contained"
-                              sx={{
-                                padding: "4px 10px",
-                                height: "32px",
-                                bgcolor: "#1FC3EB",
-                                color: "#0A0A0A",
-                                border: "none",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                fontWeight: 500,
-                                textTransform: "none",
-                                "&:hover": {
-                                  bgcolor: "#0DB5D8",
-                                }
-                              }}
-                            >
-                              Continue
-                            </Button>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
+                        )}
+                      </Box>
+                    </MuiTableCell>
+                  </MuiTableRow>
+                ))}
+              </MuiTableBody>
+            </MuiTable>
           )}
 
           {/* Pagination */}
           {!loading && filtered.length > 0 && (
             <Box sx={{
-              padding: "12px 16px",
               borderTop: "0.625px solid var(--border)",
               background: "var(--table-header-bg)",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
+              minWidth: "1200px",
+              width: "100%",
             }}>
+              <Box sx={{
+                padding: "12px 16px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                minWidth: "1200px",
+              }}>
               <Typography sx={{
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
@@ -420,10 +450,12 @@ export default function ViewLeadsPage() {
                   Next
                 </Button>
               </Stack>
+              </Box>
             </Box>
           )}
-          <StickyScrollbar scrollRef={tableRef} />
         </Box>
+
+        <StickyScrollbar scrollRef={tableRef} />
 
       </div>
     </main>
