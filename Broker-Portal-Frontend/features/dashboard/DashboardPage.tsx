@@ -18,6 +18,8 @@ import { ROUTES } from "@/lib/constants";
 import { getLeads } from "@/lib/api/leads";
 import { getRepresentativeId } from "@/lib/auth";
 import DashboardCard from "@/components/ui/DashboardCard";
+import MetricCard from "@/components/ui/MetricCard";
+import { getDashboardMetrics } from "@/lib/api/dashboard";
 
 const quickActions = [
   {
@@ -42,7 +44,7 @@ const quickActions = [
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState({
+  const [metrics, setMetrics] = useState({
     activeLeads: 0,
     failedInvoices: 0,
     activeQuotes: 0,
@@ -52,38 +54,16 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
-        const representativeId = getRepresentativeId() ?? undefined;
-        const leads = await getLeads(representativeId);
-        
-        const activeLeads = leads.filter((l) => 
-          ["Draft", "In Progress", "Quote Generated", "Awaiting Employer Acceptance", "Accepted", "Onboarding Submitted", "Pending Approval"].includes(l.status)
-        ).length;
-        
-        const allQuotes = leads.flatMap(l => l.quotes || []);
-        const activeQuotes = allQuotes.filter(q => 
-          !["Expired", "Cancelled", "Rejected"].includes(q.quoteStatus)
-        ).length;
-        
-        const sevenDaysFromNow = new Date();
-        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-        const now = new Date();
-
-        const quotesNearExpiry = allQuotes.filter(q => {
-          if (!q.expiryDate) return false;
-          const expiry = new Date(q.expiryDate);
-          return expiry > now && expiry <= sevenDaysFromNow;
-        }).length;
-
-        setStats({
-          activeLeads,
-          failedInvoices: 0,
-          activeQuotes,
-          quotesNearExpiry,
+        const metricsData = await getDashboardMetrics();
+        setMetrics({
+          activeLeads: metricsData.activeLeads,
+          failedInvoices: metricsData.failedInvoices,
+          activeQuotes: metricsData.activeQuotes,
+          quotesNearExpiry: metricsData.quotesExpiredToday,
         });
       } catch (err) {
-        console.error("Failed to fetch dashboard stats", err);
-        // Set default stats on error
-        setStats({
+        console.error("Failed to fetch dashboard Metrics", err);
+        setMetrics({
           activeLeads: 0,
           failedInvoices: 0,
           activeQuotes: 0,
@@ -93,24 +73,24 @@ export default function DashboardPage() {
     })();
   }, []);
 
-  const statCards = [
+  const metricCards = [
     {
-      value: stats.activeLeads.toString(),
+      value: metrics.activeLeads.toString(),
       label: "Active Leads",
       icon: Users,
     },
     {
-      value: stats.failedInvoices.toString(),
+      value: metrics.failedInvoices.toString(),
       label: "Failed Invoices",
       icon: CircleDollarSign,
     },
     {
-      value: stats.activeQuotes.toString(),
+      value: metrics.activeQuotes.toString(),
       label: "Active Quotes",
       icon: ClipboardList,
     },
     {
-      value: stats.quotesNearExpiry.toString(),
+      value: metrics.quotesNearExpiry.toString(),
       label: "Quotes Near Expiry (Today)",
       icon: TriangleAlert,
     },
@@ -138,47 +118,9 @@ export default function DashboardPage() {
 
       <Box sx={{ maxWidth: "100%" }}>
         <Grid container spacing={3} sx={{ mb: "32px" }}>
-          {statCards.map(({ value, label, icon: Icon }) => (
+          {metricCards.map(({ value, label, icon }) => (
             <Grid size={3} key={label}>
-              <Card
-                sx={{
-                  p: "16px",
-                  borderRadius: "12px",
-                  border: "1px solid var(--border)",
-                  background: "var(--card-secondary)",
-                  boxShadow: "none",
-                }}
-              >
-                <Box
-                  sx={{
-                    mb: "4px",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: "12px",
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: "1.5rem",
-                      fontWeight: 600,
-                      lineHeight: 1,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {value}
-                  </Typography>
-                  <Icon size={16} style={{ color: "var(--text-secondary)" }} />
-                </Box>
-                <Typography
-                  sx={{
-                    fontSize: "0.75rem",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  {label}
-                </Typography>
-              </Card>
+              <MetricCard value={value} label={label} icon={icon} />
             </Grid>
           ))}
         </Grid>
@@ -203,33 +145,12 @@ export default function DashboardPage() {
                   description={description}
                   icon={<Icon size={15} />}
                   onClick={() => router.push(href)}
-                  style={{
-                    background: "var(--card-secondary)",
-                    borderColor: "var(--border)",
-                    borderRadius: "16px",
-                  }}
                   iconWrapperStyle={{
-                    display: "inline-flex",
                     height: "28px",
                     width: "28px",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "50%",
                     backgroundColor: "rgba(148,163,184,0.14)",
                     color: "var(--text-primary)",
                     marginBottom: "24px",
-                  }}
-                  titleStyle={{
-                    fontSize: "22px",
-                    fontWeight: 500,
-                    lineHeight: "24px",
-                    color: "var(--text-primary)",
-                    marginBottom: "8px",
-                  }}
-                  descriptionStyle={{
-                    fontSize: "12px",
-                    color: "var(--text-secondary)",
-                    lineHeight: "18px",
                   }}
                 />
               </Grid>

@@ -7,13 +7,15 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import { Plus, Search, Eye, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, Eye, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
 import { getLeads, Lead } from "@/lib/api/leads";
 import { ROUTES } from "@/lib/constants";
 import { getRepresentativeId } from "@/lib/auth";
 import Badge from "@/components/ui/badge";
 import StickyScrollbar from "@/components/ui/StickyScrollbar";
+import MetricCard from "@/components/ui/MetricCard";
+import FilterToolbar from "@/components/ui/FilterToolbar";
 import {
   Table,
   TableHeader,
@@ -80,6 +82,12 @@ export default function ViewLeadsPage() {
 
   const statusOptions = ["All", ...Array.from(new Set(leads.map(l => l.status))).filter(Boolean)];
   const quoteOptions = ["All", ...Array.from(new Set(leads.map(l => l.quoteStatus))).filter((s): s is string => Boolean(s))];
+  const leadMetrics = [
+    { label: "Total Leads", value: total },
+    { label: "Active", value: active },
+    { label: "Accepted", value: accepted },
+    { label: "Cancelled", value: cancelled },
+  ]
 
   return (
     <main className="flex-1 overflow-y-auto p-6" style={{ background: "var(--background)" }}>
@@ -116,84 +124,35 @@ export default function ViewLeadsPage() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
+        {/* Lead Metric Cards */}
         <Grid container spacing={3} sx={{ marginBottom: "26px" }}>
-          {[
-            { label: "Total Leads", value: total },
-            { label: "Active", value: active },
-            { label: "Accepted", value: accepted },
-            { label: "Cancelled", value: cancelled },
-          ].map(({ label, value }) => (
+          {leadMetrics.map(({ label, value }) => (
             <Grid size={{ xs: 12, sm: 6, md: 3 }} key={label}>
-              <Box sx={{
-                boxSizing: "border-box",
-                background: "var(--card-secondary)",
-                border: "1px solid var(--border)",
-                borderRadius: "12px",
-                height: "88px",
-                padding: "0 23px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                gap: "3px",
-              }}>
-                <Typography sx={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "20px",
-                  fontWeight: 700,
-                  lineHeight: "24px",
-                  color: "var(--text-primary)",
-                  margin: 0,
-                }}>
-                  {value}
-                </Typography>
-                <Typography sx={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 400,
-                  lineHeight: "17px",
-                  color: "var(--text-secondary)",
-                  margin: 0,
-                }}>
-                  {label}
-                </Typography>
-              </Box>
+              <MetricCard value={value.toString()} label={label} />
             </Grid>
           ))}
         </Grid>
 
         {/* Search & Filters */}
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "26px" }}>
-          {/* Search */}
-          <div style={{ position: "relative", flex: 1, maxWidth: "480px" }}>
-            <Search size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--muted-foreground)", pointerEvents: "none" }} />
-            <input
-              type="text"
-              placeholder="Search by company name or lead ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ width: "100%", height: "38px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--input)", padding: "0 12px 0 36px", fontSize: "13px", color: "var(--foreground)", outline: "none", boxSizing: "border-box" }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
-            />
-          </div>
-
-          {/* Status Filter */}
-          <StatusDropdown
-            value={statusFilter}
-            onChange={setStatus}
-            options={statusOptions}
-            placeholder="All Statuses"
-          />
-
-          {/* Quote Status Filter */}
-          <StatusDropdown
-            value={quoteFilter}
-            onChange={setQuote}
-            options={quoteOptions}
-            placeholder="All Quote Statuses"
-          />
-        </div>
+        <FilterToolbar
+          search={search}
+          onSearch={setSearch}
+          searchPlaceholder="Search by company name or lead ID..."
+          filters={[
+            {
+              value: statusFilter,
+              onChange: setStatus,
+              options: statusOptions,
+              placeholder: "All Statuses",
+            },
+            {
+              value: quoteFilter,
+              onChange: setQuote,
+              options: quoteOptions,
+              placeholder: "All Quote Statuses",
+            },
+          ]}
+        />
 
         {/* Table */}
         <Box
@@ -471,33 +430,3 @@ export default function ViewLeadsPage() {
   );
 }
 
-function StatusDropdown({ value, onChange, options, placeholder }: {
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-  placeholder: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const displayLabel = value === "All" ? placeholder : value;
-  return (
-    <div style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        style={{ display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 14px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--input)", color: "var(--foreground)", fontSize: "13px", cursor: "pointer", minWidth: "160px", justifyContent: "space-between" }}
-      >
-        <span>{displayLabel}</span>
-        <ChevronDown size={14} style={{ opacity: 0.5, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-      </button>
-      {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, minWidth: "160px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px", zIndex: 50, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-          {options.map((opt) => (
-            <button key={opt} onMouseDown={() => { onChange(opt); setOpen(false); }}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 14px", fontSize: "13px", color: opt === value ? "var(--primary)" : "var(--foreground)", background: opt === value ? "rgba(31,195,235,0.08)" : "transparent", border: "none", cursor: "pointer" }}>
-              {opt === "All" ? placeholder : opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}

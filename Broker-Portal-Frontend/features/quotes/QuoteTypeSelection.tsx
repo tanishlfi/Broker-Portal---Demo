@@ -73,26 +73,17 @@ function QuoteTypeSelectionContent() {
               icon={<Bolt size={15} />}
               onClick={handleQuickQuote}
               style={{
-                background: "var(--card-secondary)",
-                borderColor: "var(--border)",
                 width: "271px",
                 height: "225px",
                 minHeight: "225px",
-                borderRadius: "16px",
               }}
               iconWrapperStyle={{
-                display: "inline-flex",
                 height: "36px",
                 width: "36px",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "12px",
                 backgroundColor: "rgba(148,163,184,0.14)",
                 color: "var(--text-primary)",
                 marginBottom: "36px",
               }}
-              titleStyle={{ fontSize: "22px", fontWeight: 500, lineHeight: "24px", color: "var(--text-primary)" }}
-              descriptionStyle={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: "18px" }}
             />
 
             <DashboardCard
@@ -101,26 +92,17 @@ function QuoteTypeSelectionContent() {
               icon={<List size={15} />}
               onClick={handleFullQuote}
               style={{
-                background: "var(--card-secondary)",
-                borderColor: "var(--border)",
                 width: "271px",
                 height: "225px",
                 minHeight: "225px",
-                borderRadius: "16px",
               }}
               iconWrapperStyle={{
-                display: "inline-flex",
                 height: "36px",
                 width: "36px",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "12px",
                 backgroundColor: "rgba(148,163,184,0.14)",
                 color: "var(--text-primary)",
                 marginBottom: "24px",
               }}
-              titleStyle={{ fontSize: "22px", fontWeight: 500, lineHeight: "24px", color: "var(--text-primary)" }}
-              descriptionStyle={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: "18px" }}
             />
           </Stack>
 
