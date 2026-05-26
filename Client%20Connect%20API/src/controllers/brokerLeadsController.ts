@@ -175,13 +175,14 @@ export const getLeads = async (req: Request, res: Response) => {
     // Add representativeId to query for the service to use
     const query = { ...req.query, representativeId };
     
-    const { count, rows } = await leadService.getLeads(query);
+    const { count, rows, metrics } = await leadService.getLeads(query);
     return res.status(200).json({
       success: true,
       message: "Leads fetched successfully",
       data: {
         leads: rows,
         total: count,
+        metrics,
       },
     });
   } catch (error: any) {

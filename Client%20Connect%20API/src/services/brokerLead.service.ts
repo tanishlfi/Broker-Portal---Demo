@@ -1,7 +1,10 @@
 const { sequelize } = require("../models");
+const { Op } = require("sequelize");
+const { applyFilters } = require("../utils/filterHelper");
+
 import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { AuditService } from "./auditService";
-import { AuditEventType, ActionOutcome } from "../enums/brokerPortalEnums";
+import { AuditEventType, ActionOutcome, LeadStatus } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const leadRepo = new BrokerLeadRepository();
@@ -14,7 +17,7 @@ export class BrokerLeadService {
 
       const lead = await leadRepo.create({
         lead_reference: leadReference,
-        lead_status: (data.contactFirstName && data.contactEmail) ? "In Progress" : "Draft",
+        lead_status: (data.contactFirstName && data.contactEmail) ? LeadStatus.IN_PROGRESS : LeadStatus.DRAFT,
         last_saved_step: (data.contactFirstName && data.contactEmail) ? 2 : 1,
         representative_id: data.representativeId,
         broker_id: data.brokerId,
@@ -67,8 +70,6 @@ export class BrokerLeadService {
 
   async getLeads(query: any) {
     const { representativeId, clientName } = query;
-    const { applyFilters } = require("../utils/filterHelper");
-    const { Op } = require("sequelize");
 
     const { where, limit, offset, order, pagination } = applyFilters(
       query,
@@ -104,34 +105,72 @@ export class BrokerLeadService {
     );
 
     where.representative_id = representativeId;
+    
+    // If is_active is not explicitly provided in the query, we default to including all leads
+    // for the metrics to match the list. However, if you want the list to only show active leads 
+    // by default, you can uncomment the line below.
+    // if (where.is_active === undefined) where.is_active = true;
 
     const employerWhere: any = {};
     if (clientName) {
       employerWhere.employer_name = { [Op.like]: `%${clientName}%` };
     }
 
-    return await leadRepo.findAndCountAll({
-      where,
-      include: [
-        {
-          model: require("../models").BrokerEmployer,
-          as: "employer",
-          where: clientName ? employerWhere : undefined,
-          required: !!clientName
-        },
-        { model: require("../models").BrokerContact, as: "contact" },
-        { model: require("../models").BrokerQuote, as: "quotes", required: false }
-      ],
-      order: order.length > 0 ? order : [["lead_created_at", "DESC"]],
-      limit,
-      offset,
-      distinct: true,
-      subQuery: false,
+    const [leadsData, rawCounts] = await Promise.all([
+      leadRepo.findAndCountAll({
+        where,
+        include: [
+          {
+            model: require("../models").BrokerEmployer,
+            as: "employer",
+            where: clientName ? employerWhere : undefined,
+            required: !!clientName
+          },
+          { model: require("../models").BrokerContact, as: "contact" },
+          { model: require("../models").BrokerQuote, as: "quotes", required: false }
+        ],
+        order: order.length > 0 ? order : [["lead_created_at", "DESC"]],
+        limit,
+        offset,
+        distinct: true,
+        subQuery: false,
+      }),
+      leadRepo.getLeadCountsByStatus(representativeId)
+    ]);
+
+    const metrics = {
+      total: 0,
+      active: 0,
+      accepted: 0,
+      cancelled: 0
+    };
+
+    rawCounts.forEach((item: any) => {
+      const count = parseInt(item.count);
+      const status = item.lead_status as LeadStatus;
+      
+      metrics.total += count;
+
+      if ([LeadStatus.CANCELLED, LeadStatus.REJECTED, LeadStatus.EXPIRED].includes(status)) {
+        metrics.cancelled += count;
+      } else {
+        // Everything not lost (Cancelled/Rejected/Expired) is considered Active
+        metrics.active += count;
+
+        if ([LeadStatus.ACCEPTED,LeadStatus.ONBOARDING_SUBMITTED,LeadStatus.PENDING_APPROVAL, LeadStatus.APPROVED, LeadStatus.POLICY_CREATED].includes(status)) {
+          metrics.accepted += count;
+        }
+      }
     });
+
+    return {
+      count: leadsData.count,
+      rows: leadsData.rows,
+      metrics
+    };
   }
 
   async getLeadById(leadId: string) {
-    const { Op } = require("sequelize");
     return await leadRepo.findOne({
       where: { [Op.or]: [{ lead_id: leadId }, { lead_reference: leadId }] },
       include: [
@@ -148,8 +187,15 @@ export class BrokerLeadService {
       const lead = await leadRepo.findById(leadId);
       if (!lead) throw new Error("Lead not found");
 
-      const unmodifiableStatuses = ["Accepted", "Onboarding Submitted", "Approved", "Rejected", "Cancelled"];
-      if (unmodifiableStatuses.includes(lead.lead_status)) {
+      const unmodifiableStatuses = [
+        LeadStatus.ACCEPTED, 
+        LeadStatus.ONBOARDING_SUBMITTED, 
+        LeadStatus.APPROVED, 
+        LeadStatus.REJECTED, 
+        LeadStatus.CANCELLED
+      ];
+
+      if (unmodifiableStatuses.includes(lead.lead_status as LeadStatus)) {
         throw new Error(`Cannot update a lead with status: ${lead.lead_status}`);
       }
 
@@ -160,7 +206,7 @@ export class BrokerLeadService {
       if (contact) await leadRepo.updateContact(leadId, contact, t);
 
       const updates: any = {};
-      if (lead.lead_status === "Draft") updates.lead_status = "In Progress";
+      if (lead.lead_status === LeadStatus.DRAFT) updates.lead_status = LeadStatus.IN_PROGRESS;
       if (lastSavedStep) updates.last_saved_step = lastSavedStep;
 
       if (Object.keys(updates).length > 0) {
@@ -199,13 +245,19 @@ export class BrokerLeadService {
       const lead = await leadRepo.findById(leadId);
       if (!lead) throw new Error("Lead not found");
 
-      const allowedCancelStatuses = ["Draft", "In Progress", "Quote Generated", "Expired"];
-      if (!allowedCancelStatuses.includes(lead.lead_status)) {
+      const allowedCancelStatuses = [
+        LeadStatus.DRAFT, 
+        LeadStatus.IN_PROGRESS, 
+        LeadStatus.QUOTE_GENERATED, 
+        LeadStatus.EXPIRED
+      ];
+
+      if (!allowedCancelStatuses.includes(lead.lead_status as LeadStatus)) {
         throw new Error(`Cannot cancel an ineligible lead with status: ${lead.lead_status}`);
       }
 
       await leadRepo.update(leadId, {
-        lead_status: "Cancelled",
+        lead_status: LeadStatus.CANCELLED,
         cancelled_at: new Date(),
         cancelled_by: data.representativeId || lead.representative_id,
         cancel_reason: data.reason,
