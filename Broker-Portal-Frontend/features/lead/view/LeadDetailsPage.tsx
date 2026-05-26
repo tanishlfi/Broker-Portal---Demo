@@ -13,7 +13,7 @@ import Stack from "@mui/material/Stack";
 import { Plus } from "lucide-react";
 
 import { getLead, LeadDetail } from "@/lib/api/leads";
-import QuoteCard from "@/components/ui/QuoteCard";
+import PreviousQuoteCard from "@/components/ui/PreviousQuoteCard";
 
 interface LeadDetailsPageProps {
   leadId: string;
@@ -109,7 +109,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
           }}>
             Lead Details
           </h2>
-          
+
           <Box sx={{ display: "flex", gap: "12px" }}>
             {!["Accepted", "Onboarding Submitted", "Approved", "Rejected", "Cancelled"].includes(lead.leadStatus) && (
               <Button
@@ -328,7 +328,7 @@ export default function LeadDetailsPage({ leadId }: LeadDetailsPageProps) {
         ) : (
           <Stack spacing={2}>
             {quotes.map((quote) => (
-              <QuoteCard key={quote.quoteId} quote={quote} />
+              <PreviousQuoteCard key={quote.quoteId} quote={quote} />
             ))}
           </Stack>
         )}

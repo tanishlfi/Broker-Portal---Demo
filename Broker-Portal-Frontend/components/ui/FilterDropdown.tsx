@@ -99,7 +99,8 @@ export default function FilterDropdown({
               "1px solid var(--border)",
             borderRadius: "8px",
             zIndex: 50,
-            overflow: "hidden",
+            maxHeight: "300px",
+            overflow: "auto",
             boxShadow:
               "0 8px 24px rgba(0,0,0,0.4)",
           }}

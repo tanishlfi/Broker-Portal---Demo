@@ -224,7 +224,14 @@ export class BrokerQuoteService {
       include: [
         { model: require("../models").BrokerQuoteBenefit, as: "benefits" },
         { model: require("../models").BrokerQuickQuoteData, as: "quick_quote_data" },
-        { model: require("../models").BrokerLead, as: "lead" }
+        {
+          model: require("../models").BrokerLead,
+          as: "lead",
+          include: [
+            { model: require("../models").BrokerEmployer, as: "employer" },
+            { model: require("../models").BrokerContact, as: "contact" }
+          ]
+        }
       ]
     });
   }

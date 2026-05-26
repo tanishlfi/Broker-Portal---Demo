@@ -24,11 +24,13 @@ import {
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import CancelQuoteModal from "@/components/quotes/CancelQuoteModal";
 import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
+import QuoteDetailsPage from "./QuoteDetailsPage";
 import { getLeads } from "@/lib/api/leads";
-import { getQuotes, updateQuoteStatus, formatRand, saveOnboardingDetails } from "@/lib/api/quotes";
+import { getQuotes, updateQuoteStatus, formatRand, saveOnboardingDetails, type Quote as ApiQuote } from "@/lib/api/quotes";
 import { getRepresentativeId } from "@/lib/auth";
 import { QuoteStatus } from "@/lib/enums";
 import FilterToolbar from "@/components/ui/FilterToolbar";
+import QuoteBadge from "@/components/ui/QuoteBadge";
 
 interface Quote {
   id: string;
@@ -87,6 +89,7 @@ export default function QuotesPage() {
   const [selectedQuoteForCancel, setSelectedQuoteForCancel] = useState<Quote | null>(null);
   const [activeMenuQuote, setActiveMenuQuote] = useState<Quote | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [detailsQuoteId, setDetailsQuoteId] = useState<string | null>(null);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>, quote: Quote) => {
     setAnchorEl(event.currentTarget);
@@ -170,7 +173,7 @@ export default function QuotesPage() {
           filters.clientName = debouncedSearchQuery;
         }
       }
-      
+
       const apiQuotes = await getQuotes(representativeId, filters);
 
       // Map backend quotes to frontend Quote interface
@@ -378,33 +381,33 @@ export default function QuotesPage() {
             </Button>
           </FilterToolbar>
 
-        {/* Tabs */}
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: "8px 0px" }}>
-          {TABS.map((tab) => (
-            <Button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              variant={activeTab === tab.key ? "contained" : "outlined"}
-              sx={{
-                height: "32px",
-                px: "12px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: 500,
-                textTransform: "none",
-                bgcolor: activeTab === tab.key ? "#1FC3EB" : "var(--card-secondary)",
-                borderColor: activeTab === tab.key ? "none" : "var(--border)",
-                color: activeTab === tab.key ? "#151515" : "var(--text-primary)",
-                "&:hover": {
-                  bgcolor: activeTab === tab.key ? "#1AB3D9" : "var(--card-primary)",
-                  borderColor: "var(--border)",
-                }
-              }}
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </Stack>
+          {/* Tabs */}
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: "8px 0px" }}>
+            {TABS.map((tab) => (
+              <Button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                variant={activeTab === tab.key ? "contained" : "outlined"}
+                sx={{
+                  height: "32px",
+                  px: "12px",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textTransform: "none",
+                  bgcolor: activeTab === tab.key ? "#1FC3EB" : "var(--card-secondary)",
+                  borderColor: activeTab === tab.key ? "none" : "var(--border)",
+                  color: activeTab === tab.key ? "#151515" : "var(--text-primary)",
+                  "&:hover": {
+                    bgcolor: activeTab === tab.key ? "#1AB3D9" : "var(--card-primary)",
+                    borderColor: "var(--border)",
+                  }
+                }}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </Stack>
 
           {/* Quotes List */}
           <Stack spacing={2} sx={{ mb: "24px" }}>
@@ -428,8 +431,11 @@ export default function QuotesPage() {
                     {/* Left Section */}
                     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
                       {/* Company Name & Badges */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}> 
-                        <Chip
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                        <Typography variant="h3" sx={{ fontSize: "18px", fontWeight: 500, color: "var(--text-primary)", m: 0 }}>
+                          {quote.companyName}
+                        </Typography>
+                        {/* <Chip
                           label={quote.quoteType}
                           sx={{
                             height: "22px",
@@ -442,40 +448,41 @@ export default function QuotesPage() {
                           }}
                         />
 
-                      <Chip
-                        label={`${quote.daysRemaining} days remaining`}
-                        sx={{
-                          height: "22px",
-                          bgcolor: "transparent",
-                          border: "1px solid var(--border)",
-                          color: "var(--text-primary)",
-                          fontSize: "12px",
-                          fontWeight: 500,
-                          "& .MuiChip-label": { px: "8px" }
-                        }}
-                      />
-                    </Box>
+                        <Chip
+                          label={`${quote.daysRemaining} days remaining`}
+                          sx={{
+                            height: "22px",
+                            bgcolor: "transparent",
+                            border: "1px solid var(--border)",
+                            color: "var(--text-primary)",
+                            fontSize: "12px",
+                            fontWeight: 500,
+                            "& .MuiChip-label": { px: "8px" }
+                          }}
+                        /> */}
+                        <QuoteBadge type={quote.quoteType} daysRemaining={quote.daysRemaining} />
+                      </Box>
 
-                    {/* Quote Details Grid */}
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Quote ID</Typography>
-                        <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.quoteId}</Typography>
+                      {/* Quote Details Grid */}
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, sm: 3 }}>
+                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Quote ID</Typography>
+                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.quoteId}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 3 }}>
+                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Monthly Premium</Typography>
+                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "#1FC3EB" }}>{quote.monthlyPremium}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 3 }}>
+                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Coverage Amount</Typography>
+                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.coverageAmount}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 3 }}>
+                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Created Date</Typography>
+                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.createdDate}</Typography>
+                        </Grid>
                       </Grid>
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Monthly Premium</Typography>
-                        <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "#1FC3EB" }}>{quote.monthlyPremium}</Typography>
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Coverage Amount</Typography>
-                        <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.coverageAmount}</Typography>
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Created Date</Typography>
-                        <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.createdDate}</Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
+                    </Box>
 
                     {/* Actions Button */}
                     <Box>
@@ -490,6 +497,14 @@ export default function QuotesPage() {
                           borderRadius: "8px",
                           color: "var(--text-primary)",
                           textTransform: "none",
+                          outline: "none",
+                          "&:focus": {
+                            outline: "none",
+                          },
+                          "&.Mui-focusVisible": {
+                            outline: "none",
+                            borderColor: "var(--text-primary)",
+                          },
                           "&:hover": {
                             bgcolor: "var(--border)",
                             borderColor: "var(--text-primary)",
@@ -560,15 +575,7 @@ export default function QuotesPage() {
         <MenuItem
           onClick={() => {
             if (activeMenuQuote) {
-              const params = new URLSearchParams({
-                companyName: activeMenuQuote.companyName,
-                quoteType: activeMenuQuote.quoteType,
-                quoteId: activeMenuQuote.quoteId,
-                monthlyPremium: activeMenuQuote.monthlyPremium,
-                coverageAmount: activeMenuQuote.coverageAmount,
-                createdDate: activeMenuQuote.createdDate,
-              });
-              router.push(`/quotes/${activeMenuQuote.id}?${params.toString()}`);
+              setDetailsQuoteId(activeMenuQuote.id);
             }
             handleCloseMenu();
           }}
@@ -739,6 +746,14 @@ export default function QuotesPage() {
           }}
           quoteId={selectedQuoteForCancel.quoteId}
           onConfirm={handleConfirmCancel}
+        />
+      )}
+
+      {/* Quote Details Popup Modal */}
+      {detailsQuoteId && (
+        <QuoteDetailsPage
+          quoteId={detailsQuoteId}
+          onClose={() => setDetailsQuoteId(null)}
         />
       )}
     </Box>
