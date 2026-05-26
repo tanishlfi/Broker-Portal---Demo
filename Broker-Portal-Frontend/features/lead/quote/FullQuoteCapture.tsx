@@ -17,6 +17,9 @@ import AdjustFullCoverStep from "./components/AdjustFullCoverStep";
 import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import { useRouter } from "next/navigation";
+import { INDUSTRY_TYPE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/enums";
+import CustomInput from "@/components/ui/CustomInput";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 
 interface Employee {
@@ -41,14 +44,6 @@ const labelStyle: React.CSSProperties = {
   fontSize: "0.8125rem", fontWeight: 400, color: "var(--text-secondary)", display: "block", marginBottom: "6px",
 };
 
-const INDUSTRIES = [
-  "Agriculture", "Construction", "Education", "Finance", "Healthcare",
-  "Hospitality", "Manufacturing", "Mining", "Retail", "Technology", "Transport", "Other",
-];
-const PROVINCES = [
-  "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
-  "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape",
-];
 
 const STEPS = ["Quote Details", "Employee Information", "Cover Adjustments"];
 
@@ -241,9 +236,13 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
         const formattedEmployees = employeeList.map(e => ({
           firstName: e.firstName || e.name.split(' ')[0] || "Unknown",
           surname: e.surname || e.name.split(' ').slice(1).join(' ') || "Unknown",
-          gender: e.gender && ["M", "F", "Other"].includes(e.gender.charAt(0).toUpperCase())
-            ? e.gender.charAt(0).toUpperCase()
-            : "M",
+          gender: (() => {
+            const g = (e.gender || "").trim().toLowerCase();
+            if (g.startsWith("m")) return "Male";
+            if (g.startsWith("f")) return "Female";
+            if (g === "prefer not to say") return "Prefer Not to Say";
+            return "Other";
+          })(),
           income: parseFloat(e.income || e.salary || "1000") || 1000,
           dateOfBirth: e.dob ? (e.dob.includes('/') ? e.dob.split('/').reverse().join('-') : e.dob) : "2000-01-01",
           email: e.email || "user@example.com",
@@ -374,31 +373,13 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
           {/* ── STEP 0: Quote Details ── */}
           {currentStep === 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {/* RMA member number */}
-              <div>
-                <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "12px", lineHeight: 1.6 }}>
-                  Please enter your RMA member number so we can pre fill your application and offer you additional products.{" "}
-                  <strong style={{ color: "var(--text-primary)" }}>If you're not an RMA member</strong>, please skip to the next section and complete the form.
-                </p>
-                <input
-                  type="text"
-                  placeholder="Enter RMA number"
-                  value={rmaNumber}
-                  onChange={e => setRmaNumber(e.target.value)}
-                  style={getInputStyle(false)}
-                  onFocus={onFocus}
-                  onBlur={e => onBlur(e, false)}
-                  onMouseEnter={onMouseEnter}
-                  onMouseLeave={e => onMouseLeave(e, false)}
-                />
-              </div>
 
               {/* Province Selection */}
               <div>
                 <label style={{ ...labelStyle, color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "10px" }}>
                   In which province are most of the employees based?
                 </label>
-                <select
+                <CustomSelect
                   value={province}
                   onChange={e => setProvince(e.target.value)}
                   style={getSelectStyle(false)}
@@ -408,8 +389,8 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                   onMouseLeave={e => onMouseLeave(e, false)}
                 >
                   <option value="">Select Province</option>
-                  {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+                  {PROVINCE_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                </CustomSelect>
               </div>
 
               {/* Permanently employed */}
@@ -478,25 +459,20 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                       buttonStyle={yesNoButtonStyle}
                     />
                   </div>
-
-                  {/* Replaced policy start date */}
-                  <div>
-                    <label style={{ ...labelStyle, color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "10px" }}>
-                      What was the start date of the replaced policy?
-                    </label>
-                    <input
-                      type="date"
-                      value={replacedPolicyStartDate}
-                      onChange={e => setReplacedPolicyStartDate(e.target.value)}
-                      style={getInputStyle(false)}
-                      onFocus={onFocus}
-                      onBlur={e => onBlur(e, false)}
-                      onMouseEnter={onMouseEnter}
-                      onMouseLeave={e => onMouseLeave(e, false)}
-                    />
-                  </div>
                 </div>
               )}
+
+              {/* Replaced policy start date (Always visible) */}
+              <div>
+                <label style={{ ...labelStyle, color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "10px" }}>
+                  What was the start date of the replaced policy?
+                </label>
+                <CustomInput
+                  type="date"
+                  value={replacedPolicyStartDate}
+                  onChange={e => setReplacedPolicyStartDate(e.target.value)}
+                />
+              </div>
             </div>
           )}
 

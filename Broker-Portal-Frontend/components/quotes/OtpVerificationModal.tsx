@@ -61,7 +61,7 @@ export default function OtpVerificationModal({
       }
 
       await verifyOTP({
-        referenceId: quoteId,
+        quoteId: quoteId,
         otpCode: otpValue,
       });
 

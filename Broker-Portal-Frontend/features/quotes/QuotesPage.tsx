@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search, ChevronDown, X, Eye } from "lucide-react";
+import { Plus, ChevronDown, X } from "lucide-react";
 
 import {
   Box,
@@ -24,10 +24,11 @@ import {
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import CancelQuoteModal from "@/components/quotes/CancelQuoteModal";
 import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
-import { getLeads, type Lead as ApiLead } from "@/lib/api/leads";
-import { updateQuoteStatus, formatRand, saveOnboardingDetails, type Quote as ApiQuote } from "@/lib/api/quotes";
+import { getLeads } from "@/lib/api/leads";
+import { getQuotes, updateQuoteStatus, formatRand, saveOnboardingDetails } from "@/lib/api/quotes";
 import { getRepresentativeId } from "@/lib/auth";
-import { QuoteStatus, QuoteType } from "@/lib/enums";
+import { QuoteStatus } from "@/lib/enums";
+import FilterToolbar from "@/components/ui/FilterToolbar";
 
 interface Quote {
   id: string;
@@ -55,7 +56,13 @@ interface Lead {
   leadReference: string;
 }
 
-const fmt = (n: number) => `R ${n.toLocaleString("en-ZA")}`;
+const TABS = [
+  { key: "new" as const, label: "New" },
+  { key: "onboarding" as const, label: "Onboarding" },
+  { key: "approved" as const, label: "Approved" },
+  { key: "pending" as const, label: "Pending" },
+  { key: "cancelled" as const, label: "Cancelled" },
+];
 
 export default function QuotesPage() {
   const router = useRouter();
@@ -65,7 +72,12 @@ export default function QuotesPage() {
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"new" | "onboarding" | "approved" | "pending" | "cancelled">("new");
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -73,7 +85,6 @@ export default function QuotesPage() {
   const [selectedQuoteForApproval, setSelectedQuoteForApproval] = useState<Quote | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedQuoteForCancel, setSelectedQuoteForCancel] = useState<Quote | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeMenuQuote, setActiveMenuQuote] = useState<Quote | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -87,14 +98,6 @@ export default function QuotesPage() {
     setActiveMenuQuote(null);
   };
 
-  const tabs = [
-    { key: "new" as const, label: "New" },
-    { key: "onboarding" as const, label: "Onboarding" },
-    { key: "approved" as const, label: "Approved" },
-    { key: "pending" as const, label: "Pending" },
-    { key: "cancelled" as const, label: "Cancelled" },
-  ];
-
   // Check for tab query parameter on mount
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -103,33 +106,69 @@ export default function QuotesPage() {
     }
   }, [searchParams]);
 
-  // Load leads (for the "Add New Quote" modal) and fetch actual quotes
-  const load = useCallback(async (isInitial = false) => {
-    if (isInitial) setLeadsLoading(true);
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [debouncedSearchQuery, activeTab, sortBy, sortOrder]);
+
+  // Fetch leads for the "New Quote" modal only when opened
+  useEffect(() => {
+    if (showLeadModal && leads.length === 0) {
+      setLeadsLoading(true);
+      getLeads().then(apiLeads => {
+        setLeads(
+          apiLeads.map((l) => ({
+            id: l.leadId,
+            companyName: l.employerName,
+            employees: l.numberOfEmployees,
+            status: l.status,
+            leadId: l.leadId,
+            leadReference: l.leadReference,
+          }))
+        );
+      }).catch(err => {
+        console.error("Failed to load leads for modal:", err);
+      }).finally(() => {
+        setLeadsLoading(false);
+      });
+    }
+  }, [showLeadModal, leads.length]);
+
+  // Load actual quotes from the quotes API
+  const load = useCallback(async () => {
     try {
       const representativeId = getRepresentativeId() ?? undefined;
-      
-      // 1. Load leads for the "New Quote" selection modal
-      const apiLeads = await getLeads(representativeId);
-      setLeads(
-        apiLeads.map((l) => ({
-          id: l.leadId,
-          companyName: l.employerName,
-          employees: l.numberOfEmployees,
-          status: l.status,
-          leadId: l.leadId,
-          leadReference: l.leadReference,
-        }))
-      );
 
-      // 2. Load actual quotes from the quotes API
-      const { getQuotes } = await import("@/lib/api/quotes");
-      
-      const filters: any = {};
-      if (searchQuery) {
-        filters.search = searchQuery;
-        filters.searchFields = "quote_reference";
-        filters.clientName = searchQuery;
+      const getStatusesForTab = (tab: string) => {
+        switch (tab) {
+          case "new": return [QuoteStatus.DRAFT, QuoteStatus.GENERATED, QuoteStatus.REVISED];
+          case "pending": return [QuoteStatus.AWAITING_EMPLOYER_ACCEPTANCE, "Awaiting OTP"];
+          case "onboarding": return [QuoteStatus.ACCEPTED];
+          case "approved": return [QuoteStatus.EXPIRED];
+          case "cancelled": return [QuoteStatus.REJECTED, "Cancelled"];
+          default: return undefined;
+        }
+      };
+
+      const filters: any = {
+        page,
+        limit: 10,
+        sortBy,
+        sortOrder,
+        quote_status: getStatusesForTab(activeTab),
+      };
+      if (debouncedSearchQuery) {
+        if (debouncedSearchQuery.toLowerCase().startsWith("qt-")) {
+          filters.quote_reference = debouncedSearchQuery;
+        } else {
+          filters.clientName = debouncedSearchQuery;
+        }
       }
       
       const apiQuotes = await getQuotes(representativeId, filters);
@@ -176,23 +215,22 @@ export default function QuotesPage() {
       });
 
       setQuotes(derivedQuotes);
+      if (apiQuotes.pagination) {
+        setTotalPages(Math.max(1, Math.ceil(apiQuotes.pagination.total / 10)));
+      }
     } catch (err) {
       console.error("Failed to load quotes:", err);
-    } finally {
-      if (isInitial) setLeadsLoading(false);
     }
-  }, [searchQuery]);
+  }, [debouncedSearchQuery, page, sortBy, sortOrder, activeTab]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
-    load(true);
-    intervalId = setInterval(() => load(false), 10000);
+    load();
+    intervalId = setInterval(() => load(), 10000);
 
     return () => clearInterval(intervalId);
   }, [load]);
-
-  const filteredQuotes = quotes.filter((quote) => quote.status === activeTab);
 
   const handleProceedWithQuote = () => {
     if (selectedLead) {
@@ -253,13 +291,7 @@ export default function QuotesPage() {
     setShowApproveModal(false);
     setSelectedQuoteForApproval(null);
     setActiveTab("onboarding");
-    load(false); // Trigger immediate non-blocking refresh of quotes list!
-  };
-
-  const card: React.CSSProperties = {
-    background: "var(--card)",
-    border: "1px solid var(--border)",
-    borderRadius: "10px",
+    load(); // Trigger immediate non-blocking refresh of quotes list!
   };
 
   return (
@@ -283,57 +315,72 @@ export default function QuotesPage() {
       {/* Scrollable Content Container */}
       <Box sx={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1 }}>
 
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: "24px", px: "24px", pt: "24px" }}>
-        <Typography variant="h1" sx={{ fontSize: "20px", fontWeight: 500, color: "var(--text-primary)" }}>
-          Quotes
-        </Typography>
-        <Button
-          onClick={() => setShowLeadModal(true)}
-          variant="contained"
-          startIcon={<Plus size={20} />}
-          sx={{
-            bgcolor: "#1FC3EB",
-            color: "#0A0A0A",
-            borderRadius: "8px",
-            fontWeight: 700,
-            fontSize: "14px",
-            textTransform: "none",
-            height: "40px",
-            px: "16px",
-            "&:hover": {
-              bgcolor: "#1AB3D9",
-            },
-            "& .MuiButton-startIcon": {
+        {/* Header */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: "24px", px: "24px", pt: "24px" }}>
+          <Typography variant="h1" sx={{ fontSize: "20px", fontWeight: 500, color: "var(--text-primary)" }}>
+            Quotes
+          </Typography>
+          <Button
+            onClick={() => setShowLeadModal(true)}
+            variant="contained"
+            startIcon={<Plus size={20} />}
+            sx={{
+              bgcolor: "#1FC3EB",
               color: "#0A0A0A",
-            }
-          }}
-        >
-          Add New Quote
-        </Button>
-      </Box>
+              borderRadius: "8px",
+              fontWeight: 700,
+              fontSize: "14px",
+              textTransform: "none",
+              height: "40px",
+              px: "16px",
+              "&:hover": {
+                bgcolor: "#1AB3D9",
+              },
+              "& .MuiButton-startIcon": {
+                color: "#0A0A0A",
+              }
+            }}
+          >
+            Add New Quote
+          </Button>
+        </Box>
 
-      {/* Main Content */}
-      <Box sx={{ px: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        {/* Search + Tabs row */}
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <div style={{ position: "relative", flex: 1, maxWidth: "480px" }}>
-            <Search size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--muted-foreground)", pointerEvents: "none" }} />
-            <input
-              type="text"
-              placeholder="Search by company name or quote ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: "100%", height: "38px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--input)", padding: "0 12px 0 36px", fontSize: "13px", color: "var(--foreground)", outline: "none", boxSizing: "border-box" }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
-            />
-          </div>
-        </div>
+        {/* Main Content */}
+        <Box sx={{ px: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Search & Sort row */}
+          <FilterToolbar
+            search={searchQuery}
+            onSearch={setSearchQuery}
+            searchPlaceholder="Search by company name or quote ID..."
+          >
+            <Typography sx={{ fontSize: "13px", color: "var(--text-secondary)" }}>Sort by:</Typography>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ height: "38px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--card-secondary)", padding: "0 12px", fontSize: "13px", color: "var(--text-primary)", outline: "none" }}
+            >
+              <option value="created_at">Created Date</option>
+              <option value="lead.employer.employer_name">Company Name</option>
+              <option value="total_premium">Monthly Premium</option>
+            </select>
+            <Button
+              onClick={() => setSortOrder(prev => prev === "ASC" ? "DESC" : "ASC")}
+              sx={{
+                minWidth: "38px", height: "38px", p: 0,
+                border: "1px solid var(--border)", borderRadius: "8px",
+                color: "var(--text-primary)",
+                "&:hover": { bgcolor: "var(--card-secondary)" }
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: sortOrder === "DESC" ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </Button>
+          </FilterToolbar>
 
         {/* Tabs */}
         <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: "8px 0px" }}>
-          {tabs.map((tab) => (
+          {TABS.map((tab) => (
             <Button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
@@ -359,41 +406,41 @@ export default function QuotesPage() {
           ))}
         </Stack>
 
-        {/* Quotes List */}
-        <Stack spacing={2} sx={{ mb: "24px" }}>
-          {filteredQuotes.length === 0 ? (
-            <Box sx={{ textAlignment: "center", py: "48px" }}>
-              <Typography sx={{ color: "var(--text-secondary)", fontSize: "14px", textAlign: "center" }}>No quotes in this category</Typography>
-            </Box>
-          ) : (
-            filteredQuotes.map((quote) => (
-              <Card
-                key={quote.id}
-                sx={{
-                  bgcolor: "var(--card-secondary)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "10px",
-                  p: "24px",
-                  boxShadow: "none",
-                }}
-              >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  {/* Left Section */}
-                  <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {/* Company Name & Badges */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}> 
-                      <Chip
-                        label={quote.quoteType}
-                        sx={{
-                          height: "22px",
-                          bgcolor: quote.quoteType === "Quick Quote" ? "rgba(43,127,255,0.1)" : "rgba(31,195,235,0.1)",
-                          border: quote.quoteType === "Quick Quote" ? "1px solid rgba(43,127,255,0.2)" : "1px solid rgba(31,195,235,0.2)",
-                          color: quote.quoteType === "Quick Quote" ? "#2B7FFF" : "#1FC3EB",
-                          fontSize: "12px",
-                          fontWeight: 500,
-                          "& .MuiChip-label": { px: "8px" }
-                        }}
-                      />
+          {/* Quotes List */}
+          <Stack spacing={2} sx={{ mb: "24px" }}>
+            {quotes.length === 0 ? (
+              <Box sx={{ textAlignment: "center", py: "48px" }}>
+                <Typography sx={{ color: "var(--text-secondary)", fontSize: "14px", textAlign: "center" }}>No quotes in this category</Typography>
+              </Box>
+            ) : (
+              quotes.map((quote) => (
+                <Card
+                  key={quote.id}
+                  sx={{
+                    bgcolor: "var(--card-secondary)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "10px",
+                    p: "24px",
+                    boxShadow: "none",
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    {/* Left Section */}
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
+                      {/* Company Name & Badges */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}> 
+                        <Chip
+                          label={quote.quoteType}
+                          sx={{
+                            height: "22px",
+                            bgcolor: quote.quoteType === "Quick Quote" ? "rgba(43,127,255,0.1)" : "rgba(31,195,235,0.1)",
+                            border: quote.quoteType === "Quick Quote" ? "1px solid rgba(43,127,255,0.2)" : "1px solid rgba(31,195,235,0.2)",
+                            color: quote.quoteType === "Quick Quote" ? "#2B7FFF" : "#1FC3EB",
+                            fontSize: "12px",
+                            fontWeight: 500,
+                            "& .MuiChip-label": { px: "8px" }
+                          }}
+                        />
 
                       <Chip
                         label={`${quote.daysRemaining} days remaining`}
@@ -430,35 +477,70 @@ export default function QuotesPage() {
                     </Grid>
                   </Box>
 
-                  {/* Actions Button */}
-                  <Box>
-                    <Button
-                      variant="outlined"
-                      endIcon={<ChevronDown size={20} />}
-                      onClick={(e) => handleOpenMenu(e, quote)}
-                      sx={{
-                        height: "36px",
-                        bgcolor: "var(--table-header-bg)",
-                        border: "1px solid var(--text-secondary)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        textTransform: "none",
-                        "&:hover": {
-                          bgcolor: "var(--border)",
-                          borderColor: "var(--text-primary)",
-                          borderWidth: "1px",
-                        }
-                      }}
-                    >
-                      Actions
-                    </Button>
+                    {/* Actions Button */}
+                    <Box>
+                      <Button
+                        variant="outlined"
+                        endIcon={<ChevronDown size={20} />}
+                        onClick={(e) => handleOpenMenu(e, quote)}
+                        sx={{
+                          height: "36px",
+                          bgcolor: "var(--table-header-bg)",
+                          border: "1px solid var(--text-secondary)",
+                          borderRadius: "8px",
+                          color: "var(--text-primary)",
+                          textTransform: "none",
+                          "&:hover": {
+                            bgcolor: "var(--border)",
+                            borderColor: "var(--text-primary)",
+                            borderWidth: "1px",
+                          }
+                        }}
+                      >
+                        Actions
+                      </Button>
+                    </Box>
                   </Box>
-                </Box>
-              </Card>
-            ))
-          )}
-        </Stack>
-      </Box>
+                </Card>
+              ))
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: "24px", px: "12px" }}>
+                <Typography sx={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                  Page {page} of {totalPages}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    disabled={page === 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    sx={{
+                      minWidth: "auto", px: "12px", height: "32px",
+                      border: "1px solid var(--border)", borderRadius: "8px",
+                      color: "var(--text-primary)", fontSize: "13px", textTransform: "none",
+                      "&:disabled": { opacity: 0.5, borderColor: "var(--border)" }
+                    }}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    sx={{
+                      minWidth: "auto", px: "12px", height: "32px",
+                      border: "1px solid var(--border)", borderRadius: "8px",
+                      color: "var(--text-primary)", fontSize: "13px", textTransform: "none",
+                      "&:disabled": { opacity: 0.5, borderColor: "var(--border)" }
+                    }}
+                  >
+                    Next
+                  </Button>
+                </Stack>
+              </Box>
+            )}
+          </Stack>
+        </Box>
       </Box>
 
       {/* Global Actions Menu */}

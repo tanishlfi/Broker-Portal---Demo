@@ -1,12 +1,9 @@
 import React, { useState } from "react";
-import {
-  validateRequired,
-  validatePositiveNumber,
-  validatePositiveDecimal,
-} from "@/utils/validators";
+import { validateQuickQuoteField } from "@/utils/validators";
 import { BackButton, NextButton } from "@/components/ui/StepButtons";
 import StepProgress from "@/components/ui/StepProgress";
 import OptionToggleGroup from "@/components/ui/OptionToggleGroup";
+import { INDUSTRY_TYPE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/enums";
 
 const QUICK_STEPS = ["Quote Details", "Adjust Cover Amounts"];
 
@@ -27,15 +24,6 @@ interface QuickQuoteInputsProps {
   onGenerateQuote?: () => void;
 }
 
-const INDUSTRIES = [
-  "Agriculture", "Construction", "Education", "Finance", "Healthcare",
-  "Hospitality", "Manufacturing", "Mining", "Retail", "Technology", "Transport", "Other",
-];
-
-const PROVINCES = [
-  "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
-  "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape",
-];
 
 const labelStyle: React.CSSProperties = {
   fontSize: "0.8125rem",
@@ -103,20 +91,39 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
   const { employees, genderSplit, averageAge, averageIncome, province, industry } = formData;
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const handleChange = (field: keyof FormData, val: string) => {
+    onFormChange({ ...formData, [field]: val });
+    if (errors[field] || val !== "") {
+      const error = validateQuickQuoteField(field, val);
+      setErrors(prev => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const handleBlur = (field: keyof FormData, val: string) => {
+    const error = validateQuickQuoteField(field, val);
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
+
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!validateRequired(employees) || !validatePositiveNumber(employees))
-      e.employees = "At least 1 employee needs to be covered.";
-    if (!validateRequired(genderSplit))
-      e.genderSplit = "Please select a gender split.";
-    if (!validateRequired(averageAge) || !validatePositiveNumber(averageAge))
-      e.averageAge = "Average age is required.";
-    if (!validateRequired(averageIncome) || !validatePositiveDecimal(averageIncome))
-      e.averageIncome = "Income should be a number higher than 0.";
-    if (!validateRequired(province))
-      e.province = "Please select a province.";
-    if (!validateRequired(industry))
-      e.industry = "Please select an industry.";
+    const empErr = validateQuickQuoteField("employees", employees);
+    if (empErr) e.employees = empErr;
+    
+    const genErr = validateQuickQuoteField("genderSplit", genderSplit);
+    if (genErr) e.genderSplit = genErr;
+    
+    const ageErr = validateQuickQuoteField("averageAge", averageAge);
+    if (ageErr) e.averageAge = ageErr;
+    
+    const incErr = validateQuickQuoteField("averageIncome", averageIncome);
+    if (incErr) e.averageIncome = incErr;
+    
+    const provErr = validateQuickQuoteField("province", province);
+    if (provErr) e.province = provErr;
+    
+    const indErr = validateQuickQuoteField("industry", industry);
+    if (indErr) e.industry = indErr;
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -166,7 +173,10 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
           <OptionToggleGroup
             options={["Mostly male", "Mostly female", "Even split"]}
             value={genderSplit}
-            onChange={val => { onFormChange({ ...formData, genderSplit: val }); setErrors({ ...errors, genderSplit: "" }); }}
+            onChange={val => {
+              onFormChange({ ...formData, genderSplit: val });
+              setErrors(prev => ({ ...prev, genderSplit: validateQuickQuoteField("genderSplit", val) }));
+            }}
             error={errors.genderSplit}
           />
         </div>
@@ -198,8 +208,7 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
               onChange={e => {
                 let v = e.target.value.replace(/[^\d.]/g, "");
                 if ((v.match(/\./g) || []).length > 1) v = v.replace(/\.$/, "");
-                onFormChange({ ...formData, averageIncome: v });
-                setErrors({ ...errors, averageIncome: "" });
+                handleChange("averageIncome", v);
               }}
               onFocus={onFocus}
               onBlur={e => onBlur(e, !!errors.averageIncome)}
@@ -224,7 +233,7 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
               onMouseLeave={e => onMouseLeave(e, !!errors.province)}
             >
               <option value="">Select province</option>
-              {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+              {PROVINCE_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             {errMsg(errors.province)}
           </div>
@@ -240,7 +249,7 @@ export default function QuickQuoteInputs({ formData, onFormChange, onBack, onGen
               onMouseLeave={e => onMouseLeave(e, !!errors.industry)}
             >
               <option value="">Select industry</option>
-              {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+              {INDUSTRY_TYPE_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
             {errMsg(errors.industry)}
           </div>

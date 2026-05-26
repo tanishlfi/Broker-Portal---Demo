@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createLead } from "@/lib/api/leads";
-import { redirectToAuth, getRepresentativeId, getBrokerId } from "@/lib/auth";
+import { redirectToAuth } from "@/lib/auth";
 import {
   validateSAMobileNumber,
   validateEmail,
@@ -16,19 +16,11 @@ import {
   validateRegistrationNumber,
   validateContactPersonName,
 } from "@/utils/validators";
- 
+import { INDUSTRY_TYPE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/enums";
+
 const STEPS = ["1. Employer Details", "2. Contact Details", "3. Review & Submit"];
- 
-const INDUSTRIES = [
-  "Agriculture", "Construction", "Education", "Finance", "Healthcare",
-  "Hospitality", "Manufacturing", "Mining", "Retail", "Technology", "Transport", "Other",
-];
- 
-const PROVINCES = [
-  "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
-  "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape",
-];
- 
+
+
 type EmployerForm = {
   companyName: string; registrationNumber: string; industry: string;
   numberOfEmployees: string; companyAddress: string; city: string;
@@ -173,9 +165,6 @@ export default function StartNewLeadPage() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const repId = getRepresentativeId() || "00000000-0000-0000-0000-000000000000";
-      const bId = getBrokerId() || "00000000-0000-0000-0000-000000000000";
-
       const [firstName, ...rest] = contact.contactName.trim().split(" ");
       const result = await createLead({
         employerName: employer.companyName,
@@ -188,8 +177,6 @@ export default function StartNewLeadPage() {
         contactEmail: contact.email,
         contactMobile: contact.phone,
         preferredCommunicationMethod: "Email",
-        representativeId: repId,
-        brokerId: bId,
       });
       const { leadId, leadReference } = result.data;
       showToast("Lead created successfully");
@@ -295,7 +282,7 @@ export default function StartNewLeadPage() {
                       value={employer.industry}
                       onChange={e => { setEmployer({ ...employer, industry: e.target.value }); setEmployerErrors({ ...employerErrors, industry: undefined }); }}>
                       <option value="">Select industry</option>
-                      {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+                      {INDUSTRY_TYPE_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
                     </select>
                     {errMsg(employerErrors.industry)}
                   </div>
@@ -340,7 +327,7 @@ export default function StartNewLeadPage() {
                       value={employer.province}
                       onChange={e => { setEmployer({ ...employer, province: e.target.value }); setEmployerErrors({ ...employerErrors, province: undefined }); }}>
                       <option value="">Select province</option>
-                      {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                      {PROVINCE_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                     {errMsg(employerErrors.province)}
                   </div>

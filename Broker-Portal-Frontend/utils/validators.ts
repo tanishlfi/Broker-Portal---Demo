@@ -193,3 +193,30 @@ export const validateRequired = (value: string | number | undefined): boolean =>
   }
   return value !== undefined && value !== null;
 };
+
+// Quick Quote Field Validator
+export const validateQuickQuoteField = (field: string, value: string): string => {
+  switch (field) {
+    case "employees":
+      if (!validateRequired(value) || !validatePositiveNumber(value)) return "At least 1 employee needs to be covered.";
+      return "";
+    case "genderSplit":
+      if (!validateRequired(value)) return "Please select a gender split.";
+      return "";
+    case "averageAge":
+      if (!validateRequired(value) || !validatePositiveNumber(value)) return "Average age is required.";
+      if (parseInt(value, 10) < 18) return "Average age cannot be below 18.";
+      return "";
+    case "averageIncome":
+      if (!validateRequired(value) || !validatePositiveDecimal(value)) return "Income should be a number higher than 0.";
+      return "";
+    case "province":
+      if (!validateRequired(value)) return "Please select a province.";
+      return "";
+    case "industry":
+      if (!validateRequired(value)) return "Please select an industry.";
+      return "";
+    default:
+      return "";
+  }
+};

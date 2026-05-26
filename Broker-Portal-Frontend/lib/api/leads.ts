@@ -12,8 +12,6 @@ export interface CreateLeadPayload {
   contactEmail: string;
   contactMobile: string;
   preferredCommunicationMethod?: "Email" | "SMS" | "Phone";
-  representativeId: string;
-  brokerId: string;
 }
 
 export interface QuoteSummary {
@@ -59,17 +57,15 @@ export interface LeadFilterParams {
   sortBy?: string;
   sortOrder?: "ASC" | "DESC";
   search?: string;
-  searchFields?: string | string[];
   lead_status?: string;
+  quoteStatus?: string;
   clientName?: string;
 }
 
 export async function getLeads(
-  representativeId?: string,
   filters?: LeadFilterParams
-): Promise<Lead[] & { pagination?: any }> {
-  const repId = representativeId || "00000000-0000-0000-0000-000000000000";
-  const params = new URLSearchParams({ representativeId: repId });
+): Promise<Lead[] & { pagination?: any, metrics?: any }> {
+  const params = new URLSearchParams();
 
   if (filters) {
     Object.entries(filters).forEach(([key, val]) => {
@@ -116,7 +112,16 @@ export async function getLeads(
 
   if (json.data?.pagination) {
     Object.defineProperty(resultList, "pagination", {
-      value: json.data.pagination,
+      value: { ...json.data.pagination, total: json.data.total },
+      writable: true,
+      enumerable: false,
+      configurable: true,
+    });
+  }
+
+  if (json.data?.metrics) {
+    Object.defineProperty(resultList, "metrics", {
+      value: json.data.metrics,
       writable: true,
       enumerable: false,
       configurable: true,

@@ -48,8 +48,7 @@ export default function ApproveQuoteModal({
     setError(null);
     try {
       await sendOTP({
-        referenceId: quoteId,
-        referenceType: "Quote",
+        quoteId: quoteId,
       });
       setShowOtpModal(true);
     } catch (err) {

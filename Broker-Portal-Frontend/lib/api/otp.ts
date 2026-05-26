@@ -3,8 +3,7 @@ import { getValidToken } from "@/lib/auth";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/apirma/v1";
 
 export interface SendOTPRequest {
-  referenceId: string;
-  referenceType: "Quote" | "Lead";
+  quoteId: string;
 }
 
 export interface SendOTPResponse {
@@ -16,7 +15,7 @@ export interface SendOTPResponse {
 }
 
 export interface VerifyOTPRequest {
-  referenceId: string;
+  quoteId: string;
   otpCode: string;
 }
 

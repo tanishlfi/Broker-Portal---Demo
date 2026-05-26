@@ -15,6 +15,7 @@ interface FilterToolbarProps {
   onSearch: (value: string) => void;
   filters?: Filter[];
   searchPlaceholder?: string;
+  children?: React.ReactNode;
 }
 
 export default function FilterToolbar({
@@ -22,28 +23,40 @@ export default function FilterToolbar({
   onSearch,
   filters = [],
   searchPlaceholder = "Search...",
+  children,
 }: FilterToolbarProps) {
   return (
     <div
       style={{
         display: "flex",
-        gap: "12px",
+        justifyContent: "space-between",
         alignItems: "center",
+        flexWrap: "wrap",
+        gap: "16px",
         marginBottom: "26px",
       }}
     >
-      <SearchInput
-        value={search}
-        onChange={onSearch}
-        placeholder={searchPlaceholder}
-      />
+      <div style={{ display: "flex", gap: "12px", alignItems: "center", flex: 1 }}>
+        <div style={{ minWidth: "300px", maxWidth: "480px", flex: 1 }}>
+          <SearchInput
+            value={search}
+            onChange={onSearch}
+            placeholder={searchPlaceholder}
+          />
+        </div>
+        {filters.map((filter, index) => (
+          <FilterDropdown
+            key={`${filter.placeholder}-${index}`}
+            {...filter}
+          />
+        ))}
+      </div>
 
-      {filters.map((filter, index) => (
-        <FilterDropdown
-          key={`${filter.placeholder}-${index}`}
-          {...filter}
-        />
-      ))}
+      {children && (
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {children}
+        </div>
+      )}
     </div>
   );
-}
+}
