@@ -14,9 +14,7 @@ interface DashboardCardProps {
   iconWrapperClassName?: string;
   iconWrapperStyle?: React.CSSProperties;
   titleClassName?: string;
-  titleStyle?: React.CSSProperties;
   descriptionClassName?: string;
-  descriptionStyle?: React.CSSProperties;
 }
 
 export default function DashboardCard({
@@ -25,9 +23,7 @@ export default function DashboardCard({
   icon,
   onClick,
   style,
-  iconWrapperStyle,
-  titleStyle,
-  descriptionStyle,
+  iconWrapperStyle
 }: DashboardCardProps) {
   const cardContent = (
     <Box
@@ -43,6 +39,10 @@ export default function DashboardCard({
         sx={{
           mb: "16px",
           color: "#1FC3EB",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: "50%",
           transition: "transform 0.2s ease-in-out",
           ".MuiCardActionArea-root:hover &": {
             transform: "scale(1.1)",
@@ -55,12 +55,11 @@ export default function DashboardCard({
       <Typography
         variant="h3"
         sx={{
-          fontSize: "1.125rem",
+          fontSize: "22px",
           fontWeight: 500,
-          lineHeight: 1.5,
-          color: "#ffffff",
-          mb: "8px",
-          ...titleStyle,
+          lineHeight: "24px",
+          color: "var(--text-primary)",
+          marginBottom: "8px",
         }}
       >
         {title}
@@ -68,11 +67,9 @@ export default function DashboardCard({
       <Typography
         variant="body2"
         sx={{
-          fontSize: "0.875rem",
-          color: "#9ca3af",
-          lineHeight: 1.5,
-          flex: 1,
-          ...descriptionStyle,
+          fontSize: "12px",
+          color: "var(--text-secondary)",
+          lineHeight: "18px",
         }}
       >
         {description}
@@ -83,9 +80,9 @@ export default function DashboardCard({
   return (
     <Card
       sx={{
-        bgcolor: "#2d2d2d",
-        border: "1px solid rgb(58, 58, 58)",
-        borderRadius: "8px",
+         background: "var(--card-secondary)",
+        border: "1px solid var(--border)",
+        borderRadius: "16px",
         height: "100%",
         width: "100%",
         boxShadow: "none",
