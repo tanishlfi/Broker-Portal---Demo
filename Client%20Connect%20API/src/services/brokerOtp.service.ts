@@ -4,7 +4,7 @@ import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { BrokerOtpRepository } from "../repositories/brokerOtp.repository";
 import { sendBrokerEmail } from "../utils/brokerSendEmail";
 import { AuditService } from "./auditService";
-import { AuditEventType, ActionOutcome } from "../enums/brokerPortalEnums";
+import { AuditEventType, ActionOutcome, LeadStatus, OTPStatus } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const quoteRepo = new BrokerQuoteRepository();
@@ -33,24 +33,25 @@ export class BrokerOtpService {
       targetEmail = quote.lead.contact.contact_email;
       recipientName = `${quote.lead.contact.contact_first_name} ${quote.lead.contact.contact_last_name}`;
 
+      // Mark previous active OTPs as Expired
       await otpRepo.updateMany(
-        { reference_id: quoteId, is_verified: false },
-        { is_verified: false, expires_at: new Date() },
+        { reference_id: quoteId, otp_status: { [require("sequelize").Op.in]: [OTPStatus.GENERATED, OTPStatus.SENT] } },
+        { otp_status: OTPStatus.EXPIRED, otp_expiry: new Date() },
         t
       );
 
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-      await otpRepo.create({
+      // Create with status "Generated"
+      const otpRecord = await otpRepo.create({
         otp_id: uuidv4(),
         reference_id: quoteId,
-        reference_type: "Quote",
         otp_code: otpCode,
-        expires_at: expiresAt,
+        otp_expiry: expiresAt,
         sent_to: targetEmail,
         sent_method: "Email",
-        status: "Sent",
+        otp_status: OTPStatus.GENERATED,
       }, t);
 
       await sendBrokerEmail({
@@ -61,9 +62,12 @@ export class BrokerOtpService {
         message: `Dear ${recipientName},<br><br>Your secure OTP is: <b style="font-size: 24px;">${otpCode}</b>`
       });
 
+      // Update status to "Sent" after email success
+      await otpRecord.update({ otp_status: OTPStatus.SENT }, { transaction: t });
+
       // Update Lead and Quote status to "Awaiting Employer Acceptance"
-      await leadRepo.update(quote.lead_id, { lead_status: "Awaiting Employer Acceptance" }, t);
-      await quoteRepo.update(quoteId, { quote_status: "Awaiting Employer Acceptance" }, t);
+      await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.AWAITING_EMPLOYER_ACCEPTANCE }, t);
+      await quoteRepo.update(quoteId, { quote_status: LeadStatus.AWAITING_EMPLOYER_ACCEPTANCE }, t);
 
       await t.commit();
 
@@ -98,27 +102,26 @@ export class BrokerOtpService {
       const otpRecord = await otpRepo.findActiveOtp(quoteId, t);
 
       if (!otpRecord) throw new Error("No active verification request found.");
-      if (otpRecord.is_blocked) throw new Error("This code is blocked.");
 
-      if (otpRecord.otp_code !== otpCode) {
-        const newAttempts = otpRecord.attempts + 1;
-        const isBlocked = newAttempts >= 3;
-        await otpRecord.update({ 
-          attempts: newAttempts, 
-          is_blocked: isBlocked,
-          status: isBlocked ? "Failed" : otpRecord.status 
-        }, { transaction: t });
+      // Check Expiry
+      if (new Date() > otpRecord.otp_expiry) {
+        await otpRecord.update({ otp_status: OTPStatus.EXPIRED }, { transaction: t });
         await t.commit();
-        throw new Error(isBlocked ? "Code blocked." : "Invalid OTP.");
+        throw new Error("Verification code has expired.");
       }
 
-      await otpRecord.update({ is_verified: true, status: "Verified" }, { transaction: t });
-      await otpRepo.deleteMany({ reference_id: quoteId, otp_id: { [require("sequelize").Op.ne]: otpRecord.otp_id } }, t);
+      if (otpRecord.otp_code !== otpCode) {
+        await otpRecord.update({ otp_status: OTPStatus.FAILED }, { transaction: t });
+        await t.commit();
+        throw new Error("Invalid verification code. This code has been invalidated for security.");
+      }
 
+      await otpRecord.update({ otp_status: OTPStatus.VERIFIED }, { transaction: t });
+      
       const quote = await quoteRepo.findById(quoteId, { transaction: t });
       if (quote) {
-        await quote.update({ quote_status: "Accepted", employer_accepted_at: new Date() }, { transaction: t });
-        await leadRepo.update(quote.lead_id, { lead_status: "Accepted" }, t);
+        await quote.update({ quote_status: LeadStatus.ACCEPTED, employer_accepted_at: new Date() }, { transaction: t });
+        await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.ACCEPTED }, t);
         
         await t.commit();
 
@@ -137,7 +140,7 @@ export class BrokerOtpService {
 
       return true;
     } catch (error: any) {
-      if (t) await t.rollback();
+      if (t && !t.finished) await t.rollback();
 
       await AuditService.logEvent({
         eventType: AuditEventType.OTP_VERIFIED,

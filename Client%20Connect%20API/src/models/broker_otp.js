@@ -20,37 +20,17 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
       },
-      reference_type: {
-        type: DataTypes.ENUM(...REFERENCE_TYPE_OPTIONS),
-        allowNull: false,
-      },
       otp_code: {
         type: DataTypes.STRING(6),
         allowNull: false,
       },
-      expires_at: {
+      otp_expiry: {
         type: DataTypes.DATE,
         allowNull: false,
       },
-      status: {
+      otp_status: {
         type: DataTypes.ENUM(...OTP_STATUS_OPTIONS),
         defaultValue: "Generated",
-      },
-      is_verified: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
-      attempts: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
-      },
-      is_blocked: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
-      last_attempt_at: {
-        type: DataTypes.DATE,
-        allowNull: true,
       },
       sent_to: {
         type: DataTypes.STRING,

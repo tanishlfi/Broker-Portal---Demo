@@ -1,3 +1,5 @@
+import { OTPStatus } from "../enums/brokerPortalEnums";
+
 const { BrokerOTP } = require("../models");
 const { Op } = require("sequelize");
 
@@ -6,8 +8,7 @@ export class BrokerOtpRepository {
     return await BrokerOTP.findOne({
       where: {
         reference_id: referenceId,
-        is_verified: false,
-        expires_at: { [Op.gt]: new Date() }
+        otp_status: { [Op.in]: [OTPStatus.GENERATED, OTPStatus.SENT] }
       },
       order: [["created_at", "DESC"]],
       transaction,
