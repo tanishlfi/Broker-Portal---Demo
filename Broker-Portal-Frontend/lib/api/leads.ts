@@ -46,6 +46,13 @@ export async function createLead(payload: CreateLeadPayload) {
   );
 }
 
+export async function updateLead(leadId: string, payload: any) {
+  return apiClient<{ success: boolean; data: any }>(
+    `/broker/leads/${leadId}`,
+    { method: "PATCH", body: JSON.stringify(payload) }
+  );
+}
+
 export interface LeadFilterParams {
   page?: number;
   limit?: number;
