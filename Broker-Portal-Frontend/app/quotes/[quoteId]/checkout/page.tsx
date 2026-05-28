@@ -223,6 +223,14 @@ function CheckoutPageContent() {
 
   return (
     <div className="w-full space-y-3 pb-12">
+      {/* Hide native browser calendar icon visually but keep it clickable */}
+      <style>{`
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          opacity: 0 !important;
+          background: transparent !important;
+          color: transparent !important;
+        }
+      `}</style>
 
       {/* Back to Quotes navigation */}
       <button
@@ -319,14 +327,33 @@ function CheckoutPageContent() {
               </div>
             </div>
 
-            {/* Date of Birth */}
-            <div>
-              <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
-              <DateInput
-                value={dob}
-                onChange={setDob}
-                inputStyle={getInputStyle()}
-              />
+            {/* Date of Birth & Nationality */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={dob}
+                    onChange={setDob}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>What is your nationality?</label>
+                <div className="mt-auto w-full">
+                  <select
+                    value={nationality}
+                    onChange={(e) => setNationality(e.target.value)}
+                    style={getSelectStyle()}
+                  >
+                    <option value="">Please select</option>
+                    <option value="South African">South African</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Cellphone & Landline */}
@@ -366,41 +393,32 @@ function CheckoutPageContent() {
               />
             </div>
 
-            {/* ID or Passport Number */}
-            <div>
-              <label style={labelStyle}>ID or passport number</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
-              <input
-                type="text"
-                placeholder="ID or passport number"
-                value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)}
-                style={getInputStyle()}
-              />
-            </div>
+            {/* ID or Passport Number & Passport Expiry */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>ID or passport number</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="ID or passport number"
+                    value={idNumber}
+                    onChange={(e) => setIdNumber(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            {/* Passport Expiry */}
-            <div>
-              <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
-              <DateInput
-                value={passportExpiry}
-                onChange={setPassportExpiry}
-                inputStyle={getInputStyle()}
-              />
-            </div>
-
-            {/* Nationality */}
-            <div>
-              <label style={labelStyle}>What is your nationality?</label>
-              <select
-                value={nationality}
-                onChange={(e) => setNationality(e.target.value)}
-                style={getSelectStyle()}
-              >
-                <option value="">Please select</option>
-                <option value="South African">South African</option>
-                <option value="Other">Other</option>
-              </select>
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={passportExpiry}
+                    onChange={setPassportExpiry}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Home Address */}
@@ -416,27 +434,33 @@ function CheckoutPageContent() {
             </div>
 
             {/* Emails */}
-            <div>
-              <label style={labelStyle}>Email address for policy document and logging in</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Please note sensitive employee info will be sent to this address</p>
-              <input
-                type="email"
-                placeholder="Email address for policy"
-                value={emailForPolicy}
-                onChange={(e) => setEmailForPolicy(e.target.value)}
-                style={getInputStyle()}
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Email address for policy document and logging in</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Please note sensitive employee info will be sent to this address</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="email"
+                    placeholder="Email address for policy"
+                    value={emailForPolicy}
+                    onChange={(e) => setEmailForPolicy(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label style={labelStyle}>Email address for monthly invoice</label>
-              <input
-                type="email"
-                placeholder="Email address for invoice"
-                value={emailForInvoice}
-                onChange={(e) => setEmailForInvoice(e.target.value)}
-                style={getInputStyle()}
-              />
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Email address for monthly invoice</label>
+                <div className="mt-auto w-full">
+                  <input
+                    type="email"
+                    placeholder="Email address for invoice"
+                    value={emailForInvoice}
+                    onChange={(e) => setEmailForInvoice(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -468,14 +492,33 @@ function CheckoutPageContent() {
               </div>
             </div>
 
-            {/* DOB */}
-            <div>
-              <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
-              <DateInput
-                value={bossDob}
-                onChange={setBossDob}
-                inputStyle={getInputStyle()}
-              />
+            {/* DOB & Nationality */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={bossDob}
+                    onChange={setBossDob}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>What is their nationality?</label>
+                <div className="mt-auto w-full">
+                  <select
+                    value={bossNationality}
+                    onChange={(e) => setBossNationality(e.target.value)}
+                    style={getSelectStyle()}
+                  >
+                    <option value="">Please select</option>
+                    <option value="South African">South African</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Boss SA ID Question */}
@@ -491,41 +534,32 @@ function CheckoutPageContent() {
               />
             </div>
 
-            {/* Boss ID or Passport */}
-            <div>
-              <label style={labelStyle}>ID or passport</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
-              <input
-                type="text"
-                placeholder="ID or passport"
-                value={bossIdNumber}
-                onChange={(e) => setBossIdNumber(e.target.value)}
-                style={getInputStyle()}
-              />
-            </div>
+            {/* Boss ID or Passport & Passport Expiry */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>ID or passport</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="ID or passport"
+                    value={bossIdNumber}
+                    onChange={(e) => setBossIdNumber(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            {/* Boss Passport Expiry */}
-            <div>
-              <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
-              <DateInput
-                value={bossPassportExpiry}
-                onChange={setBossPassportExpiry}
-                inputStyle={getInputStyle()}
-              />
-            </div>
-
-            {/* Boss Nationality */}
-            <div>
-              <label style={labelStyle}>What is their nationality?</label>
-              <select
-                value={bossNationality}
-                onChange={(e) => setBossNationality(e.target.value)}
-                style={getSelectStyle()}
-              >
-                <option value="">Please select</option>
-                <option value="South African">South African</option>
-                <option value="Other">Other</option>
-              </select>
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={bossPassportExpiry}
+                    onChange={setBossPassportExpiry}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Boss Home Address */}
@@ -576,26 +610,28 @@ function CheckoutPageContent() {
             </div>
 
             {/* Registered & Trading Name */}
-            <div>
-              <label style={labelStyle}>Registered name</label>
-              <input
-                type="text"
-                placeholder="Registered name"
-                value={registeredName}
-                onChange={(e) => setRegisteredName(e.target.value)}
-                style={getInputStyle()}
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label style={labelStyle}>Registered name</label>
+                <input
+                  type="text"
+                  placeholder="Registered name"
+                  value={registeredName}
+                  onChange={(e) => setRegisteredName(e.target.value)}
+                  style={getInputStyle()}
+                />
+              </div>
 
-            <div>
-              <label style={labelStyle}>Trading name</label>
-              <input
-                type="text"
-                placeholder="Trading name"
-                value={tradingName}
-                onChange={(e) => setTradingName(e.target.value)}
-                style={getInputStyle()}
-              />
+              <div>
+                <label style={labelStyle}>Trading name</label>
+                <input
+                  type="text"
+                  placeholder="Trading name"
+                  value={tradingName}
+                  onChange={(e) => setTradingName(e.target.value)}
+                  style={getInputStyle()}
+                />
+              </div>
             </div>
 
             {/* Registration No & Stock Exchange */}
@@ -623,27 +659,33 @@ function CheckoutPageContent() {
             </div>
 
             {/* Addresses */}
-            <div>
-              <label style={labelStyle}>Registered Address</label>
-              <input
-                type="text"
-                placeholder="Type registered address ..."
-                value={registeredAddress}
-                onChange={(e) => setRegisteredAddress(e.target.value)}
-                style={getInputStyle()}
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Registered Address</label>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="Type registered address ..."
+                    value={registeredAddress}
+                    onChange={(e) => setRegisteredAddress(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label style={labelStyle}>Physical Address</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Provide Head Office address if there are multiple addresses</p>
-              <input
-                type="text"
-                placeholder="Type physical address ..."
-                value={physicalAddress}
-                onChange={(e) => setPhysicalAddress(e.target.value)}
-                style={getInputStyle()}
-              />
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Physical Address</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Provide Head Office address if there are multiple addresses</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="Type physical address ..."
+                    value={physicalAddress}
+                    onChange={(e) => setPhysicalAddress(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Source of Funds */}
@@ -724,34 +766,35 @@ function CheckoutPageContent() {
               </span>
             </label>
 
-            {/* Bank Dropdown */}
-            <div>
-              <label style={labelStyle}>Bank</label>
-              <select
-                value={bank}
-                onChange={(e) => setBank(e.target.value)}
-                style={getSelectStyle()}
-              >
-                <option value="African Bank">African Bank</option>
-                <option value="ABSA">ABSA</option>
-                <option value="Capitec">Capitec</option>
-                <option value="FNB">FNB</option>
-                <option value="Nedbank">Nedbank</option>
-                <option value="Standard Bank">Standard Bank</option>
-              </select>
-            </div>
+            {/* Bank & Account Number */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label style={labelStyle}>Bank</label>
+                <select
+                  value={bank}
+                  onChange={(e) => setBank(e.target.value)}
+                  style={getSelectStyle()}
+                >
+                  <option value="African Bank">African Bank</option>
+                  <option value="ABSA">ABSA</option>
+                  <option value="Capitec">Capitec</option>
+                  <option value="FNB">FNB</option>
+                  <option value="Nedbank">Nedbank</option>
+                  <option value="Standard Bank">Standard Bank</option>
+                </select>
+              </div>
 
-            {/* Bank Account Number */}
-            <div>
-              <label style={labelStyle}>Bank account number</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Bank account number"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                  style={getInputStyle()}
-                />
+              <div>
+                <label style={labelStyle}>Bank account number</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Bank account number"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
               </div>
             </div>
 
