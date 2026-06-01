@@ -5,7 +5,10 @@ import {
   BANK_ACCOUNT_TYPE_OPTIONS,
   INDUSTRY_TYPE_OPTIONS,
   PROVINCE_OPTIONS,
-  GENDER_OPTIONS
+  GENDER_OPTIONS,
+  ID_TYPE_OPTIONS,
+  EMPLOYMENT_STATUS_OPTIONS,
+  IDType,
 } from "../enums/brokerPortalEnums";
 
 // Lead Management Validations
@@ -158,7 +161,22 @@ export const brokerEmployeeSchema = Yup.object().shape({
     .matches(/^0[6-8]\d{8}$/, "Invalid cell number format")
     .required("Cell number is required"),
   employmentStartDate: Yup.date().required("Employment start date is required"),
-  idNumber: Yup.string().required("ID number is required"),
+  idType: Yup.string()
+    .oneOf(ID_TYPE_OPTIONS, `Invalid ID type. Valid options: ${ID_TYPE_OPTIONS.join(", ")}`)
+    .required("ID type is required"),
+  idNumber: Yup.string().when("idType", {
+    is: IDType.SA_ID,
+    then: (schema) => schema.required("SA ID number is required"),
+    otherwise: (schema) => schema.nullable(),
+  }),
+  passportNumber: Yup.string().when("idType", {
+    is: IDType.PASSPORT,
+    then: (schema) => schema.required("Passport number is required"),
+    otherwise: (schema) => schema.nullable(),
+  }),
+  employmentStatus: Yup.string()
+    .oneOf(EMPLOYMENT_STATUS_OPTIONS, `Invalid employment status. Valid options: ${EMPLOYMENT_STATUS_OPTIONS.join(", ")}`)
+    .nullable(),
   nationality: Yup.string().required("Nationality is required"),
 });
 

@@ -27,8 +27,10 @@ module.exports = (sequelize, DataTypes) => {
       date_of_birth: { type: DataTypes.DATEONLY, allowNull: true },
       id_type: { type: DataTypes.STRING, allowNull: true },
       id_number: { type: DataTypes.STRING, allowNull: true },
+      passport_number: { type: DataTypes.STRING, allowNull: true },
       salary: { type: DataTypes.DECIMAL(18, 2), allowNull: true },
       gender: { type: DataTypes.STRING, allowNull: true },
+      employment_status: { type: DataTypes.STRING, allowNull: true },
       is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     },
     {
