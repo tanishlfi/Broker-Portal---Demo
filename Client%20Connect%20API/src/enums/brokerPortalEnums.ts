@@ -133,6 +133,18 @@ export enum ActionOutcome {
   WARNING = "Warning",
 }
 
+export enum IDType {
+  SA_ID = "South African ID",
+  PASSPORT = "Passport",
+}
+
+export enum EmploymentStatus {
+  ACTIVE = "Active",
+  INACTIVE = "Inactive",
+  NEW_JOINER = "New Joiner",
+  TERMINATED = "Terminated",
+}
+
 export const LEAD_STATUS_OPTIONS = Object.values(LeadStatus);
 export const QUOTE_TYPE_OPTIONS = Object.values(QuoteType);
 export const QUOTE_STATUS_OPTIONS = Object.values(QuoteStatus);
@@ -149,3 +161,5 @@ export const PROVINCE_OPTIONS = Object.values(Province);
 export const GENDER_OPTIONS = Object.values(Gender);
 export const AUDIT_EVENT_TYPE = Object.values(AuditEventType);
 export const ACTION_OUTCOME = Object.values(ActionOutcome);
+export const ID_TYPE_OPTIONS = Object.values(IDType);
+export const EMPLOYMENT_STATUS_OPTIONS = Object.values(EmploymentStatus);

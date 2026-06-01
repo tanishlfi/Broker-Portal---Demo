@@ -33,7 +33,7 @@ import {
  *               - gender
  *               - income
  *               - dateOfBirth
- *               - idNumber
+ *               - idType
  *             properties:
  *               firstName:
  *                 type: string
@@ -47,11 +47,20 @@ import {
  *               dateOfBirth:
  *                 type: string
  *                 format: date
- *               idNumber:
- *                 type: string
  *               idType:
  *                 type: string
- *                 default: "ID"
+ *                 enum: [South African ID, Passport]
+ *                 default: "South African ID"
+ *               idNumber:
+ *                 type: string
+ *                 description: Required when idType is South African ID
+ *               passportNumber:
+ *                 type: string
+ *                 description: Required when idType is Passport
+ *               employmentStatus:
+ *                 type: string
+ *                 enum: [Active, Inactive, New Joiner, Terminated]
+ *                 description: Employment status of the employee
  *     responses:
  *       200:
  *         description: Employee added successfully
@@ -286,6 +295,18 @@ export const getEmployeesController = async (req: Request, res: Response) => {
  *                 format: date
  *               idNumber:
  *                 type: string
+ *                 description: Required when idType is South African ID
+ *               idType:
+ *                 type: string
+ *                 enum: [South African ID, Passport]
+ *                 default: "South African ID"
+ *               passportNumber:
+ *                 type: string
+ *                 description: Required when idType is Passport
+ *               employmentStatus:
+ *                 type: string
+ *                 enum: [Active, Inactive, New Joiner, Terminated]
+ *                 description: Employment status of the employee
  *               isActive:
  *                 type: boolean
  *     responses:

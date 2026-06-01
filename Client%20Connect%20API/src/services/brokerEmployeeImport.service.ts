@@ -2,7 +2,7 @@ const { sequelize } = require("../models");
 import { BrokerEmployeeRepository } from "../repositories/brokerEmployee.repository";
 import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { AuditService } from "./auditService";
-import { AuditEventType, ActionOutcome } from "../enums/brokerPortalEnums";
+import { AuditEventType, ActionOutcome, IDType, EmploymentStatus } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const employeeRepo = new BrokerEmployeeRepository();
@@ -66,8 +66,10 @@ export const brokerImportEmployeesService = async (
           gender: emp.gender,
           salary: emp.income,
           date_of_birth: emp.dateOfBirth,
-          id_number: emp.idNumber,
-          id_type: "ID", 
+          id_type: emp.idType || IDType.SA_ID,
+          id_number: emp.idNumber || null,
+          passport_number: emp.passportNumber || null,
+          employment_status: emp.employmentStatus || null,
           is_active: true,
         });
         existingIdNumbers.add(emp.idNumber);
@@ -119,9 +121,28 @@ export const brokerImportEmployeesService = async (
 export const getEmployeesByLeadIdService = async (leadId: string) => {
   try {
     const employees = await employeeRepo.findByLeadId(leadId);
+
+    // Derive Age from DateOfBirth per spec 5.6 (Age is system-derived, not stored)
+    const today = new Date();
+    const enriched = employees.map((emp: any) => {
+      const plain = emp.get ? emp.get({ plain: true }) : { ...emp };
+      if (plain.date_of_birth) {
+        const dob = new Date(plain.date_of_birth);
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+          age--;
+        }
+        plain.age = age;
+      } else {
+        plain.age = null;
+      }
+      return plain;
+    });
+
     return {
       success: true,
-      data: employees,
+      data: enriched,
     };
   } catch (error: any) {
     console.error("GET EMPLOYEES BY LEAD ID SERVICE ERROR:", error);
@@ -174,7 +195,14 @@ export const updateEmployeeService = async (
     if (data.gender) updateData.gender = data.gender;
     if (data.income) updateData.salary = data.income;
     if (data.dateOfBirth) updateData.date_of_birth = data.dateOfBirth;
+    // IDType is editable per spec 5.6 — must be valid enum value (SA ID / Passport)
+    if (data.idType) updateData.id_type = data.idType;
+    // IDNumber conditional on idType = SA ID
     if (data.idNumber) updateData.id_number = data.idNumber;
+    // PassportNumber conditional on idType = Passport
+    if (data.passportNumber) updateData.passport_number = data.passportNumber;
+    // EmploymentStatus is editable per spec 5.6
+    if (data.employmentStatus) updateData.employment_status = data.employmentStatus;
     if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
     if (Object.keys(updateData).length === 0) {
@@ -250,8 +278,10 @@ export const addSingleEmployeeService = async (
       gender: employeeData.gender,
       salary: employeeData.income,
       date_of_birth: employeeData.dateOfBirth,
-      id_number: employeeData.idNumber,
-      id_type: employeeData.idType || "ID",
+      id_type: employeeData.idType || IDType.SA_ID,
+      id_number: employeeData.idNumber || null,
+      passport_number: employeeData.passportNumber || null,
+      employment_status: employeeData.employmentStatus || null,
       is_active: true,
     };
 
