@@ -3,7 +3,7 @@ import { BrokerQuoteRepository } from "../repositories/brokerQuote.repository";
 import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { PricingHelper } from "../utils/pricingHelper";
 import { AuditService } from "./auditService";
-import { AuditEventType, ActionOutcome, LeadStatus, QuoteStatus } from "../enums/brokerPortalEnums";
+import { AuditEventType, ActionOutcome, LeadStatus, QuoteStatus, QuoteType } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const quoteRepo = new BrokerQuoteRepository();
@@ -248,7 +248,9 @@ export class BrokerQuoteService {
       const quote = await quoteRepo.findById(quoteId);
       if (!quote) throw new Error("Quote not found");
 
-      await leadRepo.update(lead.lead_id, { lead_status: LeadStatus.QUOTE_GENERATED }, t);
+      if (quote.quote_type !== QuoteType.QUICK) {
+        await leadRepo.update(lead.lead_id, { lead_status: LeadStatus.QUOTE_GENERATED }, t);
+      }
       await quoteRepo.update(quote.quote_id, { quote_status: QuoteStatus.GENERATED }, t);
 
       await t.commit();
@@ -282,7 +284,9 @@ export class BrokerQuoteService {
 
       // Update status to REVISED after repricing
       await quoteRepo.update(quote.quote_id, { quote_status: QuoteStatus.REVISED }, t);
-      await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.QUOTE_GENERATED }, t);
+      if (quote.quote_type !== QuoteType.QUICK) {
+        await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.QUOTE_GENERATED }, t);
+      }
 
       await t.commit();
       return pricingResult;
@@ -301,35 +305,42 @@ export class BrokerQuoteService {
       if (!quote) throw new Error("Quote not found");
 
       const {
-        quote_type,
-        quote_status,
-        workforce_count,
-        average_age,
-        average_salary,
-        rma_member_number,
-        is_permanent_employees,
-        is_actively_at_work,
-        is_replacing_policy,
-        replaced_policy_includes_disability,
-        is_policy_older_than_6_months,
-        replaced_policy_start_date,
+        quoteType,
+        quoteStatus,
+        workforceCount,
+        averageAge,
+        averageSalaryQuickQuote,
+        rmaMemberNumber,
+        isPermanentEmployees,
+        isActivelyAtWork,
+        isReplacingPolicy,
+        replacedPolicyIncludesDisability,
+        isPolicyOlderThan6Months,
+        replacedPolicyStartDate,
         province,
         industry,
-        gender_split
+        genderSplit,
+        totalPremium,
+        pricingReference,
+        benefits,
+        productId
       } = data;
 
       // 1. Update Header / Full Quote Data
       const headerUpdates: any = {};
-      if (quote_type !== undefined) headerUpdates.quote_type = quote_type;
-      if (quote_status !== undefined) headerUpdates.quote_status = quote_status;
-      if (rma_member_number !== undefined) headerUpdates.rma_member_number = rma_member_number;
-      if (is_permanent_employees !== undefined) headerUpdates.is_permanent_employees = is_permanent_employees;
-      if (is_actively_at_work !== undefined) headerUpdates.is_actively_at_work = is_actively_at_work;
-      if (is_replacing_policy !== undefined) headerUpdates.is_replacing_policy = is_replacing_policy;
-      if (replaced_policy_includes_disability !== undefined) headerUpdates.replaced_policy_includes_disability = replaced_policy_includes_disability;
-      if (is_policy_older_than_6_months !== undefined) headerUpdates.is_policy_older_than_6_months = is_policy_older_than_6_months;
-      if (replaced_policy_start_date !== undefined) headerUpdates.replaced_policy_start_date = replaced_policy_start_date;
+      if (quoteType !== undefined) headerUpdates.quote_type = quoteType;
+      if (quoteStatus !== undefined) headerUpdates.quote_status = quoteStatus;
+      if (productId !== undefined) headerUpdates.product_id = productId;
+      if (rmaMemberNumber !== undefined) headerUpdates.rma_member_number = rmaMemberNumber;
+      if (isPermanentEmployees !== undefined) headerUpdates.is_permanent_employees = isPermanentEmployees;
+      if (isActivelyAtWork !== undefined) headerUpdates.is_actively_at_work = isActivelyAtWork;
+      if (isReplacingPolicy !== undefined) headerUpdates.is_replacing_policy = isReplacingPolicy;
+      if (replacedPolicyIncludesDisability !== undefined) headerUpdates.replaced_policy_includes_disability = replacedPolicyIncludesDisability;
+      if (isPolicyOlderThan6Months !== undefined) headerUpdates.is_policy_older_than_6_months = isPolicyOlderThan6Months;
+      if (replacedPolicyStartDate !== undefined) headerUpdates.replaced_policy_start_date = replacedPolicyStartDate;
       if (province !== undefined) headerUpdates.province = province;
+      if (totalPremium !== undefined) headerUpdates.total_premium = totalPremium;
+      if (pricingReference !== undefined) headerUpdates.pricing_reference = pricingReference;
 
       if (Object.keys(headerUpdates).length > 0) {
         await quoteRepo.update(quoteId, headerUpdates, t);
@@ -337,12 +348,12 @@ export class BrokerQuoteService {
 
       // 2. Update Quick Quote Data (if applicable)
       if (
-        workforce_count !== undefined || 
-        average_age !== undefined || 
-        average_salary !== undefined || 
+        workforceCount !== undefined || 
+        averageAge !== undefined || 
+        averageSalaryQuickQuote !== undefined || 
         province !== undefined || 
         industry !== undefined || 
-        gender_split !== undefined
+        genderSplit !== undefined
       ) {
         if (!quote.quick_quote_data) {
           // If it doesn't exist, we might need to create it if we are switching to Quick Quote
@@ -354,21 +365,21 @@ export class BrokerQuoteService {
         }
 
         const qqUpdates: any = {};
-        if (workforce_count !== undefined) {
-          if (workforce_count <= 0) throw new Error("WorkforceCount must be greater than 0");
-          qqUpdates.workforce_count = workforce_count;
+        if (workforceCount !== undefined) {
+          if (workforceCount <= 0) throw new Error("WorkforceCount must be greater than 0");
+          qqUpdates.workforce_count = workforceCount;
         }
-        if (average_age !== undefined) {
-          if (average_age <= 0) throw new Error("AverageAge must be greater than 0");
-          qqUpdates.average_age = average_age;
+        if (averageAge !== undefined) {
+          if (averageAge <= 0) throw new Error("AverageAge must be greater than 0");
+          qqUpdates.average_age = averageAge;
         }
-        if (average_salary !== undefined) {
-          if (average_salary < 0) throw new Error("AverageSalary must be greater than or equal to 0");
-          qqUpdates.average_salary = average_salary;
+        if (averageSalaryQuickQuote !== undefined) {
+          if (averageSalaryQuickQuote < 0) throw new Error("AverageSalaryQuickQuote must be greater than or equal to 0");
+          qqUpdates.average_salary = averageSalaryQuickQuote;
         }
         if (province !== undefined) qqUpdates.province = province;
         if (industry !== undefined) qqUpdates.industry_type = industry;
-        if (gender_split !== undefined) qqUpdates.gender_split = gender_split;
+        if (genderSplit !== undefined) qqUpdates.gender_split = genderSplit;
 
         if (Object.keys(qqUpdates).length > 0) {
           if (quote.quick_quote_data) {
@@ -380,6 +391,26 @@ export class BrokerQuoteService {
               ...qqUpdates
             }, { transaction: t });
           }
+        }
+      }
+
+      // 3. Update Benefits (if provided)
+      if (benefits && Array.isArray(benefits)) {
+        const { BrokerQuoteBenefit } = require("../models");
+        await BrokerQuoteBenefit.destroy({ where: { quote_id: quoteId }, transaction: t });
+
+        for (const b of benefits) {
+          await BrokerQuoteBenefit.create({
+            quote_benefit_id: uuidv4(),
+            quote_id: quoteId,
+            benefit_type: b.benefit_type || b.benefitType,
+            benefit_name: b.benefit_name || b.benefitName || b.benefit_type || b.benefitType,
+            cover_amount: b.cover_amount || b.coverAmount || b.SelectedBenefitValue || 0,
+            premium_rate: b.premium_rate || b.premiumRate || 0,
+            premium_amount: b.premium_amount || b.premiumAmount || b.BenefitPremiumAmount || 0,
+            is_vaps: b.is_vaps || b.isVaps || false,
+            effective_date: b.effective_date || b.effectiveDate || new Date(),
+          }, { transaction: t });
         }
       }
 

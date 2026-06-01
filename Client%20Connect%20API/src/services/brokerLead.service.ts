@@ -243,11 +243,11 @@ export class BrokerLeadService {
       if (contact) {
         // Map UI names to DB names for contact
         const contactUpdates: any = {};
-        if (contact.contact_first_name) contactUpdates.contact_first_name = contact.contact_first_name;
-        if (contact.contact_last_name) contactUpdates.contact_last_name = contact.contact_last_name;
-        if (contact.contact_email) contactUpdates.contact_email = contact.contact_email;
-        if (contact.contact_mobile) contactUpdates.contact_mobile = contact.contact_mobile;
-        if (contact.preferred_communication_method) contactUpdates.preferred_communication_method = contact.preferred_communication_method;
+        if (contact.contactFirstName) contactUpdates.contact_first_name = contact.contactFirstName;
+        if (contact.contactLastName) contactUpdates.contact_last_name = contact.contactLastName;
+        if (contact.contactEmail) contactUpdates.contact_email = contact.contactEmail;
+        if (contact.contactMobile) contactUpdates.contact_mobile = contact.contactMobile;
+        if (contact.preferredCommunicationMethod) contactUpdates.preferred_communication_method = contact.preferredCommunicationMethod;
 
         if (Object.keys(contactUpdates).length > 0) {
           await leadRepo.updateContact(leadId, contactUpdates, t);
