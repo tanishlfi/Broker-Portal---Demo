@@ -169,22 +169,19 @@ export const updateEmployeeService = async (
     }
 
     const updateData: any = {};
-    if (data.employeeFirstName) updateData.first_name = data.employeeFirstName;
-    if (data.employeeSurname) updateData.last_name = data.employeeSurname;
-    if (data.dateOfBirth) updateData.date_of_birth = data.dateOfBirth;
-    if (data.idType) updateData.id_type = data.idType;
-    if (data.idNumber) updateData.id_number = data.idNumber;
-    if (data.passportNumber) updateData.passport_number = data.passportNumber;
-    if (data.salaryAmount) updateData.salary = data.salaryAmount;
-    if (data.employmentStatus) updateData.employment_status = data.employmentStatus;
+    if (data.firstName) updateData.first_name = data.firstName;
+    if (data.surname) updateData.last_name = data.surname;
     if (data.gender) updateData.gender = data.gender;
+    if (data.income) updateData.salary = data.income;
+    if (data.dateOfBirth) updateData.date_of_birth = data.dateOfBirth;
+    if (data.idNumber) updateData.id_number = data.idNumber;
     if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
     if (Object.keys(updateData).length === 0) {
       await t.rollback();
       return {
         success: false,
-        message: "No valid fields provided for update. Please use camelCase (e.g., employeeFirstName).",
+        message: "No valid fields provided for update. Please use camelCase (e.g., firstName).",
       };
     }
 

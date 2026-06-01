@@ -4,7 +4,7 @@ import { BrokerLeadRepository } from "../repositories/brokerLead.repository";
 import { BrokerOtpRepository } from "../repositories/brokerOtp.repository";
 import { sendBrokerEmail } from "../utils/brokerSendEmail";
 import { AuditService } from "./auditService";
-import { AuditEventType, ActionOutcome, LeadStatus, OTPStatus, QuoteType } from "../enums/brokerPortalEnums";
+import { AuditEventType, ActionOutcome, LeadStatus, OTPStatus } from "../enums/brokerPortalEnums";
 import { v4 as uuidv4 } from "uuid";
 
 const quoteRepo = new BrokerQuoteRepository();
@@ -66,10 +66,8 @@ export class BrokerOtpService {
       await otpRecord.update({ otp_status: OTPStatus.SENT }, { transaction: t });
 
       // Update Lead and Quote status to "Awaiting Employer Acceptance"
-      if (quote.quote_type !== QuoteType.QUICK) {
-        await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.AWAITING_EMPLOYER_ACCEPTANCE }, t);
-      }
-      await quoteRepo.update(quoteId, { quote_status: LeadStatus.AWAITING_EMPLOYER_ACCEPTANCE as any }, t);
+      await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.AWAITING_EMPLOYER_ACCEPTANCE }, t);
+      await quoteRepo.update(quoteId, { quote_status: LeadStatus.AWAITING_EMPLOYER_ACCEPTANCE }, t);
 
       await t.commit();
 
@@ -122,10 +120,8 @@ export class BrokerOtpService {
       
       const quote = await quoteRepo.findById(quoteId, { transaction: t });
       if (quote) {
-        await quote.update({ quote_status: LeadStatus.ACCEPTED as any, employer_accepted_at: new Date() }, { transaction: t });
-        if (quote.quote_type !== QuoteType.QUICK) {
-          await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.ACCEPTED }, t);
-        }
+        await quote.update({ quote_status: LeadStatus.ACCEPTED, employer_accepted_at: new Date() }, { transaction: t });
+        await leadRepo.update(quote.lead_id, { lead_status: LeadStatus.ACCEPTED }, t);
         
         await t.commit();
 
