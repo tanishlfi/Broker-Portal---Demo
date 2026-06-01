@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Lock, Info } from "lucide-react";
-import CustomInput from "@/components/ui/CustomInput";
-import CustomSelect from "@/components/ui/CustomSelect";
+import React, { useState, Suspense } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import DateInput from "@/components/ui/DateInput";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
+import { saveOnboardingDetails } from "@/lib/api/quotes";
+import { useThemeToggle } from "@/app/providers";
+
 interface RadioGroupProps {
   name: string;
   options: string[];
@@ -13,7 +18,7 @@ interface RadioGroupProps {
 
 function CustomRadioGroup({ name, options, value, onChange }: RadioGroupProps) {
   return (
-    <div className="flex flex-col gap-3 mt-2">
+    <div className="flex flex-col gap-1 mt-1">
       {options.map((opt) => (
         <label key={opt} className="flex items-center gap-2 cursor-pointer text-[15px] text-[var(--text-primary)] font-sans">
           <input
@@ -31,28 +36,23 @@ function CustomRadioGroup({ name, options, value, onChange }: RadioGroupProps) {
   );
 }
 
-interface CheckoutInfoModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onNext: (data: any) => void;
-  companyName: string;
-  quoteId: string;
-}
+function CheckoutPageContent() {
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const { isDarkMode } = useThemeToggle();
 
-export default function CheckoutInfoModal({
-  isOpen,
-  onClose,
-  onNext,
-  companyName,
-  quoteId,
-}: CheckoutInfoModalProps) {
+  const quoteId = params.quoteId as string;
+  const companyName = searchParams.get("companyName") || "Organisation";
+  const quoteReference = searchParams.get("ref") || quoteId;
+
   // Form State - Your Details
   const [authorised, setAuthorised] = useState<string>("Yes");
   const [isDirector, setIsDirector] = useState<string>("No");
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [dob, setDob] = useState("");
-  const [cellphone, setCellphone] = useState("0938473234");
+  const [cellphone, setCellphone] = useState("");
   const [landline, setLandline] = useState("");
   const [hasSaId, setHasSaId] = useState<string>("No");
   const [idNumber, setIdNumber] = useState("");
@@ -92,7 +92,9 @@ export default function CheckoutInfoModal({
   const [accountType, setAccountType] = useState<string>("Cheque");
   const [debitDay, setDebitDay] = useState<string>("25");
 
-  if (!isOpen) return null;
+  // Modal / Progress State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
 
   const isFormValid =
     firstName.trim() !== "" &&
@@ -121,9 +123,9 @@ export default function CheckoutInfoModal({
     accountNumber.trim() !== "" &&
     debitDay !== "";
 
-
-  const handleNext = () => {
-    onNext({
+  const handleNext = async () => {
+    setIsSubmitting(true);
+    const onboardingData = {
       is_authorised: authorised === "Yes",
       is_director: isDirector === "Yes",
       first_name: firstName,
@@ -165,53 +167,95 @@ export default function CheckoutInfoModal({
       bank_account_type: accountType,
       debit_day_of_month: parseInt(debitDay, 10),
       debit_order_authorised: acknowledged,
-    });
+    };
+
+    try {
+      await saveOnboardingDetails(quoteId, onboardingData);
+      setShowApproveModal(true);
+    } catch (err) {
+      console.error("Failed to save onboarding details:", err);
+      alert(err instanceof Error ? err.message : "Failed to save onboarding details. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSendOTP = () => {
+    setShowApproveModal(false);
+    router.push("/quotes?tab=onboarding");
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: "16px",
-    fontWeight: "bold",
+    fontSize: "15px",
     color: "var(--text-primary)",
     display: "block",
-    marginBottom: "10px",
+    marginBottom: "6px",
   };
 
   const sectionHeaderStyle: React.CSSProperties = {
-    fontSize: "28px",
-    fontWeight: "bold",
+    fontSize: "20px",
     color: "var(--primary)",
-    marginTop: "24px",
-    marginBottom: "16px",
+    marginTop: "0px",
+    marginBottom: "8px",
   };
 
+  const getInputStyle = (error?: boolean): React.CSSProperties => ({
+    width: "100%",
+    height: "44px",
+    padding: "0 12px",
+    background: "var(--card-secondary)",
+    border: error ? "1px solid #ef4444" : "1px solid var(--border)",
+    borderRadius: "6px",
+    color: "var(--text-primary)",
+    fontSize: "14px",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+    colorScheme: isDarkMode ? "dark" : "light",
+  });
+
+  const getSelectStyle = (error?: boolean): React.CSSProperties => ({
+    ...getInputStyle(error),
+    appearance: "auto",
+  });
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{
-        background: "rgba(11, 11, 11, 0.72)",
-        backdropFilter: "blur(10.5px)",
-      }}
-      onClick={onClose}
-    >
-      {/* Modal Container */}
+    <div className="w-full space-y-3 pb-12">
+      {/* Hide native browser calendar icon visually but keep it clickable */}
+      <style>{`
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          opacity: 0 !important;
+          background: transparent !important;
+          color: transparent !important;
+        }
+      `}</style>
+
+      {/* Back to Quotes navigation */}
+      <button
+        onClick={() => router.push("/quotes")}
+        className="flex items-center gap-2 text-[14px] text-[#1FC3EB] font-medium hover:underline cursor-pointer bg-transparent border-none p-0 outline-none"
+      >
+        <ArrowLeft size={16} /> Back to Quotes
+      </button>
+
+      {/* Main Container Card */}
       <div
-        className="flex flex-col w-full max-w-[550px] max-h-[95vh] rounded-[16px] overflow-hidden shadow-2xl relative"
+        className="flex flex-col w-full rounded-[16px] shadow-2xl relative"
         style={{
           background: "var(--card-secondary)",
           color: "var(--text-primary)",
           border: "1px solid var(--border)",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
-        {/* Scrollable Form Content */}
-        <div className="flex-1 overflow-y-auto px-10 py-10 space-y-8 custom-scrollbar">
+        {/* Form Content */}
+        <div className="px-8 py-6 space-y-5">
           {/* Main Title Area */}
           <div className="text-center space-y-4">
             <h3 className="text-[32px] font-bold text-[var(--text-primary)] leading-tight font-sans">
               Lastly, we need some info for policy servicing and payment
             </h3>
             <p className="text-[20px] text-[var(--text-secondary)] font-sans">
-              Please ensure the info is accurate
+              Please ensure the info is accurate for {companyName} ({quoteReference})
             </p>
           </div>
 
@@ -228,7 +272,7 @@ export default function CheckoutInfoModal({
           </div>
 
           {/* Question: Authorised */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <label style={labelStyle}>
               Are you authorised to act on behalf of the organisation?
             </label>
@@ -241,11 +285,11 @@ export default function CheckoutInfoModal({
           </div>
 
           {/* Section: Your Details */}
-          <div className="space-y-6 pt-4 border-t border-[var(--border)]">
+          <div className="space-y-4 pt-3 border-t border-[var(--border)]">
             <h4 style={sectionHeaderStyle}>Your Details</h4>
 
             {/* Question: Director */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label style={labelStyle}>
                 Are you a director or member of the organisation?
               </label>
@@ -258,61 +302,84 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Inputs: First Name & Surname */}
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label style={labelStyle}>First name</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="First name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
               <div>
                 <label style={labelStyle}>Surname</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="Surname"
                   value={surname}
                   onChange={(e) => setSurname(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
             </div>
 
-            {/* Date of Birth */}
-            <div>
-              <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
-              <CustomInput
-                type="date"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
-              />
+            {/* Date of Birth & Nationality */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={dob}
+                    onChange={setDob}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>What is your nationality?</label>
+                <div className="mt-auto w-full">
+                  <select
+                    value={nationality}
+                    onChange={(e) => setNationality(e.target.value)}
+                    style={getSelectStyle()}
+                  >
+                    <option value="">Please select</option>
+                    <option value="South African">South African</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Cellphone & Landline */}
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label style={labelStyle}>Cellphone</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="Cellphone"
                   value={cellphone}
                   onChange={(e) => setCellphone(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
               <div>
                 <label style={labelStyle}>Landline</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="(optional)"
                   value={landline}
                   onChange={(e) => setLandline(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
             </div>
 
             {/* Question: SA ID */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label style={labelStyle}>
                 Do you have a South African ID Number?
               </label>
@@ -324,113 +391,136 @@ export default function CheckoutInfoModal({
               />
             </div>
 
-            {/* ID or Passport Number */}
-            <div>
-              <label style={labelStyle}>ID or passport number</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
-              <CustomInput
-                type="text"
-                placeholder="ID or passport number"
-                value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)}
-              />
-            </div>
+            {/* ID or Passport Number & Passport Expiry */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>ID or passport number</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="ID or passport number"
+                    value={idNumber}
+                    onChange={(e) => setIdNumber(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            {/* Passport Expiry */}
-            <div>
-              <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
-              <CustomInput
-                type="date"
-                value={passportExpiry}
-                onChange={(e) => setPassportExpiry(e.target.value)}
-              />
-            </div>
-
-            {/* Nationality */}
-            <div>
-              <label style={labelStyle}>What is your nationality?</label>
-              <CustomSelect
-                value={nationality}
-                onChange={(e) => setNationality(e.target.value)}
-              >
-                <option value="">Please select</option>
-                <option value="South African">South African</option>
-                <option value="Other">Other</option>
-              </CustomSelect>
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={passportExpiry}
+                    onChange={setPassportExpiry}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Home Address */}
             <div>
               <label style={labelStyle}>Home Address</label>
-              <CustomInput
+              <input
                 type="text"
                 placeholder="Type your address ..."
                 value={homeAddress}
                 onChange={(e) => setHomeAddress(e.target.value)}
+                style={getInputStyle()}
               />
             </div>
 
             {/* Emails */}
-            <div>
-              <label style={labelStyle}>Email address for policy document and logging in</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Please note sensitive employee info will be sent to this address</p>
-              <CustomInput
-                type="email"
-                placeholder="Email address for policy"
-                value={emailForPolicy}
-                onChange={(e) => setEmailForPolicy(e.target.value)}
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Email address for policy document and logging in</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Please note sensitive employee info will be sent to this address</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="email"
+                    placeholder="Email address for policy"
+                    value={emailForPolicy}
+                    onChange={(e) => setEmailForPolicy(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label style={labelStyle}>Email address for monthly invoice</label>
-              <CustomInput
-                type="email"
-                placeholder="Email address for invoice"
-                value={emailForInvoice}
-                onChange={(e) => setEmailForInvoice(e.target.value)}
-              />
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Email address for monthly invoice</label>
+                <div className="mt-auto w-full">
+                  <input
+                    type="email"
+                    placeholder="Email address for invoice"
+                    value={emailForInvoice}
+                    onChange={(e) => setEmailForInvoice(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Section: Boss / MD / CEO details */}
-          <div className="space-y-6 pt-4 border-t border-[var(--border)]">
+          <div className="space-y-4 pt-3 border-t border-[var(--border)]">
             <h4 style={sectionHeaderStyle}>Boss / MD / CEO details</h4>
 
             {/* First Name & Surname */}
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label style={labelStyle}>First name</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="First name"
                   value={bossFirstName}
                   onChange={(e) => setBossFirstName(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
               <div>
                 <label style={labelStyle}>Surname</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="Surname"
                   value={bossSurname}
                   onChange={(e) => setBossSurname(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
             </div>
 
-            {/* DOB */}
-            <div>
-              <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
-              <CustomInput
-                type="date"
-                value={bossDob}
-                onChange={(e) => setBossDob(e.target.value)}
-              />
+            {/* DOB & Nationality */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={bossDob}
+                    onChange={setBossDob}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>What is their nationality?</label>
+                <div className="mt-auto w-full">
+                  <select
+                    value={bossNationality}
+                    onChange={(e) => setBossNationality(e.target.value)}
+                    style={getSelectStyle()}
+                  >
+                    <option value="">Please select</option>
+                    <option value="South African">South African</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Boss SA ID Question */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label style={labelStyle}>
                 Does your Boss / MD / CEO have a South African ID Number?
               </label>
@@ -442,55 +532,49 @@ export default function CheckoutInfoModal({
               />
             </div>
 
-            {/* Boss ID or Passport */}
-            <div>
-              <label style={labelStyle}>ID or passport</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
-              <CustomInput
-                type="text"
-                placeholder="ID or passport"
-                value={bossIdNumber}
-                onChange={(e) => setBossIdNumber(e.target.value)}
-              />
-            </div>
+            {/* Boss ID or Passport & Passport Expiry */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>ID or passport</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Used as a password for opening documents containing employee details</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="ID or passport"
+                    value={bossIdNumber}
+                    onChange={(e) => setBossIdNumber(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            {/* Boss Passport Expiry */}
-            <div>
-              <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
-              <CustomInput
-                type="date"
-                value={bossPassportExpiry}
-                onChange={(e) => setBossPassportExpiry(e.target.value)}
-              />
-            </div>
-
-            {/* Boss Nationality */}
-            <div>
-              <label style={labelStyle}>What is their nationality?</label>
-              <CustomSelect
-                value={bossNationality}
-                onChange={(e) => setBossNationality(e.target.value)}
-              >
-                <option value="">Please select</option>
-                <option value="South African">South African</option>
-                <option value="Other">Other</option>
-              </CustomSelect>
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Passport expiry (dd/mm/yyyy)</label>
+                <div className="mt-auto w-full">
+                  <DateInput
+                    value={bossPassportExpiry}
+                    onChange={setBossPassportExpiry}
+                    inputStyle={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Boss Home Address */}
             <div>
               <label style={labelStyle}>Home Address</label>
-              <CustomInput
+              <input
                 type="text"
                 placeholder="Type your address ..."
                 value={bossHomeAddress}
                 onChange={(e) => setBossHomeAddress(e.target.value)}
+                style={getInputStyle()}
               />
             </div>
           </div>
 
           {/* Section: Organisation details */}
-          <div className="space-y-6 pt-4 border-t border-[var(--border)]">
+          <div className="space-y-4 pt-3 border-t border-[var(--border)]">
             <h4 style={sectionHeaderStyle}>Organisation details</h4>
 
             <p className="text-[14px] text-[#EF4444] font-medium leading-relaxed mb-4">
@@ -500,19 +584,20 @@ export default function CheckoutInfoModal({
             {/* Business Type */}
             <div>
               <label style={labelStyle}>What kind of business is this?</label>
-              <CustomSelect
+              <select
                 value={businessType}
                 onChange={(e) => setBusinessType(e.target.value)}
+                style={getSelectStyle()}
               >
                 <option value="Public (Listed) Company [Ltd]">Public (Listed) Company [Ltd]</option>
                 <option value="Private Company (Pty) Ltd">Private Company (Pty) Ltd</option>
                 <option value="Sole Proprietor">Sole Proprietor</option>
                 <option value="Trust">Trust</option>
-              </CustomSelect>
+              </select>
             </div>
 
             {/* Country of Incorporation */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label style={labelStyle}>Country of Incorporation/Registration</label>
               <CustomRadioGroup
                 name="countryOfInc"
@@ -523,72 +608,86 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Registered & Trading Name */}
-            <div>
-              <label style={labelStyle}>Registered name</label>
-              <CustomInput
-                type="text"
-                placeholder="Registered name"
-                value={registeredName}
-                onChange={(e) => setRegisteredName(e.target.value)}
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label style={labelStyle}>Registered name</label>
+                <input
+                  type="text"
+                  placeholder="Registered name"
+                  value={registeredName}
+                  onChange={(e) => setRegisteredName(e.target.value)}
+                  style={getInputStyle()}
+                />
+              </div>
 
-            <div>
-              <label style={labelStyle}>Trading name</label>
-              <CustomInput
-                type="text"
-                placeholder="Trading name"
-                value={tradingName}
-                onChange={(e) => setTradingName(e.target.value)}
-              />
+              <div>
+                <label style={labelStyle}>Trading name</label>
+                <input
+                  type="text"
+                  placeholder="Trading name"
+                  value={tradingName}
+                  onChange={(e) => setTradingName(e.target.value)}
+                  style={getInputStyle()}
+                />
+              </div>
             </div>
 
             {/* Registration No & Stock Exchange */}
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label style={labelStyle}>Registration no</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="Registration no"
                   value={registrationNo}
                   onChange={(e) => setRegistrationNo(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
               <div>
                 <label style={labelStyle}>Name of Stock Exchange Listing</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="Stock exchange listing"
                   value={stockExchangeName}
                   onChange={(e) => setStockExchangeName(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
             </div>
 
             {/* Addresses */}
-            <div>
-              <label style={labelStyle}>Registered Address</label>
-              <CustomInput
-                type="text"
-                placeholder="Type registered address ..."
-                value={registeredAddress}
-                onChange={(e) => setRegisteredAddress(e.target.value)}
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Registered Address</label>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="Type registered address ..."
+                    value={registeredAddress}
+                    onChange={(e) => setRegisteredAddress(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label style={labelStyle}>Physical Address</label>
-              <p className="text-[11px] text-[var(--text-secondary)] mb-2">Provide Head Office address if there are multiple addresses</p>
-              <CustomInput
-                type="text"
-                placeholder="Type physical address ..."
-                value={physicalAddress}
-                onChange={(e) => setPhysicalAddress(e.target.value)}
-              />
+              <div className="flex flex-col h-full">
+                <label style={labelStyle}>Physical Address</label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Provide Head Office address if there are multiple addresses</p>
+                <div className="mt-auto w-full">
+                  <input
+                    type="text"
+                    placeholder="Type physical address ..."
+                    value={physicalAddress}
+                    onChange={(e) => setPhysicalAddress(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Source of Funds */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label style={labelStyle}>Source of Funds</label>
               <CustomRadioGroup
                 name="sourceOfFunds"
@@ -599,30 +698,32 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Tax & VAT Number */}
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label style={labelStyle}>Company Tax Number</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="Tax number"
                   value={taxNumber}
                   onChange={(e) => setTaxNumber(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
               <div>
                 <label style={labelStyle}>Company VAT Number (if applicable)</label>
-                <CustomInput
+                <input
                   type="text"
                   placeholder="(optional)"
                   value={vatNumber}
                   onChange={(e) => setVatNumber(e.target.value)}
+                  style={getInputStyle()}
                 />
               </div>
             </div>
           </div>
 
           {/* Section: Payment details */}
-          <div className="space-y-6 pt-4 border-t border-[var(--border)]">
+          <div className="space-y-4 pt-3 border-t border-[var(--border)]">
             <h4 style={sectionHeaderStyle}>Payment details</h4>
 
             {/* Legal Mandate Text */}
@@ -651,7 +752,7 @@ export default function CheckoutInfoModal({
             </div>
 
             {/* Acknowledge Checkbox */}
-            <label className="flex items-center gap-3 cursor-pointer group">
+            <label className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={acknowledged}
@@ -663,37 +764,40 @@ export default function CheckoutInfoModal({
               </span>
             </label>
 
-            {/* Bank Dropdown */}
-            <div>
-              <label style={labelStyle}>Bank</label>
-              <CustomSelect
-                value={bank}
-                onChange={(e) => setBank(e.target.value)}
-              >
-                <option value="African Bank">African Bank</option>
-                <option value="ABSA">ABSA</option>
-                <option value="Capitec">Capitec</option>
-                <option value="FNB">FNB</option>
-                <option value="Nedbank">Nedbank</option>
-                <option value="Standard Bank">Standard Bank</option>
-              </CustomSelect>
-            </div>
+            {/* Bank & Account Number */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label style={labelStyle}>Bank</label>
+                <select
+                  value={bank}
+                  onChange={(e) => setBank(e.target.value)}
+                  style={getSelectStyle()}
+                >
+                  <option value="African Bank">African Bank</option>
+                  <option value="ABSA">ABSA</option>
+                  <option value="Capitec">Capitec</option>
+                  <option value="FNB">FNB</option>
+                  <option value="Nedbank">Nedbank</option>
+                  <option value="Standard Bank">Standard Bank</option>
+                </select>
+              </div>
 
-            {/* Bank Account Number */}
-            <div>
-              <label style={labelStyle}>Bank account number</label>
-              <div className="relative">
-                <CustomInput
-                  type="text"
-                  placeholder="Bank account number"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                />
+              <div>
+                <label style={labelStyle}>Bank account number</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Bank account number"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    style={getInputStyle()}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Bank Account Type */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label style={labelStyle}>Bank account type</label>
               <CustomRadioGroup
                 name="accountType"
@@ -706,14 +810,15 @@ export default function CheckoutInfoModal({
             {/* Debit Day Dropdown */}
             <div className="pb-8">
               <label style={labelStyle}>Which day of the month should we debit the bank account?</label>
-              <CustomSelect
+              <select
                 value={debitDay}
                 onChange={(e) => setDebitDay(e.target.value)}
+                style={getSelectStyle()}
               >
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                   <option key={day} value={String(day)}>{day}</option>
                 ))}
-              </CustomSelect>
+              </select>
             </div>
           </div>
         </div>
@@ -722,29 +827,51 @@ export default function CheckoutInfoModal({
         <div className="flex flex-col items-center justify-center p-8 bg-[var(--card-secondary)] border-t border-[var(--border)] space-y-4 flex-shrink-0">
           <button
             onClick={() => alert("Downloading quote...")}
-            className="text-[14px] text-[#1FC3EB] font-medium hover:underline transition-colors"
+            className="text-[14px] text-[#1FC3EB] font-medium hover:underline transition-colors bg-transparent border-none cursor-pointer"
           >
             Download quote
           </button>
 
           <button
             onClick={handleNext}
-            disabled={!isFormValid}
-            className={`w-[240px] h-[50px] rounded-lg font-bold text-[18px] transition-all flex items-center justify-center shadow-lg ${
-              !isFormValid ? "opacity-30 cursor-not-allowed bg-[var(--border)] text-[var(--text-secondary)]" : "bg-[#F59E0B] text-[#0A0A0A] hover:opacity-90"
+            disabled={!isFormValid || isSubmitting}
+            className={`w-[240px] h-[50px] rounded-lg font-bold text-[18px] transition-all flex items-center justify-center shadow-lg border-none cursor-pointer ${
+              !isFormValid || isSubmitting ? "opacity-30 cursor-not-allowed bg-[var(--border)] text-[var(--text-secondary)]" : "bg-[#F59E0B] text-[#0A0A0A] hover:opacity-90"
             }`}
           >
-            Next
+            {isSubmitting ? "Saving..." : "Next"}
           </button>
 
           <button
-            onClick={onClose}
-            className="text-[14px] text-[#1FC3EB] font-medium hover:underline transition-colors"
+            onClick={() => router.push("/quotes")}
+            className="text-[14px] text-[#1FC3EB] font-medium hover:underline transition-colors bg-transparent border-none cursor-pointer"
           >
             or go back
           </button>
         </div>
       </div>
+
+      {/* OTP / Approval Modal Overlay on top of this page */}
+      {showApproveModal && (
+        <ApproveQuoteModal
+          isOpen={showApproveModal}
+          onClose={() => setShowApproveModal(false)}
+          quoteId={quoteId}
+          quoteReference={quoteReference}
+          companyName={companyName}
+          onSendOTP={handleSendOTP}
+        />
+      )}
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={<div className="p-8 text-center text-secondary">Loading Checkout Page...</div>}>
+        <CheckoutPageContent />
+      </Suspense>
+    </DashboardLayout>
   );
 }

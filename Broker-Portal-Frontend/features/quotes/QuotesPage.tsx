@@ -23,14 +23,13 @@ import {
 
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import CancelQuoteModal from "@/components/quotes/CancelQuoteModal";
-import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
 import QuoteDetailsPage from "./QuoteDetailsPage";
 import { getLeads } from "@/lib/api/leads";
-import { getQuotes, updateQuoteStatus, formatRand, saveOnboardingDetails, type Quote as ApiQuote } from "@/lib/api/quotes";
+import { getQuotes, updateQuoteStatus, formatRand, type Quote as ApiQuote } from "@/lib/api/quotes";
 import { getRepresentativeId } from "@/lib/auth";
 import { QuoteStatus } from "@/lib/enums";
 import FilterToolbar from "@/components/ui/FilterToolbar";
-import QuoteBadge from "@/components/ui/QuoteBadge";
+import QuoteCard from "@/components/ui/QuoteCard";
 
 interface Quote {
   id: string;
@@ -83,7 +82,6 @@ export default function QuotesPage() {
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedQuoteForApproval, setSelectedQuoteForApproval] = useState<Quote | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedQuoteForCancel, setSelectedQuoteForCancel] = useState<Quote | null>(null);
@@ -244,21 +242,7 @@ export default function QuotesPage() {
   };
 
   const handleMarkAsApproved = (quote: Quote) => {
-    setSelectedQuoteForApproval(quote);
-    setShowCheckoutModal(true);
-  };
-
-  const handleCheckoutNext = async (onboardingData: any) => {
-    if (selectedQuoteForApproval) {
-      try {
-        await saveOnboardingDetails(selectedQuoteForApproval.id, onboardingData);
-        setShowCheckoutModal(false);
-        setShowApproveModal(true);
-      } catch (err) {
-        console.error("Failed to save onboarding details:", err);
-        alert(err instanceof Error ? err.message : "Failed to save onboarding details. Please try again.");
-      }
-    }
+    router.push(`/quotes/${quote.id}/checkout?companyName=${encodeURIComponent(quote.companyName)}&ref=${encodeURIComponent(quote.quoteReference)}`);
   };
 
   const handleCancelQuote = (quote: Quote) => {
@@ -417,106 +401,11 @@ export default function QuotesPage() {
               </Box>
             ) : (
               quotes.map((quote) => (
-                <Card
+                <QuoteCard
                   key={quote.id}
-                  sx={{
-                    bgcolor: "var(--card-secondary)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "10px",
-                    p: "24px",
-                    boxShadow: "none",
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    {/* Left Section */}
-                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
-                      {/* Company Name & Badges */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                        <Typography variant="h3" sx={{ fontSize: "18px", fontWeight: 500, color: "var(--text-primary)", m: 0 }}>
-                          {quote.companyName}
-                        </Typography>
-                        {/* <Chip
-                          label={quote.quoteType}
-                          sx={{
-                            height: "22px",
-                            bgcolor: quote.quoteType === "Quick Quote" ? "rgba(43,127,255,0.1)" : "rgba(31,195,235,0.1)",
-                            border: quote.quoteType === "Quick Quote" ? "1px solid rgba(43,127,255,0.2)" : "1px solid rgba(31,195,235,0.2)",
-                            color: quote.quoteType === "Quick Quote" ? "#2B7FFF" : "#1FC3EB",
-                            fontSize: "12px",
-                            fontWeight: 500,
-                            "& .MuiChip-label": { px: "8px" }
-                          }}
-                        />
-
-                        <Chip
-                          label={`${quote.daysRemaining} days remaining`}
-                          sx={{
-                            height: "22px",
-                            bgcolor: "transparent",
-                            border: "1px solid var(--border)",
-                            color: "var(--text-primary)",
-                            fontSize: "12px",
-                            fontWeight: 500,
-                            "& .MuiChip-label": { px: "8px" }
-                          }}
-                        /> */}
-                        <QuoteBadge type={quote.quoteType} daysRemaining={quote.daysRemaining} />
-                      </Box>
-
-                      {/* Quote Details Grid */}
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 3 }}>
-                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Quote ID</Typography>
-                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.quoteId}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 3 }}>
-                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Monthly Premium</Typography>
-                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "#1FC3EB" }}>{quote.monthlyPremium}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 3 }}>
-                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Coverage Amount</Typography>
-                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.coverageAmount}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 3 }}>
-                          <Typography sx={{ fontSize: "14px", color: "var(--text-secondary)", mb: "4px" }}>Created Date</Typography>
-                          <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{quote.createdDate}</Typography>
-                        </Grid>
-                      </Grid>
-                    </Box>
-
-                    {/* Actions Button */}
-                    <Box>
-                      <Button
-                        variant="outlined"
-                        endIcon={<ChevronDown size={20} />}
-                        onClick={(e) => handleOpenMenu(e, quote)}
-                        sx={{
-                          height: "36px",
-                          bgcolor: "var(--table-header-bg)",
-                          border: "1px solid var(--text-secondary)",
-                          borderRadius: "8px",
-                          color: "var(--text-primary)",
-                          textTransform: "none",
-                          outline: "none",
-                          "&:focus": {
-                            outline: "none",
-                          },
-                          "&.Mui-focusVisible": {
-                            outline: "none",
-                            borderColor: "var(--text-primary)",
-                          },
-                          "&:hover": {
-                            bgcolor: "var(--border)",
-                            borderColor: "var(--text-primary)",
-                            borderWidth: "1px",
-                          }
-                        }}
-                      >
-                        Actions
-                      </Button>
-                    </Box>
-                  </Box>
-                </Card>
+                  quote={quote}
+                  onOpenMenu={(e) => handleOpenMenu(e, quote)}
+                />
               ))
             )}
 
@@ -703,19 +592,7 @@ export default function QuotesPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Checkout Info Modal - The new step */}
-      {showCheckoutModal && selectedQuoteForApproval && (
-        <CheckoutInfoModal
-          isOpen={showCheckoutModal}
-          onClose={() => {
-            setShowCheckoutModal(false);
-            setSelectedQuoteForApproval(null);
-          }}
-          quoteId={selectedQuoteForApproval.quoteReference}
-          companyName={selectedQuoteForApproval.companyName}
-          onNext={handleCheckoutNext}
-        />
-      )}
+
 
       {/* Approve Quote Modal */}
       {showApproveModal && selectedQuoteForApproval && (

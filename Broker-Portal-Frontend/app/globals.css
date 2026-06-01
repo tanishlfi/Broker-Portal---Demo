@@ -26,6 +26,10 @@
   --sidebar-active-text: #ffffff;
   --sidebar-logo-color: #1FC3EB;
   --sidebar-width: 240px;
+
+  /* Date picker — dark mode defaults (JS overrides on theme toggle) */
+  --date-icon-filter: invert(1) brightness(2);
+  --color-scheme: dark;
 }
 
 * {
@@ -125,6 +129,20 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield !important;
   appearance: textfield !important;
+}
+
+/* Date picker calendar icon styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: var(--date-icon-filter);
+  cursor: pointer;
+  opacity: 0.9;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type="date"] {
+  color-scheme: var(--color-scheme);
 }
 
 /* Additional fallback */

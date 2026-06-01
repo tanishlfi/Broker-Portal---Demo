@@ -68,6 +68,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       root.style.setProperty("--text-primary", "#ffffff");
       root.style.setProperty("--text-secondary", "#A0A0A0");
       root.style.setProperty("--text-muted", "#5E6A77");
+      
+      root.style.setProperty("--date-icon-filter", "invert(1) brightness(2)");
+      root.style.setProperty("--color-scheme", "dark");
+      root.style.colorScheme = "dark";
     } else {
       root.style.setProperty("--background", "#f7f7f7");
       root.style.setProperty("--foreground", "#0a0a0a");
@@ -86,6 +90,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       root.style.setProperty("--text-primary", "#0f172a");
       root.style.setProperty("--text-secondary", "#475569");
       root.style.setProperty("--text-muted", "#64748b");
+      
+      root.style.setProperty("--date-icon-filter", "none");
+      root.style.setProperty("--color-scheme", "light");
+      root.style.colorScheme = "light";
     }
 
     // Force a reflow

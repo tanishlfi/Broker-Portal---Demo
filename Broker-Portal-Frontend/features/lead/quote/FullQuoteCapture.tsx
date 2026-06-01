@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useThemeToggle } from "@/app/providers";
 import { CheckCircle } from "lucide-react";
+import DateInput from "@/components/ui/DateInput";
 import * as XLSX from "xlsx";
 import EmployeeListTable from "@/components/ui/EmployeeListTable";
 import { BackButton, NextButton } from "@/components/ui/StepButtons";
@@ -15,7 +16,6 @@ import {
 } from "@/utils/validators";
 import OptionToggleGroup from "@/components/ui/OptionToggleGroup";
 import AdjustFullCoverStep from "./components/AdjustFullCoverStep";
-import CheckoutInfoModal from "@/components/quotes/CheckoutInfoModal";
 import ApproveQuoteModal from "@/components/quotes/ApproveQuoteModal";
 import { useRouter } from "next/navigation";
 import { INDUSTRY_TYPE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/enums";
@@ -112,7 +112,6 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
   const [isImporting, setIsImporting] = useState(false);
   const [coverMode, setCoverMode] = useState<"multiple" | "equal">("multiple");
   const [createdQuote, setCreatedQuote] = useState<{ id: string; quoteReference: string } | null>(null);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [isGeneratingForApproval, setIsGeneratingForApproval] = useState(false);
 
@@ -328,8 +327,7 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
     try {
       const quote = await onGenerate(data);
       if (quote) {
-        setCreatedQuote({ id: quote.quoteId, quoteReference: quote.quoteReference });
-        setShowCheckoutModal(true);
+        router.push(`/quotes/${quote.quoteId}/checkout?companyName=${encodeURIComponent(companyName || "")}&ref=${encodeURIComponent(quote.quoteReference || "")}`);
       }
     } catch (err) {
       console.error("Failed to generate quote for approval:", err);
@@ -365,17 +363,6 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
       width: "100%",
       boxSizing: "border-box", display: "flex", flexDirection: "column",
     }}>
-      {/* Force calendar picker icon colour based on theme */}
-      <style>{`
-        input[type="date"].full-quote-date::-webkit-calendar-picker-indicator {
-          filter: ${isDarkMode ? "invert(1) brightness(2)" : "invert(0)"};
-          cursor: pointer;
-          opacity: 0.85;
-        }
-        input[type="date"].full-quote-date::-webkit-calendar-picker-indicator:hover {
-          opacity: 1;
-        }
-      `}</style>
       {/* Stepper */}
       <StepProgress steps={STEPS} currentStep={currentStep} variant="continuous" />
 
@@ -487,12 +474,10 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                 <label style={{ ...labelStyle, color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "10px" }}>
                   What was the start date of the replaced policy?
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={replacedPolicyStartDate}
-                  onChange={e => setReplacedPolicyStartDate(e.target.value)}
-                  className="full-quote-date"
-                  style={getInputStyle(false)}
+                  onChange={setReplacedPolicyStartDate}
+                  inputStyle={getInputStyle(false)}
                   onFocus={onFocus}
                   onBlur={e => onBlur(e, false)}
                   onMouseEnter={onMouseEnter}
@@ -695,9 +680,10 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
                     </div>
                     <div>
                       <label style={labelStyle}>Date of birth (dd/mm/yyyy)</label>
-                      <input type="date" value={form.dob}
-                        onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-                        style={getInputStyle(false)}
+                      <DateInput
+                        value={form.dob}
+                        onChange={v => setForm(f => ({ ...f, dob: v }))}
+                        inputStyle={getInputStyle(false)}
                         onFocus={onFocus}
                         onBlur={e => onBlur(e, false)}
                         onMouseEnter={onMouseEnter}
@@ -783,23 +769,6 @@ export default function FullQuoteCapture({ companyName = "—", leadReference = 
       </div>
 
       {showModal && <DownloadQuoteModal onClose={() => setShowModal(false)} />}
-
-      {showCheckoutModal && createdQuote && (
-        <CheckoutInfoModal
-          isOpen={showCheckoutModal}
-          onClose={() => {
-            setShowCheckoutModal(false);
-            setCreatedQuote(null);
-          }}
-          quoteId={createdQuote.quoteReference}
-          companyName={companyName}
-          onNext={async (onboardingData) => {
-            // TODO: Implement onboarding details save when API endpoint is available
-            setShowCheckoutModal(false);
-            setShowApproveModal(true);
-          }}
-        />
-      )}
 
       {showApproveModal && createdQuote && (
         <ApproveQuoteModal
