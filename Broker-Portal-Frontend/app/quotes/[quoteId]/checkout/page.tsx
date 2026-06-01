@@ -187,15 +187,13 @@ function CheckoutPageContent() {
 
   const labelStyle: React.CSSProperties = {
     fontSize: "15px",
-    fontWeight: "bold",
     color: "var(--text-primary)",
     display: "block",
     marginBottom: "6px",
   };
 
   const sectionHeaderStyle: React.CSSProperties = {
-    fontSize: "24px",
-    fontWeight: "bold",
+    fontSize: "20px",
     color: "var(--primary)",
     marginTop: "0px",
     marginBottom: "8px",
